@@ -48,8 +48,8 @@ Domain:        ai-doc-prep.vercel.app
 
 **Check CHECKLIST.md for exact progress**
 
-Current phase: **Planning Complete ✓**
-Next task: **Phase 1 - Initialize Next.js project**
+Current phase: **Phase 1 Complete ✓**
+Next task: **Phase 2 - Core UI & Layout**
 
 ---
 
@@ -371,19 +371,54 @@ export default function ComponentName() {
 
 ---
 
+## Feature Implementation Workflow
+
+**IMPORTANT: After completing ANY feature or phase, ALWAYS update documentation in this order:**
+
+1. **Update CHECKLIST.md**
+   - Mark completed tasks with [x]
+   - Update phase status
+   - Add notes in "Notes & Issues" section
+   - Update footer with current phase
+
+2. **Update CHANGELOG.md**
+   - Add all changes under appropriate version/phase
+   - List what was Added, Changed, Fixed, or Removed
+   - Include technical decisions and testing results
+   - Update phase milestones
+
+3. **Update CLAUDE.md** (if needed)
+   - Update "Current Status" section
+   - Update "Next Action" at footer
+   - Add any new patterns or decisions to relevant sections
+
+4. **Update PROJECT_PLAN.md** (if needed)
+   - Mark implementation phases as complete
+   - Update project status
+
+5. **Commit and Push**
+   - Commit code changes first
+   - Then commit documentation updates
+   - Push all changes to branch
+
+**Never skip documentation updates!** It ensures continuity between sessions.
+
+---
+
 ## Session Handoff
 
 **At end of each session:**
-1. Update CHECKLIST.md with progress
-2. Commit all changes
-3. Push to branch
-4. Add notes about any issues/decisions
+1. Complete Feature Implementation Workflow (above)
+2. Verify all changes committed and pushed
+3. Ensure CHANGELOG.md is current
+4. Leave clear notes for next session
 
 **At start of next session:**
 1. Read this file (CLAUDE.md)
 2. Read CHECKLIST.md for status
-3. Check Notes section for context
-4. Ask user where to continue
+3. Read latest CHANGELOG.md entries
+4. Check Notes section for context
+5. Ask user where to continue
 
 ---
 
@@ -398,5 +433,5 @@ export default function ComponentName() {
 ---
 
 **Last Updated:** 2025-11-10
-**Current Status:** Planning complete, ready for Phase 1
-**Next Action:** Initialize Next.js project
+**Current Status:** Phase 1 complete, ready for Phase 2
+**Next Action:** Build core UI & layout components
