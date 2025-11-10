@@ -1,21 +1,19 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 export default function useLocalStorage(key, initialValue) {
-  const [storedValue, setStoredValue] = useState(initialValue)
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
+  // Initialize state with a function to avoid race condition
+  const [storedValue, setStoredValue] = useState(() => {
+    if (typeof window === 'undefined') return initialValue
 
     try {
       const item = window.localStorage.getItem(key)
-      if (item) {
-        setStoredValue(JSON.parse(item))
-      }
+      return item ? JSON.parse(item) : initialValue
     } catch (error) {
       console.error('Error reading from localStorage:', error)
+      return initialValue
     }
-  }, [key])
+  })
 
   const setValue = (value) => {
     try {

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useId, useRef } from 'react'
 
 export default function FileUpload({
   onFileSelect,
@@ -10,6 +10,8 @@ export default function FileUpload({
   const [dragActive, setDragActive] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [error, setError] = useState(null)
+  const fileInputId = useId()
+  const fileInputRef = useRef(null)
 
   const handleDrag = (e) => {
     e.preventDefault()
@@ -51,6 +53,17 @@ export default function FileUpload({
     }
   }
 
+  const handleClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      fileInputRef.current?.click()
+    }
+  }
+
   return (
     <div>
       <div
@@ -63,14 +76,20 @@ export default function FileUpload({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={() => document.getElementById('file-input').click()}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={label}
       >
         <input
-          id="file-input"
+          ref={fileInputRef}
+          id={fileInputId}
           type="file"
           accept={accept}
           onChange={handleChange}
           className="hidden"
+          aria-label={label}
         />
         <div className="text-4xl mb-4">📄</div>
         <p className="text-lg mb-2">{label}</p>
