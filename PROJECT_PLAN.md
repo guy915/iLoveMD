@@ -6,7 +6,7 @@
 **URL:** ai-doc-prep.vercel.app
 **Purpose:** Free web-based tool for preparing documents for LLM consumption
 **Timeline:** 1 week
-**Status:** Planning Complete ✓
+**Status:** Planning Complete
 
 ## Vision Statement
 
@@ -498,4 +498,4 @@ As a first-year CS student, this project teaches:
 
 ---
 
-**Ready to start implementation!** 🚀
+**Ready to start implementation!**
