@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Removed non-existent Settings page link from Header navigation
+  - Settings page was not in project plan (only Help and About pages planned)
+  - Removed from both desktop and mobile navigation menus
+  - Prevents 404 errors when users click the link
+- Removed unnecessary 'use client' directive from useLocalStorage hook
+  - Custom hooks don't need 'use client' directive
+  - Only components that use hooks need the directive
+  - Simplifies code and improves clarity for learning purposes
+
 ### Changed
 - Removed dark mode support (light mode only for now)
   - Removed all `dark:` Tailwind classes from components
