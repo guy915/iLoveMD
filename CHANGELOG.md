@@ -9,12 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **CI/CD Pipeline Improvements**:
-  - Enhanced main CI workflow with multiple specialized jobs:
-    - Security Audit: npm audit and dependency checks
-    - Code Quality: ESLint, code pattern checks, bundle size analysis
-    - Multi-version Build: Tests on Node.js 18.x and 20.x
-    - Build Verification: Validates artifacts for PRs
-    - Final Status Check: Comprehensive result reporting
+  - **Ultra-fast CI workflow optimized for sub-30 second runs**:
+    - Single combined CI job for maximum speed
+    - Tests on Node.js 20.x (latest LTS)
+    - ESLint, security audit, and build in one streamlined flow
+    - Uses `--prefer-offline --no-audit` for faster dependency install
+    - Optional extended analysis runs in parallel (doesn't block merge)
+    - 3-day artifact retention for PRs
   - **Dependabot Configuration** (`.github/dependabot.yml`):
     - Weekly checks for npm dependencies
     - Weekly checks for GitHub Actions updates
