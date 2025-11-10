@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Phase 1: Project Setup ✅
 
+#### Fixed
+- Added `.gitkeep` files to empty directories to ensure they're tracked by Git
+  - Addresses Copilot AI review feedback on PR #1
+  - Directories now properly visible in version control:
+    - `src/components/layout/`, `src/components/common/`, `src/components/tools/`, `src/components/home/`
+    - `src/lib/processors/`, `src/lib/api/`, `src/lib/utils/`, `src/lib/storage/`
+    - `src/hooks/`
+
 #### Added
 - Initialized Next.js 14 project with App Router
 - Created project structure with organized directories:
