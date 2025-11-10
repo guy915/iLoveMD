@@ -1,7 +1,5 @@
 # AI Doc Prep - Claude Context File
 
-**Quick Reference for AI Assistants**
-
 ---
 
 ## Project Overview
