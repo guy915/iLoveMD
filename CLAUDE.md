@@ -380,7 +380,7 @@ export default function ComponentName() {
 4. Add notes about any issues/decisions
 
 **At start of next session:**
-1. Read this file (claude.md)
+1. Read this file (CLAUDE.md)
 2. Read CHECKLIST.md for status
 3. Check Notes section for context
 4. Ask user where to continue
