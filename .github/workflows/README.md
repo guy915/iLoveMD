@@ -78,7 +78,7 @@ To add additional checks (tests, type checking, etc.):
 Add this to your README.md to show build status:
 
 ```markdown
-![CI/CD Pipeline](https://github.com/YOUR_USERNAME/AI-Doc-Prep/workflows/CI%2FCD%20Pipeline/badge.svg)
+![CI/CD Pipeline](https://github.com/YOUR_USERNAME/ai-doc-prep/workflows/CI%2FCD%20Pipeline/badge.svg)
 ```
 
 Replace `YOUR_USERNAME` with your GitHub username.
