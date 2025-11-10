@@ -48,7 +48,7 @@ Domain:        ai-doc-prep.vercel.app
 
 **Check CHECKLIST.md for exact progress**
 
-Current phase: **Phase 2 Complete ✓**
+Current phase: **Phase 2 Complete**
 Next task: **Phase 3 - PDF to Markdown Tool**
 
 ---
@@ -241,14 +241,15 @@ git push                # Push to branch
 
 ## What NOT to Do
 
-❌ **Don't use TypeScript** - Project is JavaScript only
-❌ **Don't add complex state management** - Keep it simple
-❌ **Don't store files server-side** - Everything client/proxy only
-❌ **Don't add features not in plan** - Ask user first
-❌ **Don't use our API keys** - Users provide their own
-❌ **Don't add authentication** - No accounts by design
-❌ **Don't add analytics** - Privacy-first approach
-❌ **Don't over-engineer** - This is a learning project, keep it simple
+**Don't use TypeScript** - Project is JavaScript only
+**Don't add complex state management** - Keep it simple
+**Don't store files server-side** - Everything client/proxy only
+**Don't add features not in plan** - Ask user first
+**Don't use our API keys** - Users provide their own
+**Don't add authentication** - No accounts by design
+**Don't add analytics** - Privacy-first approach
+**Don't over-engineer** - This is a learning project, keep it simple
+**Don't use emojis** - No emojis in code, documentation, or UI elements
 
 ---
 
@@ -282,6 +283,7 @@ export default function ComponentName() {
 - **Responsive:** Use `md:` and `lg:` breakpoints
 - **Dark mode:** Use `dark:` variant classes
 - **Spacing:** Follow 4px base unit (gap-4, p-6, etc.)
+- **No Emojis:** Never use emojis in code, UI, or documentation - use text labels instead
 
 ### File Naming
 - **Components:** PascalCase (e.g., `Button.js`)
