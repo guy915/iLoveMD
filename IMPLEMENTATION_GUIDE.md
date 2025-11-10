@@ -189,7 +189,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
-            📄 AI Doc Prep
+            AI Doc Prep
           </Link>
 
           {/* Desktop Navigation */}
@@ -216,7 +216,7 @@ export default function Header() {
             className="md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            ☰
+            Menu
           </button>
         </div>
 
@@ -327,19 +327,19 @@ export default function Home() {
       {/* Tool Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         <ToolTile
-          icon="📄→📝"
+          icon="PDF→MD"
           title="PDF to Markdown"
           description="Convert PDFs to clean markdown using Marker AI"
           href="/pdf-to-markdown"
         />
         <ToolTile
-          icon="🌐→📝"
+          icon="HTML→MD"
           title="HTML to Markdown"
           description="Convert HTML files or URLs to markdown"
           href="/html-to-markdown"
         />
         <ToolTile
-          icon="📝+📝→📝"
+          icon="MD+MD→MD"
           title="Merge Markdowns"
           description="Combine multiple markdown files into one"
           href="/merge-markdown"
@@ -454,7 +454,7 @@ export default function FileUpload({
           onChange={handleChange}
           className="hidden"
         />
-        <div className="text-4xl mb-4">📄</div>
+        <div className="text-4xl mb-4">FILE</div>
         <p className="text-lg mb-2">{label}</p>
         {selectedFile && (
           <p className="text-sm text-primary-600 font-medium">
