@@ -35,8 +35,11 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <button
+            type="button"
             className="md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+            aria-expanded={mobileMenuOpen}
           >
             ☰
           </button>

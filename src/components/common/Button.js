@@ -12,6 +12,7 @@ export default function Button({
 
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled || loading}
       className={`${baseClasses} ${variantClasses}`}
