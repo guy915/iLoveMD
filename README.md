@@ -10,20 +10,20 @@ AI Doc Prep provides simple, single-purpose tools to convert and prepare documen
 
 ## Features
 
-### 🔄 PDF to Markdown
+### PDF to Markdown
 - Convert PDF files to clean markdown using Marker AI
 - Support for complex layouts (tables, equations, code blocks)
 - Optional OCR for scanned documents
 - Optional LLM enhancement for highest accuracy
 - Customizable output formats (markdown, JSON, HTML, chunks)
 
-### 🌐 HTML to Markdown
+### HTML to Markdown
 - Convert HTML files or web pages to markdown
 - Two input methods: file upload or URL
 - Client-side preprocessing for speed and privacy
 - Clean extraction of main content
 
-### 📝 Merge Markdowns
+### Merge Markdowns
 - Combine multiple markdown files into one
 - Drag-and-drop reordering
 - Customizable separators and formatting

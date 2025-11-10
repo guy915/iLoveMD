@@ -245,7 +245,7 @@ xl: 1280px  /* Extra large devices */
                 border border-gray-200 dark:border-gray-700
                 hover:border-primary-500 hover:shadow-lg
                 transition-all cursor-pointer">
-  <div className="text-4xl mb-4">📄</div>
+  <div className="text-4xl mb-4">FILE</div>
   <h3 className="text-xl font-semibold mb-2">Title</h3>
   <p className="text-gray-600 dark:text-gray-400">Description</p>
 </div>
@@ -267,7 +267,7 @@ xl: 1280px  /* Extra large devices */
                 dark:border-gray-700 rounded-lg p-12 text-center
                 hover:border-primary-400 transition-colors
                 cursor-pointer">
-  <div className="text-4xl mb-4">📄</div>
+  <div className="text-4xl mb-4">FILE</div>
   <p className="text-lg mb-2">Drop file here or click to browse</p>
   <p className="text-sm text-gray-500">Supported: PDF, up to 1GB</p>
 </div>
@@ -293,7 +293,7 @@ xl: 1280px  /* Extra large devices */
 <div className="p-4 bg-green-50 dark:bg-green-900/20
                 border border-green-200 dark:border-green-800
                 rounded-lg text-green-800 dark:text-green-200">
-  ✓ Conversion complete! Download started.
+  Conversion complete! Download started.
 </div>
 ```
 
@@ -302,7 +302,7 @@ xl: 1280px  /* Extra large devices */
 <div className="p-4 bg-red-50 dark:bg-red-900/20
                 border border-red-200 dark:border-red-800
                 rounded-lg text-red-800 dark:text-red-200">
-  ✗ Error: Invalid API key
+  Error: Invalid API key
 </div>
 ```
 
@@ -498,7 +498,7 @@ All transitions use `transition-colors` or `transition-all` with default duratio
 
 ```jsx
 // Buttons without text
-<button aria-label="Close">✕</button>
+<button aria-label="Close">X</button>
 
 // Status messages
 <div role="alert">Error occurred</div>
@@ -523,22 +523,22 @@ All transitions use `transition-colors` or `transition-all` with default duratio
 
 ---
 
-## Icons & Emojis
+## Icons & Text Labels
 
 ### Usage
 
-Use emojis for visual interest (not critical information):
+Use text labels for all UI elements:
 
 ```
-📄 PDF files
-📝 Markdown
-🌐 Web/HTML
-✓ Success
-✗ Error
-⚙️ Settings
+PDF files
+Markdown
+Web/HTML
+Success
+Error
+Settings
 ```
 
-For critical UI, use text labels.
+Always use clear text labels for UI elements.
 
 ---
 
@@ -633,7 +633,7 @@ className="bg-white dark:bg-gray-900
 ```jsx
 {status === 'success' && (
   <div className="p-4 bg-green-50 rounded-lg text-green-800">
-    ✓ Conversion complete! Your download should start automatically.
+    Conversion complete! Your download should start automatically.
     <button className="ml-4 underline">Download again</button>
   </div>
 )}
