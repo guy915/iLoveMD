@@ -8,11 +8,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Phase 2: Core UI & Layout components
 - Phase 3: PDF to Markdown tool
 - Phase 4: HTML to Markdown tool
 - Phase 5: Merge Markdown tool
 - Phase 6: Polish & Deploy
+
+---
+
+## [0.2.0] - 2025-11-10
+
+### Phase 2: Core UI & Layout ✅
+
+#### Added
+- **Custom Hooks**:
+  - `src/hooks/useLocalStorage.js` - localStorage wrapper with SSR safety
+    - Handles JSON parsing/stringifying
+    - Graceful error handling
+    - Checks for `window` existence for Next.js SSR compatibility
+- **Layout Components**:
+  - `src/components/layout/Header.js` - Site header with navigation
+    - Logo and site name linking to homepage
+    - Desktop navigation menu (PDF, HTML, Merge, Help, About)
+    - Mobile hamburger menu with responsive breakpoint
+    - Dark mode support
+  - `src/components/layout/Footer.js` - Site footer
+    - Copyright text
+    - Dark mode support
+    - Auto-pushed to bottom with flex layout
+- **Common Components**:
+  - `src/components/common/Button.js` - Reusable button component
+    - Primary and secondary variants
+    - Loading state with "Processing..." text
+    - Disabled state with opacity and cursor changes
+    - Consistent styling with Tailwind classes
+  - `src/components/common/FileUpload.js` - Drag-drop file upload component
+    - Drag-and-drop zone with visual feedback
+    - Click to browse fallback
+    - File size validation (configurable, default 1GB)
+    - File type validation via accept prop
+    - Error message display
+    - Selected file name display
+    - Dark mode support
+- **Home Components**:
+  - `src/components/home/ToolTile.js` - Homepage tool cards
+    - Icon, title, and description props
+    - Hover effects (border color + shadow)
+    - Next.js Link integration
+    - Responsive padding and typography
+    - Dark mode support
+
+#### Updated
+- `src/app/layout.js` - Integrated Header and Footer
+  - Added Header above main content
+  - Added Footer below main content
+  - Maintained flex layout for sticky footer
+- `src/app/page.js` - Complete homepage redesign
+  - Hero section with title and tagline
+  - 3-column responsive tool grid
+  - ToolTile components for each tool:
+    - PDF to Markdown
+    - HTML to Markdown
+    - Merge Markdowns
+  - Responsive breakpoints (mobile: 1 col, tablet: 2 cols, desktop: 3 cols)
+- `CHECKLIST.md` - Marked all Phase 2 tasks as complete
+- `CLAUDE.md` - Updated current status to Phase 2 Complete
+
+#### Testing
+- ✅ Next.js production build successful
+- ✅ No console errors or warnings
+- ✅ All navigation links functional (though target pages don't exist yet)
+- ✅ Mobile menu opens/closes correctly
+- ✅ Component styling matches design system
+- ✅ Dark mode works across all components
+- ✅ Responsive layout verified
+
+#### Technical Decisions
+- **useLocalStorage hook**: Centralized localStorage logic for reuse across tools
+- **Client components**: Header uses `'use client'` for mobile menu state
+- **FileUpload component**: Flexible with props for different file types and sizes
+- **Button component**: Simple variant system, can be extended in future
+- **ToolTile component**: Link wrapper for better accessibility and SEO
+
+#### Git
+- All Phase 2 components committed
+- Documentation updates committed
+- Changes pushed to branch `claude/explore-codebase-011CUzmX2ZtEB5AiYhocyGKj`
 
 ---
 
@@ -108,12 +188,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Duration**: ~1 hour
 **Commits**: 3
 
-### Phase 2: Core UI & Layout 🎯 (In Progress)
+### Phase 2: Core UI & Layout ✅ (2025-11-10)
 **Goal**: Build shared layout components and homepage
-**Status**: Ready to start
-**Planned Components**: Header, Footer, Homepage, ToolTile, Button, FileUpload
+**Status**: Complete
+**Duration**: ~1 hour
+**Components Built**: useLocalStorage, Header, Footer, Button, FileUpload, ToolTile, Homepage
 
-### Phase 3: PDF Tool (Upcoming)
+### Phase 3: PDF Tool 🎯 (Ready to Start)
 **Goal**: Implement PDF conversion using Marker API
 **Status**: Not started
 
@@ -133,7 +214,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Development Notes
 
-### 2025-11-10
+### 2025-11-10 (Phase 2)
+- Built all core UI components for the application
+- useLocalStorage hook provides consistent state persistence across tools
+- Header component includes responsive navigation with mobile menu
+- FileUpload component handles drag-drop and validation elegantly
+- Homepage now displays all three tool options with clear calls to action
+- Dark mode support verified across all new components
+- Build test successful - no errors or warnings
+- Ready to proceed with Phase 3: PDF to Markdown Tool
+
+### 2025-11-10 (Phase 1)
 - Project initialized successfully with Next.js 14 and App Router
 - JavaScript chosen over TypeScript per project requirements
 - Tailwind CSS configured with custom primary colors and dark mode support
