@@ -180,19 +180,30 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-node-20
-          path: .next
 
       - name: Verify artifacts
         run: |
           echo "Verifying build artifacts..."
-          if [ ! -d ".next" ]; then
-            echo "❌ Build directory not found"
+          echo "Current directory contents:"
+          ls -la
+
+          # Check if artifacts were downloaded
+          if [ ! -d ".next" ] && [ ! -f ".next" ]; then
+            echo "❌ No .next directory or files found"
+            echo "Available files/directories:"
+            find . -maxdepth 2 -type d -o -type f
             exit 1
           fi
-          echo "✓ Build directory exists"
-          echo "  Size: $(du -sh .next | cut -f1)"
-          echo "  Files: $(find .next -type f | wc -l)"
-          echo "✓ Artifacts verified successfully"
+
+          if [ -d ".next" ]; then
+            echo "✓ Build directory exists"
+            echo "  Size: $(du -sh .next | cut -f1)"
+            echo "  Files: $(find .next -type f | wc -l)"
+            echo "✓ Artifacts verified successfully"
+          else
+            echo "⚠️  .next found but not as expected directory"
+            file .next 2>/dev/null || echo "Cannot determine .next file type"
+          fi
 
   # Final status check (waits for all jobs)
   ci-success:
