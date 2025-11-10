@@ -36,12 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Layout Components**:
   - `src/components/layout/Header.js` - Site header with navigation
     - Logo and site name linking to homepage
-    - Desktop navigation menu (PDF, HTML, Merge, Help, About)
+    - Desktop navigation menu (PDF, HTML, Markdown, Help, About, Settings)
     - Mobile hamburger menu with responsive breakpoint
-    - Dark mode support
   - `src/components/layout/Footer.js` - Site footer
     - Copyright text
-    - Dark mode support
     - Auto-pushed to bottom with flex layout
 - **Common Components**:
   - `src/components/common/Button.js` - Reusable button component
@@ -56,14 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - File type validation via accept prop
     - Error message display
     - Selected file name display
-    - Dark mode support
 - **Home Components**:
   - `src/components/home/ToolTile.js` - Homepage tool cards
-    - Icon, title, and description props
+    - Workflow name, title, and description props
     - Hover effects (border color + shadow)
     - Next.js Link integration
     - Responsive padding and typography
-    - Dark mode support
 
 #### Updated
 - `src/app/layout.js` - Integrated Header and Footer
@@ -87,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ All navigation links functional (though target pages don't exist yet)
 - ✅ Mobile menu opens/closes correctly
 - ✅ Component styling matches design system
-- ✅ Dark mode works across all components
+- ✅ Light mode styling verified
 - ✅ Responsive layout verified
 
 #### Technical Decisions
@@ -140,7 +136,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Configured
 - **Tailwind CSS**:
   - Custom primary color palette (blue shades)
-  - Dark mode with 'class' strategy
   - Content paths for all source files
 - **PostCSS**: Basic configuration with Tailwind and Autoprefixer
 - **Next.js**: Default configuration with future optimizations ready
@@ -228,14 +223,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Header component includes responsive navigation with mobile menu
 - FileUpload component handles drag-drop and validation elegantly
 - Homepage now displays all three tool options with clear calls to action
-- Dark mode support verified across all new components
+- Light mode styling verified across all components
 - Build test successful - no errors or warnings
 - Ready to proceed with Phase 3: PDF to Markdown Tool
 
 ### 2025-11-10 (Phase 1)
 - Project initialized successfully with Next.js 14 and App Router
 - JavaScript chosen over TypeScript per project requirements
-- Tailwind CSS configured with custom primary colors and dark mode support
+- Tailwind CSS configured with custom primary colors
 - All core dependencies installed and tested
 - Documentation structure established for easy reference
 - Build test successful - production build working correctly
@@ -256,7 +251,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **lib/ directory**: Business logic separated from UI components
 
 ### Configuration
-- **Dark mode**: System preference based, can be extended later
 - **Import aliases**: `@/*` for cleaner imports
 - **ESLint**: Next.js recommended config for code quality
 
