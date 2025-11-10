@@ -6,7 +6,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4">AI Doc Prep</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400">
+        <p className="text-xl text-gray-600">
           Prepare your documents for LLMs
         </p>
       </div>

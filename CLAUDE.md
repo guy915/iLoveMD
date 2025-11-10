@@ -141,10 +141,11 @@ Client → Process locally → Download
   "markerApiKey": "string",
   "pdfOptions": { paginate, useLLM, forceOCR, mode, outputFormat },
   "htmlOptions": { preserveImages, preserveLinks },
-  "mergeOptions": { separatorStyle, generateTOC, ordering },
-  "theme": "system" | "light" | "dark"
+  "mergeOptions": { separatorStyle, generateTOC, ordering }
 }
 ```
+
+**Note:** Light mode only - dark mode removed for simplicity.
 
 ---
 
@@ -217,7 +218,7 @@ git push                # Push to branch
 ### Design
 - **Minimal UI:** Functional over flashy
 - **iLovePDF-inspired:** Tile layout, simple flows
-- **Dark mode:** System preference only (no toggle yet)
+- **Light mode only:** No dark mode (simplified for now)
 - **Mobile:** Desktop first, mobile eventually
 
 ### User Experience

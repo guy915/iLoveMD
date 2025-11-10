@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Removed dark mode support (light mode only for now)
+  - Removed all `dark:` Tailwind classes from components
+  - Simplified `globals.css` to remove dark mode media query
+  - Removed `darkMode: 'class'` from `tailwind.config.js`
+  - Updated Header, Footer, ToolTile, FileUpload, and page.js
+  - Build test successful - no errors
+
 ### Planned
 - Phase 3: PDF to Markdown tool
 - Phase 4: HTML to Markdown tool
