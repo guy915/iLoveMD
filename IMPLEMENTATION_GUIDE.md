@@ -216,7 +216,7 @@ export default function Header() {
             className="md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            ☰
+            Menu
           </button>
         </div>
 
