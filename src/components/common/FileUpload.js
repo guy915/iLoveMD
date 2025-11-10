@@ -91,8 +91,7 @@ export default function FileUpload({
           className="hidden"
           aria-label={label}
         />
-        <div className="text-4xl mb-4">📄</div>
-        <p className="text-lg mb-2">{label}</p>
+        <p className="text-lg mb-2 font-medium">{label}</p>
         {selectedFile && (
           <p className="text-sm text-primary-600 font-medium">
             Selected: {selectedFile.name}

@@ -14,19 +14,19 @@ export default function Home() {
       {/* Tool Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         <ToolTile
-          icon="📄→📝"
+          workflow="PDF to Markdown"
           title="PDF to Markdown"
           description="Convert PDFs to clean markdown using Marker AI"
           href="/pdf-to-markdown"
         />
         <ToolTile
-          icon="🌐→📝"
+          workflow="HTML to Markdown"
           title="HTML to Markdown"
           description="Convert HTML files or URLs to markdown"
           href="/html-to-markdown"
         />
         <ToolTile
-          icon="📝+📝→📝"
+          workflow="Merge Markdowns"
           title="Merge Markdowns"
           description="Combine multiple markdown files into one"
           href="/merge-markdown"
