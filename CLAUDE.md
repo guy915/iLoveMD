@@ -53,6 +53,20 @@ Next task: **Phase 3 - PDF to Markdown Tool**
 
 ---
 
+## Development API Keys
+
+**Test Marker API Key:** `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
+
+**Currently hardcoded in:**
+- `src/app/pdf-to-markdown/page.js` (line 11) - Pre-filled as default localStorage value
+
+**TODO before production:**
+- Remove hardcoded API key from pdf-to-markdown/page.js
+- Change default value from the key to empty string: `useLocalStorage('markerApiKey', '')`
+- Test that users are properly prompted to enter their own key
+
+---
+
 ## Project Structure
 
 ```

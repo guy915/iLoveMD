@@ -27,9 +27,6 @@ yarn-error.log*
 # local env files
 .env*.local
 
-# test API keys (contains sensitive keys for development)
-TEST_API_KEYS.md
-
 # vercel
 .vercel
 
