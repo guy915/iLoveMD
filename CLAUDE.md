@@ -32,7 +32,7 @@ Converts documents to markdown (optimized for LLMs) with 3 tools:
 Framework:     Next.js 14+ (App Router)
 Styling:       Tailwind CSS
 Language:      JavaScript (NOT TypeScript)
-State:         Component-level + localStorage (no Redux/Context)
+State:         Component-level + localStorage + React Context (LogContext)
 Hosting:       Vercel (free)
 Domain:        ai-doc-prep.vercel.app
 ```
@@ -75,6 +75,8 @@ ai-doc-prep/
 │   ├── app/                    # Pages (Next.js App Router)
 │   │   ├── page.js            # Homepage with 3 tiles
 │   │   ├── layout.js          # Root layout (Header/Footer)
+│   │   ├── not-found.js       # 404 page with logging
+│   │   ├── loading.js         # Global loading state
 │   │   ├── pdf-to-markdown/   # PDF tool page
 │   │   ├── html-to-markdown/  # HTML tool page
 │   │   ├── merge-markdown/    # Merge tool page
@@ -85,10 +87,13 @@ ai-doc-prep/
 │   │       └── fetch-url/     # Fetch HTML (CORS bypass)
 │   │
 │   ├── components/
-│   │   ├── layout/            # Header, Footer
-│   │   ├── common/            # Button, FileUpload, etc.
+│   │   ├── layout/            # Header, Footer, GlobalDiagnosticPanel
+│   │   ├── common/            # Button, FileUpload, ErrorBoundary, etc.
 │   │   ├── home/              # ToolTile
 │   │   └── tools/             # Tool-specific components
+│   │
+│   ├── contexts/
+│   │   └── LogContext.js      # Global diagnostic logging context
 │   │
 │   ├── lib/
 │   │   ├── processors/        # Business logic for each tool
@@ -607,6 +612,165 @@ export default function ComponentName() {
    - Push all changes to branch
 
 **Never skip documentation updates!** It ensures continuity between sessions.
+
+---
+
+## CI/CD Pipeline Maintenance
+
+**IMPORTANT: Keep CI/CD workflows up to date as features are added.**
+
+### When to Update CI/CD
+
+Update `.github/workflows/` when:
+- **New test commands added** - Add to CI workflow
+- **New build steps required** - Update build job
+- **New dependencies with security implications** - Update security audit
+- **New file types or directories** - Update relevant checks
+- **Performance-critical code added** - Consider bundle size checks
+- **New API endpoints created** - Add endpoint testing if applicable
+
+### CI/CD Update Checklist
+
+When adding features, ask yourself:
+- [ ] Does this need to be tested in CI? (new scripts, builds, etc.)
+- [ ] Should this be part of the security audit? (new dependencies, APIs)
+- [ ] Does this affect bundle size? (large libraries, heavy dependencies)
+- [ ] Are there new patterns to lint for? (code quality checks)
+- [ ] Should this block merges if it fails? (critical vs informational)
+
+### Example Updates
+
+**Adding a new tool:**
+- Update code quality checks to scan new directories
+- Add any new secret patterns to detect
+- Update bundle size baseline if significantly changed
+
+**Adding external API:**
+- Add API key pattern to secret detection
+- Consider adding API accessibility test
+- Document any rate limits or testing concerns
+
+---
+
+## Diagnostic Logging Maintenance
+
+**IMPORTANT: Maintain comprehensive logging as features are added.**
+
+### Logging Philosophy
+
+**Log EVERYTHING** - Every user interaction, every state change, every error.
+
+The diagnostic logging system exists to:
+- **Trace user actions** - Know exactly what the user did before an error
+- **Debug issues faster** - See the full context of what happened
+- **Monitor application flow** - Understand how features are being used
+- **Catch edge cases** - Identify unexpected behaviors early
+
+### What to Log
+
+**ALWAYS log these events:**
+
+**User Interactions:**
+- Button clicks (with button label/purpose)
+- Link clicks (with destination)
+- Form submissions (with form identifier)
+- File uploads (with file metadata: name, size, type)
+- Drag-and-drop events
+- Modal/dialog opens and closes
+- Tab/section switches
+- Settings changes
+
+**Application State:**
+- Component mounts (page loads)
+- Route changes (navigation)
+- API calls (request + response)
+- Data validation (success and failures)
+- localStorage operations (reads/writes)
+- File operations (downloads, conversions)
+
+**Errors and Warnings:**
+- Validation errors (with context)
+- API errors (with status codes and messages)
+- File processing errors (with file details)
+- Network errors (with endpoint and error)
+- Unexpected states (edge cases)
+- React errors (via ErrorBoundary)
+
+### How to Add Logging
+
+**For client components:**
+```javascript
+'use client'
+import { useLogs } from '@/contexts/LogContext'
+
+export default function MyComponent() {
+  const { addLog } = useLogs()
+
+  const handleClick = () => {
+    addLog('info', 'Button clicked: My Action')
+    // ... rest of handler
+  }
+
+  useEffect(() => {
+    addLog('info', 'MyComponent mounted')
+  }, [addLog])
+
+  return (...)
+}
+```
+
+**For API routes:**
+```javascript
+// Log in the API route handler
+console.log('[API] /api/my-endpoint - Request received', { params })
+// These will show in server logs and can be viewed during development
+```
+
+### Logging Standards
+
+**Log types:**
+- `'info'` - Normal operations, user actions, state changes
+- `'success'` - Successful completions, validations passed
+- `'error'` - Errors, failures, validation failures
+
+**Log messages:**
+- Be descriptive and specific
+- Include action and context
+- Use present tense ("Button clicked", not "Button was clicked")
+- Include identifiers when relevant
+
+**Log data:**
+- Include relevant context as second parameter
+- Sanitize sensitive information (API keys, passwords)
+- Keep objects small (don't log massive responses)
+- Use structured data for better readability
+
+**Examples:**
+```javascript
+// Good
+addLog('info', 'File selected for upload', {
+  name: file.name,
+  size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+  type: file.type
+})
+
+// Bad
+addLog('info', 'File selected')
+```
+
+### Logging Checklist for New Features
+
+When adding a feature, ensure you log:
+- [ ] Component mount (page load)
+- [ ] All user interactions (clicks, inputs, submissions)
+- [ ] All state changes (data updates, mode switches)
+- [ ] All API calls (request + response summary)
+- [ ] All validation events (success and failures)
+- [ ] All errors and edge cases
+- [ ] All file operations (if applicable)
+- [ ] All navigation (if feature changes routes)
+
+**Never assume something is too small to log.** The goal is comprehensive traceability.
 
 ---
 
