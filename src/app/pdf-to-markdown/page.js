@@ -7,11 +7,19 @@ import useLocalStorage from '@/hooks/useLocalStorage'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 
 export default function PdfToMarkdownPage() {
-  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', '')
+  // Pre-fill with test API key (TODO: Remove hardcoded key before production)
+  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
   const [file, setFile] = useState(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const [logs, setLogs] = useState([])
+  const [showLogs, setShowLogs] = useState(true)
+
+  const addLog = (type, message, data = null) => {
+    const timestamp = new Date().toLocaleTimeString()
+    setLogs(prev => [...prev, { timestamp, type, message, data }])
+  }
 
   const handleFileSelect = (selectedFile) => {
     setFile(selectedFile)
@@ -31,7 +39,9 @@ export default function PdfToMarkdownPage() {
 
     setProcessing(true)
     setError('')
+    setLogs([]) // Clear previous logs
     setStatus('Submitting to Marker API...')
+    addLog('info', `Starting conversion for: ${file.name}`)
 
     try {
       // Submit file to our API route
@@ -39,12 +49,14 @@ export default function PdfToMarkdownPage() {
       formData.append('file', file)
       formData.append('apiKey', apiKey)
 
+      addLog('info', 'Submitting file to Marker API...')
       const submitResponse = await fetch('/api/marker', {
         method: 'POST',
         body: formData,
       })
 
       const submitData = await submitResponse.json()
+      addLog('success', 'Submit response received', submitData)
 
       if (!submitResponse.ok || !submitData.success) {
         throw new Error(submitData.error || 'Failed to submit file')
@@ -53,6 +65,7 @@ export default function PdfToMarkdownPage() {
       // Start polling for results
       setStatus('Processing PDF... This may take a minute.')
       const checkUrl = submitData.request_check_url
+      addLog('info', `Polling URL: ${checkUrl}`)
 
       const pollInterval = 2000 // Poll every 2 seconds
       const maxPolls = 150 // 5 minutes max (150 * 2 seconds)
@@ -64,6 +77,7 @@ export default function PdfToMarkdownPage() {
         }
 
         pollCount++
+        addLog('info', `Poll attempt ${pollCount}/${maxPolls}`)
 
         const pollResponse = await fetch(
           `/api/marker?checkUrl=${encodeURIComponent(checkUrl)}`,
@@ -75,6 +89,7 @@ export default function PdfToMarkdownPage() {
         )
 
         const pollData = await pollResponse.json()
+        addLog('info', `Poll response (status: ${pollData.status})`, pollData)
 
         if (!pollResponse.ok || !pollData.success) {
           throw new Error(pollData.error || 'Failed to check status')
@@ -83,9 +98,29 @@ export default function PdfToMarkdownPage() {
         if (pollData.status === 'complete') {
           // Download the result
           setStatus('Download starting...')
+          addLog('success', 'Conversion complete! Preparing download...')
+
+          // Log what we received
+          addLog('info', 'Response fields', Object.keys(pollData))
+          addLog('info', `Output format: ${pollData.output_format}`)
+          addLog('info', `Page count: ${pollData.page_count}`)
+
+          // Get the markdown content
           const markdown = pollData.markdown
+
+          if (!markdown) {
+            addLog('error', 'No markdown field in response!', pollData)
+            throw new Error('No markdown content received from API')
+          }
+
+          addLog('info', `Markdown length: ${markdown.length} characters`)
+          addLog('info', `First 200 chars: ${markdown.substring(0, 200)}`)
+
           const filename = replaceExtension(file.name, 'md')
+          addLog('info', `Downloading as: ${filename}`)
+
           downloadFile(markdown, filename, 'text/markdown')
+          addLog('success', 'File download triggered!')
 
           setStatus('Conversion complete! File downloaded.')
           setProcessing(false)
@@ -103,6 +138,7 @@ export default function PdfToMarkdownPage() {
 
     } catch (err) {
       console.error('Conversion error:', err)
+      addLog('error', err.message, err)
       setError(err.message || 'An error occurred during conversion')
       setProcessing(false)
       setStatus('')
@@ -182,6 +218,48 @@ export default function PdfToMarkdownPage() {
           {processing ? 'Converting...' : 'Convert to Markdown'}
         </Button>
       </div>
+
+      {/* Diagnostic Logs Section */}
+      {logs.length > 0 && (
+        <div className="mt-8 bg-gray-900 rounded-lg overflow-hidden">
+          <div
+            className="flex items-center justify-between p-4 bg-gray-800 cursor-pointer"
+            onClick={() => setShowLogs(!showLogs)}
+          >
+            <h3 className="text-lg font-semibold text-white">
+              Diagnostic Logs ({logs.length})
+            </h3>
+            <button className="text-gray-400 hover:text-white">
+              {showLogs ? '▼' : '▶'}
+            </button>
+          </div>
+          {showLogs && (
+            <div className="p-4 max-h-96 overflow-y-auto font-mono text-sm">
+              {logs.map((log, index) => (
+                <div
+                  key={index}
+                  className={`mb-2 ${
+                    log.type === 'error' ? 'text-red-400' :
+                    log.type === 'success' ? 'text-green-400' :
+                    'text-gray-300'
+                  }`}
+                >
+                  <span className="text-gray-500">[{log.timestamp}]</span>{' '}
+                  <span className="font-bold">
+                    {log.type.toUpperCase()}:
+                  </span>{' '}
+                  {log.message}
+                  {log.data && (
+                    <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto">
+                      {JSON.stringify(log.data, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Info Section */}
       <div className="mt-12 bg-gray-50 rounded-lg p-6">
