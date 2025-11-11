@@ -1,10 +1,19 @@
 'use client'
 import { useState, useId, useRef } from 'react'
+import { FILE_SIZE } from '@/lib/constants'
 
+/**
+ * FileUpload component with drag-and-drop support
+ * @param {Object} props
+ * @param {Function} props.onFileSelect - Callback when file is selected
+ * @param {string} props.accept - Accepted file types (e.g., ".pdf,.md")
+ * @param {number} props.maxSize - Maximum file size in bytes
+ * @param {string} props.label - Label text for the upload area
+ */
 export default function FileUpload({
   onFileSelect,
   accept,
-  maxSize = 1024 * 1024 * 1024, // 1GB
+  maxSize = FILE_SIZE.MAX_FILE_SIZE,
   label = "Drop file here or click to browse"
 }) {
   const [dragActive, setDragActive] = useState(false)
@@ -29,7 +38,8 @@ export default function FileUpload({
     if (!file) return
 
     if (file.size > maxSize) {
-      setError(`File too large. Maximum size: ${Math.round(maxSize / 1024 / 1024)}MB`)
+      const maxSizeMB = Math.round(maxSize / FILE_SIZE.BYTES_PER_MB)
+      setError(`File too large. Maximum size: ${maxSizeMB}MB`)
       return
     }
 
@@ -98,7 +108,7 @@ export default function FileUpload({
           </p>
         )}
         <p className="text-sm text-gray-500 mt-2">
-          Supported: {accept}, up to {Math.round(maxSize / 1024 / 1024)}MB
+          Supported: {accept}, up to {Math.round(maxSize / FILE_SIZE.BYTES_PER_MB)}MB
         </p>
       </div>
       {error && (

@@ -1,3 +1,14 @@
+import { cn } from '@/lib/utils/classNames'
+
+/**
+ * Button component with variants and loading state
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - Button content
+ * @param {Function} props.onClick - Click handler
+ * @param {boolean} props.disabled - Whether button is disabled
+ * @param {boolean} props.loading - Whether button is in loading state
+ * @param {string} props.variant - Button variant ('primary' or 'secondary')
+ */
 export default function Button({
   children,
   onClick,
@@ -15,7 +26,8 @@ export default function Button({
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      className={`${baseClasses} ${variantClasses}`}
+      className={cn(baseClasses, variantClasses)}
+      aria-busy={loading}
     >
       {loading ? 'Processing...' : children}
     </button>
