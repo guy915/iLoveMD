@@ -71,7 +71,7 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const checkUrl = searchParams.get('checkUrl')
-    const apiKey = searchParams.get('apiKey')
+    const apiKey = request.headers.get('x-api-key')
 
     if (!checkUrl || !apiKey) {
       return Response.json(
@@ -100,7 +100,8 @@ export async function GET(request) {
       )
     }
 
-    return Response.json(data)
+    // Wrap response with success flag for consistency
+    return Response.json({ success: true, ...data })
 
   } catch (error) {
     console.error('Poll error:', error)

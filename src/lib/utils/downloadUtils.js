@@ -34,10 +34,14 @@ export function getFileExtension(filename) {
  */
 export function replaceExtension(filename, newExtension) {
   const parts = filename.split('.')
-  if (parts.length > 1) {
+
+  // Handle dotfiles (files starting with .) - they should get extension appended
+  if (parts.length > 1 && parts[0] !== '') {
     parts[parts.length - 1] = newExtension
     return parts.join('.')
   }
+
+  // No extension or dotfile - append new extension
   return `${filename}.${newExtension}`
 }
 
