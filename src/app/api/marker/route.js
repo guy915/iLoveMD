@@ -41,10 +41,18 @@ export async function POST(request) {
     const data = await response.json()
 
     if (!response.ok) {
+      // Log the full error for debugging
+      console.error('Marker API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      })
+
       return Response.json(
         {
           success: false,
-          error: data.error || `API error: ${response.status}`
+          error: data.error || data.message || `API error: ${response.status}`,
+          details: data
         },
         { status: response.status }
       )
