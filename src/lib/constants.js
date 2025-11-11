@@ -2,16 +2,20 @@
  * Shared constants for AI Doc Prep application
  */
 
-// File size constants
+// File size constants - calculated once and reused
+const KB = 1024
+const MB = KB * 1024
+const GB = MB * 1024
+
 export const FILE_SIZE = {
-  BYTES_PER_KB: 1024,
-  BYTES_PER_MB: 1024 * 1024,
-  BYTES_PER_GB: 1024 * 1024 * 1024,
+  BYTES_PER_KB: KB,
+  BYTES_PER_MB: MB,
+  BYTES_PER_GB: GB,
 
   // Default limits
-  MAX_FILE_SIZE: 1024 * 1024 * 1024, // 1GB
+  MAX_FILE_SIZE: GB, // 1GB
   MAX_MERGE_FILES: 50,
-  MAX_TOTAL_MERGE_SIZE: 1024 * 1024 * 1024, // 1GB total
+  MAX_TOTAL_MERGE_SIZE: GB, // 1GB total
 }
 
 // Navigation links for header
