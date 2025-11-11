@@ -59,6 +59,7 @@ export default function PdfToMarkdownPage() {
       addLog('success', 'Submit response received', submitData)
 
       if (!submitResponse.ok || !submitData.success) {
+        addLog('error', 'Submission failed', submitData)
         throw new Error(submitData.error || 'Failed to submit file')
       }
 
