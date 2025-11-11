@@ -10,14 +10,6 @@ import { NAV_LINKS } from '@/lib/constants'
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // Create short labels for nav (PDF to Markdown -> PDF)
-  const getShortLabel = (label) => {
-    if (label === 'PDF to Markdown') return 'PDF'
-    if (label === 'HTML to Markdown') return 'HTML'
-    if (label === 'Merge Markdown') return 'Markdown'
-    return label
-  }
-
   return (
     <header className="bg-white border-b border-gray-200">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,7 +27,7 @@ export default function Header() {
                 href={link.href}
                 className="hover:text-primary-600"
               >
-                {getShortLabel(link.label)}
+                {link.shortLabel}
               </Link>
             ))}
           </div>
@@ -62,7 +54,7 @@ export default function Header() {
                 className="block py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {getShortLabel(link.label)}
+                {link.shortLabel}
               </Link>
             ))}
           </div>
