@@ -99,6 +99,11 @@ ai-doc-prep/
 │   └── hooks/
 │       └── useLocalStorage.js # Custom hook for persistence
 │
+├── assets/
+│   ├── test/                  # Test files for development
+│   │   └── sample.pdf         # Minimal test PDF (572 bytes)
+│   └── README.md              # Assets documentation
+│
 └── [Documentation files listed below]
 ```
 
@@ -316,13 +321,24 @@ export default function ComponentName() {
 4. **Responsive:** Mobile/tablet/desktop
 5. **Cross-browser:** Chrome, Firefox, Safari
 
-### Test Files Needed
+### Test Files Available
+**In Repository (assets/test/):**
+- `sample.pdf` - Minimal test PDF (572 bytes, 1 page) for quick testing
+
+**Additional Test Files Needed:**
 - Small PDF (~1MB)
 - Large PDF (~100MB)
 - Scanned PDF (for OCR testing)
 - Simple HTML file
 - Complex website URL
 - Multiple markdown files
+
+### Quick Testing
+```bash
+# Use the included sample PDF for quick testing
+# Location: /assets/test/sample.pdf
+# This is a minimal valid PDF for development testing
+```
 
 ---
 
