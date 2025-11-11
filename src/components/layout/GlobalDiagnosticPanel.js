@@ -24,7 +24,7 @@ export default function GlobalDiagnosticPanel() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 bg-gray-900 rounded-lg shadow-2xl overflow-hidden z-50" style={{ width: '500px', maxHeight: '400px' }}>
+        <div className="absolute top-full left-0 mt-2 bg-gray-900 rounded-lg shadow-2xl overflow-hidden z-50 w-[95vw] max-w-xl md:w-[500px]">
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
             <h3 className="text-lg font-semibold text-white">
@@ -42,7 +42,7 @@ export default function GlobalDiagnosticPanel() {
           </div>
 
           {/* Logs content */}
-          <div className="p-4 overflow-y-auto font-mono text-sm" style={{ maxHeight: '320px' }}>
+          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px]">
             {logs.length === 0 ? (
               <div className="text-gray-400 text-center py-8">
                 No logs yet. Logs will appear here as you interact with the website.
