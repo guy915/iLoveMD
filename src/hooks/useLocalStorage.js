@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 /**
  * Custom hook for syncing state with localStorage
@@ -28,9 +28,10 @@ export default function useLocalStorage(key, initialValue) {
 
   /**
    * Set value in both state and localStorage
+   * Memoized to prevent unnecessary re-renders in child components
    * @param {any} value - Value to store
    */
-  const setValue = (value) => {
+  const setValue = useCallback((value) => {
     try {
       setStoredValue(value)
       if (typeof window !== 'undefined') {
@@ -39,7 +40,7 @@ export default function useLocalStorage(key, initialValue) {
     } catch (error) {
       console.error('Error writing to localStorage:', error)
     }
-  }
+  }, [key])
 
   return [storedValue, setValue]
 }

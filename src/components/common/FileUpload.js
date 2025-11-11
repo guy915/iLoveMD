@@ -1,5 +1,5 @@
 'use client'
-import { useState, useId, useRef } from 'react'
+import { useState, useId, useRef, useMemo, useCallback } from 'react'
 import { FILE_SIZE } from '@/lib/constants'
 
 /**
@@ -22,6 +22,9 @@ export default function FileUpload({
   const fileInputId = useId()
   const fileInputRef = useRef(null)
 
+  // Memoize file size calculations to avoid recalculating on every render
+  const maxSizeMB = useMemo(() => Math.round(maxSize / FILE_SIZE.BYTES_PER_MB), [maxSize])
+
   const handleDrag = (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -32,20 +35,19 @@ export default function FileUpload({
     }
   }
 
-  const validateAndSelect = (file) => {
+  const validateAndSelect = useCallback((file) => {
     setError(null)
 
     if (!file) return
 
     if (file.size > maxSize) {
-      const maxSizeMB = Math.round(maxSize / FILE_SIZE.BYTES_PER_MB)
       setError(`File too large. Maximum size: ${maxSizeMB}MB`)
       return
     }
 
     setSelectedFile(file)
     onFileSelect(file)
-  }
+  }, [maxSize, maxSizeMB, onFileSelect])
 
   const handleDrop = (e) => {
     e.preventDefault()
@@ -108,7 +110,7 @@ export default function FileUpload({
           </p>
         )}
         <p className="text-sm text-gray-500 mt-2">
-          Supported: {accept}, up to {Math.round(maxSize / FILE_SIZE.BYTES_PER_MB)}MB
+          Supported: {accept}, up to {maxSizeMB}MB
         </p>
       </div>
       {error && (
