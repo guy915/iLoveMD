@@ -162,6 +162,17 @@ jobs:
             echo "✓ No TODO comments found"
           fi
 
+      - name: Check for hardcoded secrets
+        continue-on-error: true
+        run: |
+          echo "Checking for hardcoded test API key..."
+          if git grep -n "w4IU5bCYNudH" -- "*.js" "*.jsx"; then
+            echo "⚠️  WARNING: Test API key found in code!"
+            echo "Remember to remove hardcoded API key before production deployment"
+          else
+            echo "✓ No hardcoded test API key found"
+          fi
+
       - name: Analyze bundle size
         run: |
           npm run build
