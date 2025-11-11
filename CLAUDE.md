@@ -248,6 +248,131 @@ git push                # Push to branch
 
 ---
 
+## Testing Before Pushing Code
+
+**CRITICAL: Always test changes before committing and pushing to GitHub.**
+
+### Pre-Push Testing Checklist
+
+Run these tests in order before every push:
+
+#### 1. Build & Lint Check (Required)
+```bash
+npm run build    # Must pass without errors
+npm run lint     # Check for code quality issues
+```
+
+#### 2. Development Server Test (Required)
+```bash
+npm run dev      # Start in background
+# Wait 3-5 seconds for server to start
+```
+
+#### 3. API Endpoint Testing with curl (If applicable)
+
+**Test API routes locally:**
+```bash
+# Test POST endpoints
+curl -X POST http://localhost:3000/api/marker \
+  -F "file=@assets/test/sample.pdf" \
+  -F "apiKey=test_key" \
+  -w "\nHTTP: %{http_code}\n"
+
+# Test GET endpoints
+curl http://localhost:3000/api/marker?param=value \
+  -H "x-api-key: test_key"
+```
+
+**Test external APIs directly:**
+```bash
+# Test if external API is reachable and working
+curl -X POST https://www.datalab.to/api/v1/marker \
+  -H "X-Api-Key: YOUR_KEY" \
+  -F "file=@assets/test/sample.pdf" \
+  -F "output_format=markdown" \
+  -w "\nHTTP: %{http_code}\n"
+```
+
+#### 4. Response Structure Validation
+
+**Check response format:**
+- Verify JSON structure matches expected format
+- Confirm success/error flags are present
+- Check all required fields exist
+- Validate error messages are user-friendly
+
+#### 5. Documentation Updates (Required)
+
+**Before committing, ensure all docs are updated:**
+- [ ] CHECKLIST.md - Mark completed tasks
+- [ ] CHANGELOG.md - Document changes made
+- [ ] CLAUDE.md - Update if workflow/structure changed
+- [ ] Code comments - Add/update as needed
+- [ ] README files - Update if features changed
+
+### What Can Be Tested
+
+**✓ Can Test:**
+- Build/compilation errors
+- Lint errors and warnings
+- Local API routes (localhost)
+- External API accessibility
+- Response formats and structures
+- File operations
+- Code logic and structure
+
+**✗ Cannot Test:**
+- Browser UI interactions (no Selenium)
+- Visual appearance
+- Client-side JavaScript execution
+- Full end-to-end user flows
+- Download behavior in browser
+
+### Testing Workflow Example
+
+```bash
+# 1. Build check
+npm run build
+
+# 2. Start dev server
+npm run dev &
+sleep 5
+
+# 3. Test API endpoint
+curl -X POST http://localhost:3000/api/marker \
+  -F "file=@assets/test/sample.pdf" \
+  -F "apiKey=test"
+
+# 4. Check logs for errors
+# Review terminal output
+
+# 5. If all good, commit
+git add .
+git commit -m "Descriptive message"
+git push
+```
+
+### Error Response Checklist
+
+When testing APIs, verify:
+- [ ] 400 errors return helpful messages
+- [ ] 401/403 errors indicate auth issues
+- [ ] 500 errors are caught and logged
+- [ ] Error details are included for debugging
+- [ ] Success responses have consistent structure
+
+### When to Skip User Testing
+
+Only push without user browser testing if:
+- Documentation-only changes
+- Build configuration changes
+- Code comments/formatting
+- Non-functional changes
+
+**For any functional code changes, user should test in browser after push.**
+
+---
+
 ## What to Do When Starting a Session
 
 1. **Read CHECKLIST.md** - See current progress
@@ -269,6 +394,8 @@ git push                # Push to branch
 **Don't add analytics** - Privacy-first approach
 **Don't over-engineer** - This is a learning project, keep it simple
 **Don't use emojis** - No emojis in code, documentation, or UI elements
+**Don't skip testing** - Always run build/lint and test APIs before pushing
+**Don't skip documentation updates** - Update all relevant docs with every change
 
 ---
 
