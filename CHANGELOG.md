@@ -8,6 +8,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Code Refactoring & Quality Improvements**:
+  - **lib/constants.js** - Centralized constants file
+    - FILE_SIZE constants for consistent file size calculations
+    - NAV_LINKS array for navigation menu (DRY principle)
+    - TOOL_CARDS array for homepage tool tiles
+    - API_ENDPOINTS, STORAGE_KEYS constants
+    - ERROR_MESSAGES and SUCCESS_MESSAGES templates
+    - formatFileSize() utility function
+  - **lib/utils/classNames.js** - className utility functions
+    - cn() function for merging class names conditionally
+    - conditional() helper for ternary class logic
+    - Lightweight alternative to classnames/clsx libraries
+  - **ErrorBoundary component** - App-level error handling
+    - Catches React component errors gracefully
+    - Displays user-friendly error UI
+    - Provides "Try Again" and "Go Home" actions
+    - Shows collapsible error details for debugging
+    - Prevents entire app from crashing
+  - **JSDoc comments** - Comprehensive documentation
+    - Added to all components and utilities
+    - Function parameter and return type documentation
+    - Usage examples for complex functions
+    - Improves IDE autocomplete and developer experience
+  - **Development configuration files**:
+    - `.env.example` - Environment variable template with documentation
+    - `.nvmrc` - Node.js version specification (18)
+
+### Changed
+- **Header component refactoring**:
+  - Extracted navigation links to NAV_LINKS constant
+  - Eliminated duplicate link definitions (desktop vs mobile)
+  - Uses .map() for rendering navigation items
+  - Added getShortLabel() helper for abbreviated nav labels
+  - Mobile menu now closes when link is clicked
+  - Improved accessibility with aria-hidden on hamburger icon
+- **ToolTile component simplification**:
+  - Removed redundant workflow prop
+  - Simplified component API (title, description, href only)
+  - Cleaner visual hierarchy
+- **Homepage refactoring**:
+  - Uses TOOL_CARDS constant from lib/constants.js
+  - Maps over array instead of hardcoded components
+  - Single source of truth for tool information
+- **FileUpload component improvements**:
+  - Uses FILE_SIZE constants from lib/constants.js
+  - Consistent file size calculations across app
+  - Improved error messages with constants
+- **Button component enhancements**:
+  - Uses cn() utility for className merging
+  - Added aria-busy attribute for loading state
+  - Better accessibility support
+- **Footer component**:
+  - Dynamic copyright year using new Date().getFullYear()
+  - No more manual year updates needed
+- **Root layout**:
+  - Wrapped children in ErrorBoundary component
+  - Improved error resilience
+- **useLocalStorage hook**:
+  - Added comprehensive JSDoc documentation
+  - Internal setValue function documented
+
+### Fixed
+- README.md removed incorrect dark mode claim
+  - Documentation stated light mode only
+  - README claimed dark mode support (incorrect)
+  - Now consistent across all documentation
+
 - **CI/CD Pipeline Improvements**:
   - **Comprehensive CI workflow with maximum parallelization (sub-40 second runs)**:
     - 4 independent jobs run simultaneously in parallel:

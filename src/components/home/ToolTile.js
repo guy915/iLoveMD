@@ -1,12 +1,18 @@
 import Link from 'next/link'
 
-export default function ToolTile({ workflow, title, description, href }) {
+/**
+ * ToolTile component for displaying tool cards on the homepage
+ * @param {Object} props
+ * @param {string} props.title - Tool title
+ * @param {string} props.description - Tool description
+ * @param {string} props.href - Link to tool page
+ */
+export default function ToolTile({ title, description, href }) {
   return (
     <Link
       href={href}
       className="block p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
     >
-      <div className="text-sm font-medium text-primary-600 mb-3">{workflow}</div>
       <h3 className="text-xl font-semibold mb-2">{title}</h3>
       <p className="text-gray-600">{description}</p>
     </Link>
