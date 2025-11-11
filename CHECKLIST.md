@@ -692,6 +692,34 @@ Use this section to track issues, blockers, or notes during implementation:
     - Sensitive data sanitized (API keys show preview only)
   - Build and lint: All passing
   - All functionality tested and verified
+
+- 2025-11-11: Log Persistence & Configuration Fixes
+  - **Restored test API key as default**:
+    - Put back `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ` as default value
+    - Pre-fills API key field for easier development testing
+  - **Removed API key censoring in logs**:
+    - Changed from sanitized preview (****...****) to full key display
+    - No censoring needed in development phase
+    - Improves debugging of API-related issues
+  - **Fixed log persistence across page navigation**:
+    - Logs now stored in localStorage (key: 'diagnosticLogs')
+    - Persist when navigating between pages within site (home → help → pdf tool)
+    - Only reset on: manual clear, browser close, page refresh, crash
+    - Never reset when switching between subpages
+  - **LogContext implementation** (`src/contexts/LogContext.js`):
+    - Initialize state from localStorage on mount
+    - Auto-save logs to localStorage on every change
+    - Load logs from localStorage when component mounts
+    - Clear from localStorage when clearLogs() called
+    - SSR-safe with window checks
+  - **Documentation updates** (`CLAUDE.md`):
+    - Added "Purpose: Logs Are For Claude" section
+    - Clarified logs are primarily for Claude's debugging
+    - Explained user benefit (copy/paste to Claude for help)
+    - Noted logs replace browser console/network tab visibility
+    - Encouraged Claude to enhance logging based on preferences
+  - Build and lint: All passing
+  - Complete session history now visible across entire site
 ```
 
 ---

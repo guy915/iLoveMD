@@ -8,6 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Log Persistence & Configuration Fixes** (2025-11-11):
+  - **Restored test API key as default**:
+    - Put back `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ` as default
+    - Pre-fills API key field for development testing
+    - User clarified the key wasn't entered wrong, they wanted it pre-filled
+  - **Removed API key censoring in logs**:
+    - Changed from sanitized preview (`****...****`) to full key display
+    - Shows complete API key in diagnostic logs: `apiKey: "full_key_here"`
+    - No need for censoring during development phase
+    - Makes debugging API issues much easier
+  - **Fixed log persistence across page navigation** (CRITICAL FIX):
+    - **Problem**: Logs were resetting when navigating between pages (home → help, etc.)
+    - **Solution**: Store logs in localStorage (key: `'diagnosticLogs'`)
+    - **Implementation** (`src/contexts/LogContext.js`):
+      - Initialize state from localStorage on mount
+      - Auto-save logs to localStorage whenever they change (useEffect)
+      - Load logs from localStorage when page/component mounts
+      - Clear from localStorage only when clearLogs() called
+      - SSR-safe with window existence checks
+    - **Behavior**: Logs now persist when:
+      - Navigating between pages within site (home → help → pdf tool → etc.)
+      - Clicking navigation links
+      - Using browser back/forward buttons
+    - **Logs only reset on**:
+      - Manual "Clear" button click in diagnostic panel
+      - Browser tab/window closed
+      - Page manually refreshed (F5, Cmd+R)
+      - Website crashes
+    - **Benefits**: Complete session history visible across entire user journey
+  - **Documentation Updates** (`CLAUDE.md`):
+    - Added **"Purpose: Logs Are For Claude"** section
+    - Clarified logs are primarily for Claude (AI assistant) debugging
+    - Explained user benefit: logs useful for copying/pasting to Claude for help
+    - Emphasized logs replace browser console/network tab/application state visibility
+    - Added: **"Claude should feel free to enhance logging based on preferences"**
+    - Encouraged Claude to add whatever logs/timing/context is most helpful
+  - Build: ✅ | Lint: ✅ | Tested: ✅
+
 - **Diagnostic Logging Enhancements & Bug Fixes** (2025-11-11):
   - **Critical Fixes**:
     - **Removed hardcoded test API key** from PDF tool (`src/app/pdf-to-markdown/page.js`)
