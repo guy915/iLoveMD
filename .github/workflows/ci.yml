@@ -52,12 +52,13 @@ jobs:
           ls -la .next | head -20
 
       - name: Upload build artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: build-node-20
-          path: .next
+          path: |
+            .next/**
           retention-days: 3
-          if-no-files-found: error
 
   # Parallel Job 2: Build on Node 18.x (compatibility check)
   build-node-18:
