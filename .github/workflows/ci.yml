@@ -188,18 +188,14 @@ jobs:
       - name: Verify artifacts
         run: |
           echo "Verifying build artifacts..."
-          echo "Downloaded artifact contents:"
-          ls -la artifact-download/
 
-          # The artifact should contain the .next directory
-          if [ -d "artifact-download/.next" ]; then
-            echo "✓ Build directory exists in artifact"
-            echo "  Size: $(du -sh artifact-download/.next | cut -f1)"
-            echo "  Files: $(find artifact-download/.next -type f | wc -l)"
-            echo "✓ Artifacts verified successfully"
+          # Check for key Next.js build files (uploaded from .next directory)
+          if [ -f "artifact-download/BUILD_ID" ] && [ -d "artifact-download/server" ]; then
+            echo "✓ Build artifacts verified"
+            echo "  Size: $(du -sh artifact-download | cut -f1)"
+            echo "  Files: $(find artifact-download -type f | wc -l)"
           else
-            echo "❌ .next directory not found in artifact"
-            echo "Available structure:"
-            find artifact-download -maxdepth 2 -type d -o -type f
+            echo "❌ Build artifacts incomplete"
+            ls -la artifact-download/
             exit 1
           fi
