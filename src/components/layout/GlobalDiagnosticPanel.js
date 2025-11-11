@@ -1,14 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function GlobalDiagnosticPanel() {
   const { logs, clearLogs } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
+  const panelRef = useRef(null)
+
+  // Click outside to close
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleClickOutside = (event) => {
+      if (panelRef.current && !panelRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+
+    // Add event listener
+    document.addEventListener('mousedown', handleClickOutside)
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
 
   return (
-    <div className="relative">
+    <div className="relative" ref={panelRef}>
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
