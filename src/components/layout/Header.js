@@ -31,9 +31,6 @@ export default function Header() {
             <Link href="/about" className="hover:text-primary-600">
               About
             </Link>
-            <Link href="/settings" className="hover:text-primary-600">
-              Settings
-            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -65,9 +62,6 @@ export default function Header() {
             </Link>
             <Link href="/about" className="block py-2">
               About
-            </Link>
-            <Link href="/settings" className="block py-2">
-              Settings
             </Link>
           </div>
         )}

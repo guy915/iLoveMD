@@ -1,0 +1,55 @@
+# Automatically label PRs based on changed files
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**/*'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
+
+ci/cd:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**/*'
+
+components:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/components/**/*'
+
+ui:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/components/**/*'
+      - 'src/app/globals.css'
+      - 'tailwind.config.js'
+
+tools:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/lib/processors/**/*'
+      - 'src/app/pdf-to-markdown/**/*'
+      - 'src/app/html-to-markdown/**/*'
+      - 'src/app/merge-markdown/**/*'
+
+hooks:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/hooks/**/*'
+
+api:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/app/api/**/*'
+
+configuration:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.config.js'
+      - '*.config.json'
+      - '.eslintrc.json'
