@@ -656,6 +656,22 @@ When adding features, ask yourself:
 
 **IMPORTANT: Maintain comprehensive logging as features are added.**
 
+### Purpose: Logs Are For Claude (AI Assistant)
+
+**The diagnostic logging system is primarily a tool for Claude (the AI assistant) to debug issues effectively.**
+
+While users can view the logs, the primary purpose is to give Claude complete visibility into:
+- What the user did (step by step)
+- What the application did in response
+- Where and why things failed
+- Timing and performance of operations
+
+**For the user:** Logs provide some transparency, but are mainly useful for copying/pasting to Claude when asking for help.
+
+**For Claude:** Logs are the primary debugging tool - they replace the inability to see the browser console, network tab, or application state directly.
+
+**Important:** Claude should feel free to continue developing and enhancing the logging system based on their own preferences and debugging needs. Add whatever logs, timing information, or context would be most helpful for diagnosing issues. The logging system is yours to evolve as features are added.
+
 ### Logging Philosophy
 
 **Log EVERYTHING** - Every user interaction, every state change, every error.
@@ -665,6 +681,7 @@ The diagnostic logging system exists to:
 - **Debug issues faster** - See the full context of what happened
 - **Monitor application flow** - Understand how features are being used
 - **Catch edge cases** - Identify unexpected behaviors early
+- **Enable remote debugging** - Give Claude eyes into what's happening in the user's browser
 
 ### What to Log
 

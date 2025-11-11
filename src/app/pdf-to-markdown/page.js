@@ -8,8 +8,8 @@ import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
-  // API key from localStorage (no default - user must provide their own)
-  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', '')
+  // API key from localStorage - pre-filled with test key for development
+  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
   const [file, setFile] = useState(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
@@ -32,7 +32,7 @@ export default function PdfToMarkdownPage() {
     if (keyPresent) {
       addLog('info', 'API key loaded from localStorage', {
         keyLength: keyLength,
-        keyPreview: apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4)
+        apiKey: apiKey  // Full key, no censoring in development
       })
     }
   }, [addLog, apiKey])
