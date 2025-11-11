@@ -8,7 +8,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Global Diagnostic Logging Panel** (2025-11-11):
+- **Comprehensive Diagnostic Logging System** (2025-11-11):
+  - **Major Overhaul**: Complete redesign of logging system for full application traceability
+  - **Panel Improvements**:
+    - Relocated from fixed top-right position to Header (next to logo)
+    - Changed interaction from hover to click-based toggle
+    - Always visible with empty state message (never hides)
+    - Better integration with site navigation
+  - **Comprehensive Logging Coverage**:
+    - **Header Component** (`src/components/layout/Header.js`):
+      - Page load events (component mount)
+      - All navigation link clicks (desktop and mobile)
+      - Mobile menu toggle events (open/close)
+      - Logo clicks with destination tracking
+    - **FileUpload Component** (`src/components/common/FileUpload.js`):
+      - File drag enter events
+      - File drop events
+      - File browser selection events
+      - File validation (with file metadata: name, size, type)
+      - Validation failures (with error details)
+      - Validation successes
+    - **ToolTile Component** (`src/components/home/ToolTile.js`):
+      - Tool card clicks with tool name and destination
+    - **PDF Tool** (`src/app/pdf-to-markdown/page.js`):
+      - Already has comprehensive logging (maintained)
+      - Uses global LogContext now instead of local state
+    - **404 Page** (`src/app/not-found.js`):
+      - Automatic error logging on page load
+      - Pathname tracking for debugging
+      - "Go Home" button clicks
+  - **New Pages**:
+    - `src/app/not-found.js` - Custom 404 page with automatic error logging
+    - `src/app/loading.js` - Global loading state for better UX
+  - **Logging Standards Established**:
+    - Log types: `'info'` (actions/state), `'success'` (completions), `'error'` (failures)
+    - All logs include descriptive messages with action context
+    - Structured data included for complex events (file metadata, navigation targets, etc.)
+    - Sensitive data sanitization (no API keys, passwords)
+    - Timestamps automatically added to all logs
+  - **Documentation Updates** (`CLAUDE.md`):
+    - **New Section: "CI/CD Pipeline Maintenance"**
+      - When to update CI/CD workflows as features are added
+      - CI/CD update checklist for new features
+      - Example scenarios (new tools, external APIs, etc.)
+      - Emphasis on keeping workflows current
+    - **New Section: "Diagnostic Logging Maintenance"**
+      - Logging philosophy: "Log EVERYTHING"
+      - Comprehensive list of what to log (user interactions, app state, errors)
+      - How to add logging to new components (with code examples)
+      - Logging standards and best practices
+      - Logging checklist for new features
+      - Code examples for both client components and API routes
+    - Updated Tech Stack to mention React Context (LogContext)
+    - Updated Project Structure to show new files and directories
+  - **Benefits**:
+    - Complete user interaction tracing
+    - Easier debugging with full context
+    - Better error tracking and resolution
+    - Comprehensive application monitoring
+    - Future features will maintain logging standards
+
+- **Global Diagnostic Logging Panel** (2025-11-11) - Initial Implementation:
   - **LogContext** (`src/contexts/LogContext.js`):
     - React Context API for global state management across entire website
     - `LogProvider` component to wrap the application
