@@ -1,5 +1,17 @@
 import { useState } from 'react'
 
+/**
+ * Custom hook for syncing state with localStorage
+ * Safely handles SSR by checking for window object
+ *
+ * @param {string} key - localStorage key to use
+ * @param {any} initialValue - Initial value if key doesn't exist
+ * @returns {[any, Function]} Tuple of [storedValue, setValue]
+ *
+ * @example
+ * const [apiKey, setApiKey] = useLocalStorage('markerApiKey', '')
+ * setApiKey('new-key-value')
+ */
 export default function useLocalStorage(key, initialValue) {
   // Initialize state with a function to avoid race condition
   const [storedValue, setStoredValue] = useState(() => {
@@ -14,6 +26,10 @@ export default function useLocalStorage(key, initialValue) {
     }
   })
 
+  /**
+   * Set value in both state and localStorage
+   * @param {any} value - Value to store
+   */
   const setValue = (value) => {
     try {
       setStoredValue(value)

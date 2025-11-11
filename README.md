@@ -188,7 +188,6 @@ This is a personal hobby project, but suggestions and feedback are welcome!
 - [x] PDF to Markdown conversion
 - [x] HTML to Markdown conversion
 - [x] Merge Markdown files
-- [x] Dark mode support
 - [ ] Mobile responsive design
 
 ### Future Considerations
