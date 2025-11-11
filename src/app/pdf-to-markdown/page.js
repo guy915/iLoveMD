@@ -66,7 +66,12 @@ export default function PdfToMarkdownPage() {
         pollCount++
 
         const pollResponse = await fetch(
-          `/api/marker?checkUrl=${encodeURIComponent(checkUrl)}&apiKey=${encodeURIComponent(apiKey)}`
+          `/api/marker?checkUrl=${encodeURIComponent(checkUrl)}`,
+          {
+            headers: {
+              'x-api-key': apiKey
+            }
+          }
         )
 
         const pollData = await pollResponse.json()
