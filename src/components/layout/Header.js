@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { NAV_LINKS } from '@/lib/constants'
 
 /**
@@ -9,6 +9,16 @@ import { NAV_LINKS } from '@/lib/constants'
  */
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Memoize toggle function to prevent unnecessary re-renders
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen(prev => !prev)
+  }, [])
+
+  // Memoize close menu function
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false)
+  }, [])
 
   return (
     <header className="bg-white border-b border-gray-200">
@@ -36,7 +46,7 @@ export default function Header() {
           <button
             type="button"
             className="md:hidden text-2xl"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={toggleMobileMenu}
             aria-label="Toggle mobile menu"
             aria-expanded={mobileMenuOpen}
           >
@@ -52,7 +62,7 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 className="block py-2"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={closeMobileMenu}
               >
                 {link.shortLabel}
               </Link>
