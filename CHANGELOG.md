@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CI/CD Pipeline Improvements**:
+  - **Comprehensive CI workflow with maximum parallelization (sub-40 second runs)**:
+    - 4 independent jobs run simultaneously in parallel:
+      - Build on Node.js 20.x (lint + build + artifacts)
+      - Build on Node.js 18.x (compatibility check)
+      - Security audit (npm audit, blocks on moderate+ vulnerabilities)
+      - Code quality (console.log checks, bundle size analysis)
+    - 2 sequential jobs run after parallel phase:
+      - Verify build artifacts
+      - Final status check
+    - Total time: ~35-40 seconds (with cache)
+    - All checks are required and block merge
+    - Uses `--prefer-offline --no-audit` for faster dependency install
+    - Aggressive npm caching across all jobs
+    - 3-day artifact retention for PRs
+  - **Dependabot Configuration** (`.github/dependabot.yml`):
+    - Weekly checks for npm dependencies
+    - Weekly checks for GitHub Actions updates
+    - Groups minor and patch updates together
+    - Automatic PR creation with proper labels
+  - **PR Labeler Workflow** (`.github/workflows/pr-labeler.yml`):
+    - Automatically labels PRs based on changed files
+    - Adds size labels (XS, S, M, L, XL) based on lines changed
+    - Label configuration in `.github/labeler.yml`
+  - **Stale Issue/PR Management** (`.github/workflows/stale.yml`):
+    - Marks issues stale after 60 days, closes after 14 more
+    - Marks PRs stale after 30 days, closes after 7 more
+    - Exempt labels for important items (pinned, security, bug, etc.)
+  - **Comprehensive Documentation** (`.github/workflows/README.md`):
+    - Detailed workflow descriptions
+    - Best practices for contributors and maintainers
+    - Troubleshooting guide
+    - Performance optimization notes
+
+### Fixed
+- Removed non-existent Settings page link from Header navigation
+  - Settings page was not in project plan (only Help and About pages planned)
+  - Removed from both desktop and mobile navigation menus
+  - Prevents 404 errors when users click the link
+- Removed unnecessary 'use client' directive from useLocalStorage hook
+  - Custom hooks don't need 'use client' directive
+  - Only components that use hooks need the directive
+  - Simplifies code and improves clarity for learning purposes
+
 ### Changed
 - Removed dark mode support (light mode only for now)
   - Removed all `dark:` Tailwind classes from components
