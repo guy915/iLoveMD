@@ -1,4 +1,5 @@
 import ToolTile from '@/components/home/ToolTile'
+import { TOOL_CARDS } from '@/lib/constants'
 
 export default function Home() {
   return (
@@ -13,24 +14,14 @@ export default function Home() {
 
       {/* Tool Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        <ToolTile
-          workflow="PDF to Markdown"
-          title="PDF to Markdown"
-          description="Convert PDFs to clean markdown using Marker AI"
-          href="/pdf-to-markdown"
-        />
-        <ToolTile
-          workflow="HTML to Markdown"
-          title="HTML to Markdown"
-          description="Convert HTML files or URLs to markdown"
-          href="/html-to-markdown"
-        />
-        <ToolTile
-          workflow="Merge Markdowns"
-          title="Merge Markdowns"
-          description="Combine multiple markdown files into one"
-          href="/merge-markdown"
-        />
+        {TOOL_CARDS.map((tool) => (
+          <ToolTile
+            key={tool.href}
+            title={tool.title}
+            description={tool.description}
+            href={tool.href}
+          />
+        ))}
       </div>
     </div>
   )

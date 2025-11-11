@@ -1,9 +1,22 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
+import { NAV_LINKS } from '@/lib/constants'
 
+/**
+ * Header component with navigation menu
+ * Includes responsive mobile menu with hamburger toggle
+ */
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Create short labels for nav (PDF to Markdown -> PDF)
+  const getShortLabel = (label) => {
+    if (label === 'PDF to Markdown') return 'PDF'
+    if (label === 'HTML to Markdown') return 'HTML'
+    if (label === 'Merge Markdown') return 'Markdown'
+    return label
+  }
 
   return (
     <header className="bg-white border-b border-gray-200">
@@ -16,21 +29,15 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/pdf-to-markdown" className="hover:text-primary-600">
-              PDF
-            </Link>
-            <Link href="/html-to-markdown" className="hover:text-primary-600">
-              HTML
-            </Link>
-            <Link href="/merge-markdown" className="hover:text-primary-600">
-              Markdown
-            </Link>
-            <Link href="/help" className="hover:text-primary-600">
-              Help
-            </Link>
-            <Link href="/about" className="hover:text-primary-600">
-              About
-            </Link>
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-primary-600"
+              >
+                {getShortLabel(link.label)}
+              </Link>
+            ))}
           </div>
 
           {/* Mobile Menu Button */}
@@ -41,28 +48,23 @@ export default function Header() {
             aria-label="Toggle mobile menu"
             aria-expanded={mobileMenuOpen}
           >
-            &#9776;
+            <span aria-hidden="true">&#9776;</span>
           </button>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 space-y-2">
-            <Link href="/pdf-to-markdown" className="block py-2">
-              PDF
-            </Link>
-            <Link href="/html-to-markdown" className="block py-2">
-              HTML
-            </Link>
-            <Link href="/merge-markdown" className="block py-2">
-              Markdown
-            </Link>
-            <Link href="/help" className="block py-2">
-              Help
-            </Link>
-            <Link href="/about" className="block py-2">
-              About
-            </Link>
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="block py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {getShortLabel(link.label)}
+              </Link>
+            ))}
           </div>
         )}
       </nav>
