@@ -16,16 +16,17 @@
 export function cn(...classes) {
   return classes
     .flat()
-    .filter((cls) => {
-      if (typeof cls === 'string') return cls.trim().length > 0
+    .map((cls) => {
+      if (typeof cls === 'string') return cls;
       if (typeof cls === 'object' && cls !== null) {
         return Object.entries(cls)
           .filter(([, value]) => Boolean(value))
           .map(([key]) => key)
-          .join(' ')
       }
-      return false
+      return '';
     })
+    .flat()
+    .filter((cls) => typeof cls === 'string' && cls.trim().length > 0)
     .join(' ')
     .trim()
 }
