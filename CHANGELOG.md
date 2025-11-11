@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Global Diagnostic Logging Panel** (2025-11-11):
+  - **LogContext** (`src/contexts/LogContext.js`):
+    - React Context API for global state management across entire website
+    - `LogProvider` component to wrap the application
+    - `useLogs()` hook for components to access logging functionality
+    - `addLog(type, message, data)` function with automatic timestamps
+    - `clearLogs()` function to reset diagnostic history
+    - Support for structured data logging (objects/arrays)
+  - **GlobalDiagnosticPanel** (`src/components/layout/GlobalDiagnosticPanel.js`):
+    - Fixed position in top-right corner of screen
+    - Auto-hides when no logs are present
+    - Collapsed state shows log count badge
+    - Expands to full diagnostic panel on mouse hover
+    - Color-coded log entries (info=gray, success=green, error=red)
+    - Timestamps for all log entries
+    - JSON pretty-print for structured data
+    - Clear logs button for resetting
+    - Non-intrusive design that doesn't block UI
+  - **Integration**:
+    - Integrated into root layout for website-wide accessibility
+    - PDF tool updated to use global logging instead of local state
+    - Removed local diagnostic panel from PDF tool page
+  - **Benefits**:
+    - Consistent logging across all pages and tools
+    - Better debugging for API interactions
+    - User-friendly error tracking
+    - Always accessible without cluttering the UI
+
 - **Code Refactoring & Quality Improvements**:
   - **lib/constants.js** - Centralized constants file
     - FILE_SIZE constants for consistent file size calculations
