@@ -652,10 +652,50 @@ Use this section to track issues, blockers, or notes during implementation:
     - Sanitize sensitive information (no API keys, passwords)
   - Build and lint tests: All passing
   - Ready for continued feature development with comprehensive tracing
+
+- 2025-11-11: Diagnostic Logging Enhancements & Bug Fixes
+  - **Fixed Critical Issues**:
+    - **Removed hardcoded test API key** - Default is now empty, users must provide their own
+    - **Fixed log persistence** - Logs no longer clear during operations (only manual clear or page refresh)
+    - **Added click-outside detection** - Diagnostic panel closes when clicking outside (better UX)
+  - **Comprehensive Timing & Operation Tracking**:
+    - All network operations now include timing in milliseconds
+    - Submit request timing tracked
+    - Poll request timing tracked per attempt
+    - Total conversion time tracked end-to-end
+    - Polling elapsed time shown on each attempt
+  - **Enhanced PDF Tool Logging**:
+    - Component mount logging with API key state
+    - localStorage operations logged (API key load/update with sanitized preview)
+    - File metadata logging (name, size, type)
+    - API endpoint details (method, URL, request IDs)
+    - Poll progress tracking (attempt number, elapsed time)
+    - Network details (HTTP status codes, response structure)
+    - Success details (page count, output format, markdown size)
+    - Error context (type, message, stack trace, duration)
+  - **Improved Error Handling**:
+    - Errors now include full context (duration, type, stack trace)
+    - Validation errors logged with file details
+    - Network errors include endpoint and timing information
+    - Timeout errors show poll attempts and elapsed time
+  - **Benefits for Debugging**:
+    - Complete operation timeline with precise timing
+    - Full network request/response visibility
+    - Context for every error with stack traces
+    - Progress tracking through multi-step operations
+    - localStorage operation visibility
+    - Easy to trace any user action leading to issues
+  - All logs maintain standards:
+    - Descriptive messages with context
+    - Structured data for complex information
+    - Timing where relevant
+    - Sensitive data sanitized (API keys show preview only)
+  - Build and lint: All passing
+  - All functionality tested and verified
 ```
 
 ---
 
-**Last Updated:** 2025-11-10
+**Last Updated:** 2025-11-11
 **Current Phase:** Phase 2 Complete
 **Next Task:** Begin Phase 3 - PDF to Markdown Tool
