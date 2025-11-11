@@ -1,7 +1,9 @@
 'use client'
 import Link from 'next/link'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { NAV_LINKS } from '@/lib/constants'
+import { useLogs } from '@/contexts/LogContext'
+import GlobalDiagnosticPanel from './GlobalDiagnosticPanel'
 
 /**
  * Header component with navigation menu
@@ -9,25 +11,48 @@ import { NAV_LINKS } from '@/lib/constants'
  */
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { addLog } = useLogs()
+
+  // Log when Header mounts (page load)
+  useEffect(() => {
+    addLog('info', 'Header component mounted - Page loaded')
+  }, [addLog])
 
   // Memoize toggle function to prevent unnecessary re-renders
   const toggleMobileMenu = useCallback(() => {
-    setMobileMenuOpen(prev => !prev)
-  }, [])
+    setMobileMenuOpen(prev => {
+      const newState = !prev
+      addLog('info', `Mobile menu ${newState ? 'opened' : 'closed'}`)
+      return newState
+    })
+  }, [addLog])
 
   // Memoize close menu function
   const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false)
-  }, [])
+    addLog('info', 'Mobile menu closed')
+  }, [addLog])
+
+  // Log navigation clicks
+  const handleNavClick = useCallback((linkLabel, linkHref) => {
+    addLog('info', `Navigation clicked: ${linkLabel}`, { href: linkHref })
+  }, [addLog])
 
   return (
     <header className="bg-white border-b border-gray-200">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
-            AI Doc Prep
-          </Link>
+          {/* Logo and Diagnostic Panel */}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="flex items-center gap-2 font-semibold text-lg"
+              onClick={() => addLog('info', 'Logo clicked - Navigating to home')}
+            >
+              AI Doc Prep
+            </Link>
+            <GlobalDiagnosticPanel />
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
@@ -36,6 +61,7 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 className="hover:text-primary-600"
+                onClick={() => handleNavClick(link.shortLabel, link.href)}
               >
                 {link.shortLabel}
               </Link>
@@ -62,7 +88,10 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 className="block py-2"
-                onClick={closeMobileMenu}
+                onClick={() => {
+                  handleNavClick(link.shortLabel, link.href)
+                  closeMobileMenu()
+                }}
               >
                 {link.shortLabel}
               </Link>

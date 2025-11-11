@@ -3,7 +3,6 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { LogProvider } from '@/contexts/LogContext'
-import GlobalDiagnosticPanel from '@/components/layout/GlobalDiagnosticPanel'
 
 export const metadata = {
   title: 'AI Doc Prep',
@@ -26,7 +25,6 @@ export default function RootLayout({ children }) {
             </ErrorBoundary>
           </main>
           <Footer />
-          <GlobalDiagnosticPanel />
         </LogProvider>
       </body>
     </html>
