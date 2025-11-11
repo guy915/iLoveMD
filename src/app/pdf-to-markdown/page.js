@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
 import useLocalStorage from '@/hooks/useLocalStorage'
@@ -8,15 +8,34 @@ import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
-  // Pre-fill with test API key (TODO: Remove hardcoded key before production)
-  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
+  // API key from localStorage (no default - user must provide their own)
+  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', '')
   const [file, setFile] = useState(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
 
-  // Use global logging context
-  const { addLog, clearLogs } = useLogs()
+  // Use global logging context (do not destructure clearLogs - we never clear logs)
+  const { addLog } = useLogs()
+
+  // Log component mount and API key state
+  useEffect(() => {
+    const keyPresent = apiKey.length > 0
+    const keyLength = apiKey.length
+
+    addLog('info', 'PDF to Markdown page loaded', {
+      apiKeyPresent: keyPresent,
+      apiKeyLength: keyLength
+    })
+
+    // Log API key state if present
+    if (keyPresent) {
+      addLog('info', 'API key loaded from localStorage', {
+        keyLength: keyLength,
+        keyPreview: apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4)
+      })
+    }
+  }, [addLog, apiKey])
 
   const handleFileSelect = (selectedFile) => {
     setFile(selectedFile)
@@ -25,20 +44,30 @@ export default function PdfToMarkdownPage() {
 
   const handleConvert = async () => {
     if (!apiKey.trim()) {
-      setError('Please enter your API key')
+      const errorMsg = 'Please enter your API key'
+      setError(errorMsg)
+      addLog('error', 'Conversion blocked: No API key provided')
       return
     }
 
     if (!file) {
-      setError('Please select a PDF file')
+      const errorMsg = 'Please select a PDF file'
+      setError(errorMsg)
+      addLog('error', 'Conversion blocked: No file selected')
       return
     }
 
+    const conversionStartTime = Date.now()
     setProcessing(true)
     setError('')
-    clearLogs() // Clear previous logs
     setStatus('Submitting to Marker API...')
-    addLog('info', `Starting conversion for: ${file.name}`)
+
+    addLog('info', `Starting PDF conversion`, {
+      fileName: file.name,
+      fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      fileType: file.type,
+      timestamp: new Date().toISOString()
+    })
 
     try {
       // Submit file to our API route
@@ -46,14 +75,27 @@ export default function PdfToMarkdownPage() {
       formData.append('file', file)
       formData.append('apiKey', apiKey)
 
-      addLog('info', 'Submitting file to Marker API...')
+      addLog('info', 'Submitting to Marker API via /api/marker endpoint', {
+        endpoint: '/api/marker',
+        method: 'POST',
+        fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`
+      })
+
+      const submitStartTime = Date.now()
       const submitResponse = await fetch('/api/marker', {
         method: 'POST',
         body: formData,
       })
+      const submitDuration = Date.now() - submitStartTime
 
       const submitData = await submitResponse.json()
-      addLog('success', 'Submit response received', submitData)
+
+      addLog('success', `Submit response received (${submitDuration}ms)`, {
+        status: submitResponse.status,
+        statusText: submitResponse.ok ? 'OK' : 'Error',
+        duration: `${submitDuration}ms`,
+        responseKeys: Object.keys(submitData)
+      })
 
       if (!submitResponse.ok || !submitData.success) {
         addLog('error', 'Submission failed', submitData)
@@ -63,7 +105,14 @@ export default function PdfToMarkdownPage() {
       // Start polling for results
       setStatus('Processing PDF... This may take a minute.')
       const checkUrl = submitData.request_check_url
-      addLog('info', `Polling URL: ${checkUrl}`)
+      const pollingStartTime = Date.now()
+
+      addLog('info', 'Starting polling for conversion status', {
+        checkUrl: checkUrl,
+        requestId: submitData.request_id,
+        pollInterval: '2 seconds',
+        maxDuration: '5 minutes'
+      })
 
       const pollInterval = 2000 // Poll every 2 seconds
       const maxPolls = 150 // 5 minutes max (150 * 2 seconds)
@@ -71,11 +120,18 @@ export default function PdfToMarkdownPage() {
 
       const poll = async () => {
         if (pollCount >= maxPolls) {
+          const timeoutDuration = Date.now() - pollingStartTime
+          addLog('error', `Polling timeout after ${pollCount} attempts (${(timeoutDuration / 1000).toFixed(1)}s)`)
           throw new Error('Processing timeout. Please try again.')
         }
 
         pollCount++
-        addLog('info', `Poll attempt ${pollCount}/${maxPolls}`)
+        const pollStartTime = Date.now()
+
+        addLog('info', `Poll attempt ${pollCount}/${maxPolls}`, {
+          attemptNumber: pollCount,
+          elapsedTime: `${((pollStartTime - pollingStartTime) / 1000).toFixed(1)}s`
+        })
 
         const pollResponse = await fetch(
           `/api/marker?checkUrl=${encodeURIComponent(checkUrl)}`,
@@ -85,40 +141,71 @@ export default function PdfToMarkdownPage() {
             }
           }
         )
+        const pollDuration = Date.now() - pollStartTime
 
         const pollData = await pollResponse.json()
-        addLog('info', `Poll response (status: ${pollData.status})`, pollData)
+
+        addLog('info', `Poll response received (${pollDuration}ms)`, {
+          status: pollData.status,
+          httpStatus: pollResponse.status,
+          duration: `${pollDuration}ms`,
+          attemptNumber: pollCount
+        })
 
         if (!pollResponse.ok || !pollData.success) {
           throw new Error(pollData.error || 'Failed to check status')
         }
 
         if (pollData.status === 'complete') {
+          const totalConversionTime = Date.now() - conversionStartTime
+          const pollingTime = Date.now() - pollingStartTime
+
           // Download the result
           setStatus('Download starting...')
-          addLog('success', 'Conversion complete! Preparing download...')
+
+          addLog('success', `Conversion complete! (${(totalConversionTime / 1000).toFixed(1)}s total)`, {
+            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`,
+            pollingDuration: `${(pollingTime / 1000).toFixed(1)}s`,
+            pollAttempts: pollCount
+          })
 
           // Log what we received
-          addLog('info', 'Response fields', Object.keys(pollData))
-          addLog('info', `Output format: ${pollData.output_format}`)
-          addLog('info', `Page count: ${pollData.page_count}`)
+          addLog('info', 'API response structure', {
+            fields: Object.keys(pollData),
+            outputFormat: pollData.output_format,
+            pageCount: pollData.page_count
+          })
 
           // Get the markdown content
           const markdown = pollData.markdown
 
           if (!markdown) {
-            addLog('error', 'No markdown field in response!', pollData)
+            addLog('error', 'No markdown field in response!', {
+              receivedFields: Object.keys(pollData),
+              status: pollData.status
+            })
             throw new Error('No markdown content received from API')
           }
 
-          addLog('info', `Markdown length: ${markdown.length} characters`)
-          addLog('info', `First 200 chars: ${markdown.substring(0, 200)}`)
+          addLog('info', 'Markdown content received', {
+            length: `${markdown.length} characters`,
+            sizeKB: `${(markdown.length / 1024).toFixed(2)}KB`,
+            preview: markdown.substring(0, 200)
+          })
 
           const filename = replaceExtension(file.name, 'md')
-          addLog('info', `Downloading as: ${filename}`)
+          addLog('info', `Triggering file download`, {
+            originalFile: file.name,
+            outputFile: filename,
+            mimeType: 'text/markdown'
+          })
 
           downloadFile(markdown, filename, 'text/markdown')
-          addLog('success', 'File download triggered!')
+
+          addLog('success', 'File download triggered successfully', {
+            filename: filename,
+            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
+          })
 
           setStatus('Conversion complete! File downloaded.')
           setProcessing(false)
@@ -128,6 +215,7 @@ export default function PdfToMarkdownPage() {
           setTimeout(() => setStatus(''), 3000)
         } else {
           // Still processing, poll again
+          addLog('info', `Status: ${pollData.status} - Waiting ${pollInterval}ms before next poll`)
           setTimeout(poll, pollInterval)
         }
       }
@@ -135,8 +223,16 @@ export default function PdfToMarkdownPage() {
       await poll()
 
     } catch (err) {
+      const totalDuration = Date.now() - conversionStartTime
       console.error('Conversion error:', err)
-      addLog('error', err.message, err)
+
+      addLog('error', `Conversion failed: ${err.message}`, {
+        error: err.message,
+        errorType: err.name,
+        duration: `${(totalDuration / 1000).toFixed(1)}s`,
+        stack: err.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
+      })
+
       setError(err.message || 'An error occurred during conversion')
       setProcessing(false)
       setStatus('')
