@@ -5,6 +5,7 @@ import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
+import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // Pre-fill with test API key (TODO: Remove hardcoded key before production)
@@ -13,13 +14,9 @@ export default function PdfToMarkdownPage() {
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
-  const [logs, setLogs] = useState([])
-  const [showLogs, setShowLogs] = useState(true)
 
-  const addLog = (type, message, data = null) => {
-    const timestamp = new Date().toLocaleTimeString()
-    setLogs(prev => [...prev, { timestamp, type, message, data }])
-  }
+  // Use global logging context
+  const { addLog, clearLogs } = useLogs()
 
   const handleFileSelect = (selectedFile) => {
     setFile(selectedFile)
@@ -39,7 +36,7 @@ export default function PdfToMarkdownPage() {
 
     setProcessing(true)
     setError('')
-    setLogs([]) // Clear previous logs
+    clearLogs() // Clear previous logs
     setStatus('Submitting to Marker API...')
     addLog('info', `Starting conversion for: ${file.name}`)
 
@@ -219,48 +216,6 @@ export default function PdfToMarkdownPage() {
           {processing ? 'Converting...' : 'Convert to Markdown'}
         </Button>
       </div>
-
-      {/* Diagnostic Logs Section */}
-      {logs.length > 0 && (
-        <div className="mt-8 bg-gray-900 rounded-lg overflow-hidden">
-          <div
-            className="flex items-center justify-between p-4 bg-gray-800 cursor-pointer"
-            onClick={() => setShowLogs(!showLogs)}
-          >
-            <h3 className="text-lg font-semibold text-white">
-              Diagnostic Logs ({logs.length})
-            </h3>
-            <button className="text-gray-400 hover:text-white">
-              {showLogs ? '▼' : '▶'}
-            </button>
-          </div>
-          {showLogs && (
-            <div className="p-4 max-h-96 overflow-y-auto font-mono text-sm">
-              {logs.map((log, index) => (
-                <div
-                  key={index}
-                  className={`mb-2 ${
-                    log.type === 'error' ? 'text-red-400' :
-                    log.type === 'success' ? 'text-green-400' :
-                    'text-gray-300'
-                  }`}
-                >
-                  <span className="text-gray-500">[{log.timestamp}]</span>{' '}
-                  <span className="font-bold">
-                    {log.type.toUpperCase()}:
-                  </span>{' '}
-                  {log.message}
-                  {log.data && (
-                    <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto">
-                      {JSON.stringify(log.data, null, 2)}
-                    </pre>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Info Section */}
       <div className="mt-12 bg-gray-50 rounded-lg p-6">
