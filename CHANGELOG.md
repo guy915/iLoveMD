@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Diagnostic Logging Enhancements & Bug Fixes** (2025-11-11):
+  - **Critical Fixes**:
+    - **Removed hardcoded test API key** from PDF tool (`src/app/pdf-to-markdown/page.js`)
+      - Previous: `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ` (invalid/expired)
+      - Now: Empty string default - users must provide their own API key
+      - Resolves 401/403 errors from invalid key
+    - **Fixed log persistence bug** - Removed `clearLogs()` call from PDF conversion handler
+      - Logs now persist throughout entire session
+      - Only clear on manual "Clear" button click or page refresh
+      - No longer erases history when starting new conversions
+    - **Added click-outside detection** to diagnostic panel (`src/components/layout/GlobalDiagnosticPanel.js`)
+      - Panel now closes when clicking anywhere outside
+      - Uses React ref and mousedown event listener
+      - Better UX - behaves like standard dropdown
+  - **Comprehensive Timing & Operation Tracking**:
+    - All network operations include millisecond-precision timing
+    - Submit request timing, poll request timing per attempt
+    - Total conversion time tracked end-to-end
+    - Polling elapsed time shown on each attempt
+  - **Enhanced PDF Tool Logging**:
+    - Component lifecycle (mount, API key state)
+    - localStorage operations (load/update with sanitized preview)
+    - File operations (metadata, validation)
+    - API interactions (endpoints, requests, responses, timing)
+    - Success path (conversion complete, download trigger)
+    - Error path (validation blocks, API failures, timeouts with full context)
+  - **Benefits for Claude's Debugging**:
+    - Complete operation timeline with millisecond precision
+    - Full network request/response visibility
+    - Error context (what, when, why, duration, stack trace)
+    - Multi-step async operation progress tracking
+    - Easy trace from user action to any issue
+  - Build: ✅ | Lint: ✅ | Tested: ✅
+
 ### Added
 - **Comprehensive Diagnostic Logging System** (2025-11-11):
   - **Major Overhaul**: Complete redesign of logging system for full application traceability
