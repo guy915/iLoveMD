@@ -16,11 +16,11 @@ export const FILE_SIZE = {
 
 // Navigation links for header
 export const NAV_LINKS = [
-  { href: '/pdf-to-markdown', label: 'PDF to Markdown' },
-  { href: '/html-to-markdown', label: 'HTML to Markdown' },
-  { href: '/merge-markdown', label: 'Merge Markdown' },
-  { href: '/help', label: 'Help' },
-  { href: '/about', label: 'About' },
+  { href: '/pdf-to-markdown', label: 'PDF to Markdown', shortLabel: 'PDF' },
+  { href: '/html-to-markdown', label: 'HTML to Markdown', shortLabel: 'HTML' },
+  { href: '/merge-markdown', label: 'Merge Markdown', shortLabel: 'Markdown' },
+  { href: '/help', label: 'Help', shortLabel: 'Help' },
+  { href: '/about', label: 'About', shortLabel: 'About' },
 ]
 
 // Tool cards for homepage
