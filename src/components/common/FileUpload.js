@@ -47,7 +47,7 @@ export default function FileUpload({
 
     setSelectedFile(file)
     onFileSelect(file)
-  }, [maxSize, onFileSelect, setError, setSelectedFile])
+  }, [maxSize, maxSizeMB, onFileSelect])
 
   const handleDrop = (e) => {
     e.preventDefault()
