@@ -1,6 +1,6 @@
 'use client'
 import { useState, useId, useRef } from 'react'
-import { FILE_SIZE, formatFileSize } from '@/lib/constants'
+import { FILE_SIZE } from '@/lib/constants'
 
 /**
  * FileUpload component with drag-and-drop support
