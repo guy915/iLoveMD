@@ -301,7 +301,44 @@ curl -X POST https://www.datalab.to/api/v1/marker \
 - Check all required fields exist
 - Validate error messages are user-friendly
 
-#### 5. Documentation Updates (Required)
+#### 5. Code Cleanup & Refactoring (Required)
+
+**Before committing, clean up the code:**
+
+**Remove clutter:**
+- Delete unused imports, variables, functions
+- Remove commented-out code blocks
+- Clean up debug statements (console.log, etc.)
+- Remove temporary test code
+
+**Refactor for clarity:**
+- Extract repeated code into reusable functions
+- Simplify complex conditionals
+- Improve variable/function names for clarity
+- Break down large functions into smaller ones
+
+**Optimize performance:**
+- Remove unnecessary re-renders (React)
+- Optimize database queries or API calls
+- Reduce bundle size where possible
+- Cache expensive computations
+
+**Code hygiene:**
+- Consistent formatting (let Prettier handle this)
+- Add missing error handling
+- Ensure proper async/await usage
+- Validate all user inputs
+
+**Quick checks:**
+```bash
+# Find debug code left behind
+grep -r "console.log" src/ --exclude-dir=node_modules
+
+# Check for TODO/FIXME comments
+grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules
+```
+
+#### 6. Documentation Updates (Required)
 
 **Before committing, ensure all docs are updated:**
 - [ ] CHECKLIST.md - Mark completed tasks
@@ -346,7 +383,15 @@ curl -X POST http://localhost:3000/api/marker \
 # 4. Check logs for errors
 # Review terminal output
 
-# 5. If all good, commit
+# 5. Code cleanup check
+grep -r "console.log" src/ --exclude-dir=node_modules
+grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules
+# Review code for refactoring opportunities
+
+# 6. Update documentation
+# Update CHECKLIST.md, CLAUDE.md, CHANGELOG.md, etc.
+
+# 7. If all good, commit
 git add .
 git commit -m "Descriptive message"
 git push
