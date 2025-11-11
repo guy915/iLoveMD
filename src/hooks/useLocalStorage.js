@@ -40,7 +40,7 @@ export default function useLocalStorage(key, initialValue) {
     } catch (error) {
       console.error('Error writing to localStorage:', error)
     }
-  }, [key])
+  }, [key, setStoredValue])
 
   return [storedValue, setValue]
 }
