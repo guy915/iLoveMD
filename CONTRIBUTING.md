@@ -72,6 +72,37 @@ git checkout -b feature/your-feature-name
 4. Update documentation if needed
 5. Commit your changes with clear messages
 
+**Small commits:**
+- Easier to review and understand
+- Easier to revert if something breaks
+- Better git history for debugging
+- Clear, focused changes
+
+**Small PRs:**
+- Faster review cycles
+- Less likely to have merge conflicts
+- Easier to test thoroughly
+- Reduces risk of introducing bugs
+
+**Commit Size:**
+- **One logical change per commit** - Don't mix unrelated changes
+- **Self-contained** - Commit should work on its own (build passes)
+- **Clear message** - Describe what and why, not how
+- Examples:
+  - ✅ "Add deduplication logic to prevent duplicate logs"
+  - ✅ "Fix console.log interception for CI compatibility"
+  - ❌ "Fix stuff and add features and update docs"
+
+**PR Size:**
+- **One feature or fix per PR** - Don't combine multiple features
+- **Reviewable in 15-30 minutes** - Keep PR diff under ~300 lines when possible
+- **Address feedback first** - Fix PR review comments before adding new features
+
+**When to Split a PR:**
+- If PR review finds issues → Fix issues first, then open new PR for additional features
+- If implementing multiple features → Create separate PRs for each
+- If PR grows beyond scope → Extract new work into separate branch/PR
+
 ## Code Style
 
 ### General Guidelines
@@ -122,7 +153,6 @@ export default function ComponentName({ prop1, prop2 }) {
 - Use Tailwind utility classes
 - No custom CSS unless absolutely necessary
 - Use responsive breakpoints: `md:`, `lg:`
-- Light mode only (no dark mode)
 - Follow spacing conventions: 4px base unit
 
 ### File Organization
