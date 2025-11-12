@@ -107,7 +107,7 @@ git checkout -b feature/your-feature-name
 
 ### General Guidelines
 
-- **Language**: JavaScript (ES6+)
+- **Languages**: JavaScript, TypeScript, CSS, HTML
 - **Framework**: Next.js 14 with App Router
 - **Styling**: Tailwind CSS only (no custom CSS files)
 - **State Management**: Component-level + localStorage (no Redux/Context)
