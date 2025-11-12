@@ -161,8 +161,10 @@ See "Diagnostic Logging Maintenance" section below for detailed standards.
 
 **Check CHECKLIST.md for exact progress**
 
-Current phase: **Phase 2 Complete**
-Next task: **Phase 3 - PDF to Markdown Tool**
+Current phase: **Phase 3 Complete (MVP)**
+Next task: **Phase 4 - HTML to Markdown Tool**
+
+**Note:** Phase 3 implemented core PDF conversion functionality. Advanced options (multiple output formats, pagination, LLM enhancement, etc.) are deferred to future iterations.
 
 ---
 
@@ -995,5 +997,5 @@ When adding a feature, ensure you log:
 ---
 
 **Last Updated:** 2025-11-12
-**Current Status:** Phase 2 complete, ready for Phase 3
-**Next Action:** Build PDF to Markdown tool
+**Current Status:** Phase 3 complete (MVP), ready for Phase 4
+**Next Action:** Build HTML to Markdown tool

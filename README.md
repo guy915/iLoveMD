@@ -1,29 +1,35 @@
 # AI Doc Prep
 
-A free web-based tool for preparing documents for Large Language Models (LLMs). Convert PDFs, HTML, and merge markdown files optimized for AI consumption.
+A free, privacy-focused web application for preparing documents for Large Language Models (LLMs). Convert PDFs to markdown optimized for AI consumption.
+
+## Vision
+
+A simple, privacy-focused tool where users bring their own API keys and we provide the interface. Most processing happens client-side for privacy and cost efficiency. No accounts, no tracking, no data storage.
 
 ## Overview
 
 AI Doc Prep provides simple, single-purpose tools to convert and prepare documents specifically for LLM workflows like ChatGPT, Claude, and other AI assistants. Everything converts to markdown because that's what LLMs digest best.
 
 **Live Site:** `ai-doc-prep.vercel.app` (when deployed)
+**Status:** In development - PDF tool complete, HTML and Merge tools coming soon
 
 ## Features
 
-### PDF to Markdown
+### PDF to Markdown ✅ (Available Now)
 - Convert PDF files to clean markdown using Marker AI
 - Support for complex layouts (tables, equations, code blocks)
 - Optional OCR for scanned documents
 - Optional LLM enhancement for highest accuracy
 - Customizable output formats (markdown, JSON, HTML, chunks)
+- Comprehensive diagnostic logging for debugging
 
-### HTML to Markdown
+### HTML to Markdown (Coming Soon)
 - Convert HTML files or web pages to markdown
 - Two input methods: file upload or URL
 - Client-side preprocessing for speed and privacy
 - Clean extraction of main content
 
-### Merge Markdowns
+### Merge Markdowns (Coming Soon)
 - Combine multiple markdown files into one
 - Drag-and-drop reordering
 - Customizable separators and formatting
@@ -76,23 +82,25 @@ Create a `.env.local` file (optional, for development):
 ai-doc-prep/
 ├── src/
 │   ├── app/                    # Next.js App Router
-│   │   ├── layout.js           # Root layout
-│   │   ├── page.js             # Homepage
-│   │   ├── pdf-to-markdown/    # PDF tool
-│   │   ├── html-to-markdown/   # HTML tool
-│   │   ├── merge-markdown/     # Merge tool
-│   │   ├── help/               # Help page
-│   │   ├── about/              # About page
-│   │   └── api/                # API routes
+│   │   ├── layout.js           # Root layout with diagnostic logging
+│   │   ├── page.js             # Homepage with tool tiles
+│   │   ├── pdf-to-markdown/    # PDF tool (complete)
+│   │   ├── loading.js          # Global loading state
+│   │   ├── not-found.js        # Custom 404 page
+│   │   └── api/
+│   │       └── marker/         # Proxy to Marker API
 │   ├── components/             # React components
-│   │   ├── layout/             # Header, Footer, etc.
-│   │   ├── common/             # Reusable UI components
-│   │   └── tools/              # Tool-specific components
+│   │   ├── layout/             # Header, Footer, GlobalDiagnosticPanel
+│   │   ├── common/             # Button, FileUpload, ErrorBoundary
+│   │   └── home/               # ToolTile
+│   ├── contexts/               # React Context providers
+│   │   └── LogContext.js       # Diagnostic logging context
 │   ├── lib/                    # Business logic
-│   │   ├── processors/         # File processing logic
-│   │   ├── api/                # API client functions
-│   │   └── utils/              # Utility functions
+│   │   ├── constants.js        # Centralized constants
+│   │   └── utils/              # downloadUtils, classNames
 │   └── hooks/                  # Custom React hooks
+│       └── useLocalStorage.js  # localStorage wrapper
+├── assets/                     # Test files and resources
 ├── public/                     # Static assets
 └── README.md
 ```
@@ -103,39 +111,26 @@ ai-doc-prep/
 
 1. Navigate to the PDF to Markdown tool
 2. Enter your Marker API key (stored locally in your browser)
+   - Get your free API key at [datalab.to](https://www.datalab.to/)
 3. Upload a PDF file (up to 1GB)
-4. Configure options:
+4. Configure options (optional):
    - Output format (markdown/JSON/HTML/chunks)
    - Paginate (include page numbers)
    - Use LLM enhancement (slower but more accurate)
    - Force OCR (for scanned documents)
    - Mode (fast/accurate)
 5. Click "Convert to Markdown"
-6. Download the result
+6. Wait for processing (may take a few minutes for large files)
+7. Download automatically starts when complete
 
-### HTML to Markdown
+### Diagnostic Logging
 
-1. Navigate to the HTML to Markdown tool
-2. Choose input method:
-   - Upload an HTML file, or
-   - Paste a URL
-3. Configure options:
-   - Preserve images
-   - Preserve links
-4. Click "Convert to Markdown"
-5. Download the result
-
-### Merge Markdowns
-
-1. Navigate to the Merge Markdown tool
-2. Upload multiple markdown files (up to 50 files)
-3. Reorder files by dragging
-4. Configure options:
-   - File ordering (upload order/alphabetical/custom)
-   - Separator style (none/page breaks/file headers)
-   - Generate table of contents
-5. Click "Merge Files"
-6. Download the merged file
+The app includes a comprehensive diagnostic logging system visible in the header:
+- Click "Diagnostic Logs" to view all application events
+- See file uploads, API calls, errors, and performance metrics
+- Copy logs to share when troubleshooting issues
+- Logs persist across page navigation within the same session
+- Logs reset when you close the browser tab
 
 ## API Key Management
 
@@ -184,18 +179,38 @@ This is a personal hobby project, but suggestions and feedback are welcome!
 
 ## Roadmap
 
-### v1.0 (Current)
-- [x] PDF to Markdown conversion
-- [x] HTML to Markdown conversion
-- [x] Merge Markdown files
-- [ ] Mobile responsive design
+### Phase 1-2: Foundation ✅ Complete
+- [x] Project setup (Next.js 14, Tailwind, dependencies)
+- [x] Core UI (Header, Footer, Homepage, reusable components)
+- [x] Diagnostic logging system for debugging
 
-### Future Considerations
+### Phase 3: PDF Tool ✅ Complete
+- [x] PDF to Markdown conversion
+- [x] Marker API integration
+- [x] File upload and validation
+- [x] Comprehensive error handling and logging
+
+### Phase 4: HTML Tool (Next)
+- [ ] HTML file upload to Markdown
+- [ ] URL fetching and conversion
+- [ ] Client-side processing with Turndown.js
+
+### Phase 5: Merge Tool (Future)
+- [ ] Multi-file markdown merging
+- [ ] Drag-and-drop reordering
+- [ ] Customizable separators
+
+### Phase 6: Polish (Future)
+- [ ] Help and About pages
+- [ ] Mobile responsive design
+- [ ] Cross-browser testing
+- [ ] Deploy to production
+
+### Post-v1.0 Ideas
 - Token counter for different LLM models
 - Markdown splitter/chunker
 - Batch processing
-- Additional output formats
-- More preprocessing options
+- Preview before download
 
 ## Known Limitations
 
