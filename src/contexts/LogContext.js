@@ -67,8 +67,12 @@ export function LogProvider({ children }) {
   }, [logs])
 
   const addLog = useCallback((type, message, data = null) => {
-    // Create a simple hash for deduplication
-    const hash = `${type}:${message}:${JSON.stringify(data)}`
+    // Create a simple hash for deduplication (exclude timestamp from data for better deduplication)
+    const dataForHash = data ? { ...data } : null
+    if (dataForHash && 'timestamp' in dataForHash) {
+      delete dataForHash.timestamp
+    }
+    const hash = `${type}:${message}:${JSON.stringify(dataForHash)}`
     const now = Date.now()
 
     // Check if we've seen this exact log recently (within deduplication window)
@@ -201,13 +205,21 @@ export function LogProvider({ children }) {
     }
 
     console['log'] = (...args) => {
-      addLog('info', 'Console Log', {
-        message: args.map(arg =>
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' '),
-        url: window.location.href,
-        timestamp: new Date().toISOString()
-      })
+      const message = args.map(arg =>
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ')
+
+      // Filter out Next.js dev server noise
+      const shouldLogConsole = !message.startsWith('[Fast Refresh]')
+
+      if (shouldLogConsole) {
+        addLog('info', 'Console Log', {
+          message,
+          url: window.location.href,
+          timestamp: new Date().toISOString()
+        })
+      }
+
       originalLog.apply(console, args)
     }
 
