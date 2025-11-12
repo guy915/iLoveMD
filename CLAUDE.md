@@ -62,20 +62,47 @@ A website-wide logging panel that captures every user interaction, application e
 
 ### What It Logs
 
-**Everything:**
-- Page navigation (loads, route changes)
-- User interactions (clicks, uploads, form submissions)
-- API calls (requests, responses, timing)
-- File operations (validation, processing, downloads)
-- Errors (validation failures, network errors, crashes)
-- State changes (localStorage operations, component lifecycle)
+**Currently Tracked Events:**
+
+**Navigation & Page Events:**
+- Page loads and component mounts (Header, pages, tools)
+- Navigation link clicks (header menu, logo clicks, tool tiles)
+- Mobile menu toggles (open/close)
+- Route changes and browser navigation
+- 404 errors with pathname tracking
+
+**User Interactions:**
+- File uploads (drag-drop events, browser file selection)
+- File validation (success/failure with file metadata: name, size, type)
+- Button clicks and form submissions
+- Tool tile clicks with destination tracking
+
+**Application Events:**
+- localStorage operations (API key saves/loads, preference updates)
+- File processing operations (PDF conversion, HTML conversion)
+- Download triggers (when user downloads converted files)
+- API calls with full timing data (request sent, response received, duration in ms)
+- Polling operations (attempt count, elapsed time)
+
+**Error Tracking:**
+- Validation errors (file size limits, type mismatches)
+- Network errors (API failures, HTTP status codes, timeout errors)
+- 404 errors (invalid routes, automatic logging)
+- Application crashes (via ErrorBoundary integration)
+- API errors with full context (endpoint, request ID, error message, stack trace)
+
+**Performance Metrics:**
+- API response times (milliseconds precision)
+- Polling durations (elapsed time per attempt)
+- Total operation times (end-to-end conversion timing)
+- Network request timing (submit request, poll requests)
 
 **Each log includes:**
-- Sequential ID (persists across navigation)
-- Timestamp (when it happened)
+- Sequential ID (persists across navigation, starts at 1)
+- Timestamp (HH:MM:SS format)
 - Type (info/success/error)
-- Descriptive message
-- Structured data (file metadata, API responses, error details, timing)
+- Descriptive message (what happened)
+- Structured data (file metadata, API responses, error details, timing, request IDs)
 
 ### How to Use It (For Claude)
 
@@ -87,6 +114,7 @@ A website-wide logging panel that captures every user interaction, application e
 
 **What you get in copied logs:**
 - **About section**: Explains what the logs are (for user context)
+- **What this tool tracks**: Complete list of all tracked events (navigation, interactions, API calls, errors, performance)
 - **Session details**: Date, time, URL, browser info
 - **Statistics**: Total logs, breakdown by type (errors, successes, info)
 - **Legend**: Explains log format and types
