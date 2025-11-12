@@ -53,13 +53,92 @@ export default function GlobalDiagnosticPanel() {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                // Copy logs to clipboard with IDs
+
+                // Calculate log statistics
+                const errorCount = logs.filter(log => log.type === 'error').length
+                const successCount = logs.filter(log => log.type === 'success').length
+                const infoCount = logs.filter(log => log.type === 'info').length
+
+                // Get session info
+                const now = new Date()
+                const sessionStart = logs.length > 0 ? logs[0].timestamp : now.toLocaleTimeString()
+                const currentUrl = typeof window !== 'undefined' ? window.location.href : 'Unknown'
+                const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'
+
+                // Format metadata section
+                const metadata = `=== ABOUT THESE DIAGNOSTIC LOGS ===
+This is a diagnostic logging system that tracks all user interactions, application
+events, and errors that occur while using AI Doc Prep. These logs provide a complete
+timeline of what happened during your session, making it easier to troubleshoot issues
+and understand application behavior. If you encounter problems, share these logs when
+asking for help - they contain valuable context for debugging.
+
+=== WHAT THIS TOOL TRACKS ===
+Navigation & Page Events:
+- Page loads and component mounts
+- Navigation link clicks (header menu, logo, tool tiles)
+- Mobile menu toggles
+- Route changes and browser navigation
+
+User Interactions:
+- File uploads (drag-drop, browser selection)
+- File validation (success and failures with metadata)
+- Button clicks and form submissions
+- All tool interactions
+
+Application Events:
+- localStorage operations (API key saves, preference updates)
+- File processing operations
+- Download triggers
+- API calls with timing (request/response, duration)
+
+Error Tracking:
+- Validation errors (file size, type mismatches)
+- Network errors (API failures, timeouts)
+- 404 errors (invalid routes)
+- Application crashes (via ErrorBoundary)
+
+Performance Metrics:
+- API response times (milliseconds)
+- Polling durations
+- Total operation times
+
+=== SESSION DETAILS ===
+Date: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}
+Session Start: ${sessionStart}
+Current URL: ${currentUrl}
+Browser: ${userAgent}
+
+=== STATISTICS ===
+Total Logs: ${logs.length}
+├─ Errors: ${errorCount}
+├─ Success: ${successCount}
+└─ Info: ${infoCount}
+
+=== LEGEND ===
+ERROR   - Errors, failures, exceptions (shown in red)
+SUCCESS - Successful operations, completions (shown in green)
+INFO    - General information, events (shown in gray)
+
+Log Format: #ID [timestamp] TYPE: message
+- ID: Sequential log number (persists across navigation)
+- Timestamp: When the event occurred
+- Data: Additional context (JSON format)
+
+=== LOGS ===
+`
+
+                // Format logs
                 const logsText = logs.map(log =>
                   `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
                     log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''
                   }`
                 ).join('\n\n')
-                navigator.clipboard.writeText(logsText)
+
+                // Combine metadata + logs
+                const fullCopy = metadata + logsText
+
+                navigator.clipboard.writeText(fullCopy)
                 addLog('info', 'Logs copied to clipboard', {
                   logCount: logs.length,
                   timestamp: new Date().toISOString()

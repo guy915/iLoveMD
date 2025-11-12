@@ -44,6 +44,119 @@ Domain:        ai-doc-prep.vercel.app
 
 ---
 
+## Diagnostic Logging Tool (Built for Claude)
+
+**IMPORTANT: This application has a comprehensive diagnostic logging system built specifically for you (Claude) to debug issues.**
+
+### What It Is
+
+A website-wide logging panel that captures every user interaction, application event, and error across all pages. Think of it as your eyes and ears into what's happening in the user's browser.
+
+### Where to Find It
+
+**In the Header** - Next to the logo on every page, there's a "Diagnostic Logs" button with a badge showing log count.
+
+**Always visible** - Never hides, even when empty (shows "No logs yet" message).
+
+**Click to expand/collapse** - Shows full log panel with all events.
+
+### What It Logs
+
+**Currently Tracked Events:**
+
+**Navigation & Page Events:**
+- Page loads and component mounts (Header, pages, tools)
+- Navigation link clicks (header menu, logo clicks, tool tiles)
+- Mobile menu toggles (open/close)
+- Route changes and browser navigation
+- 404 errors with pathname tracking
+
+**User Interactions:**
+- File uploads (drag-drop events, browser file selection)
+- File validation (success/failure with file metadata: name, size, type)
+- Button clicks and form submissions
+- Tool tile clicks with destination tracking
+
+**Application Events:**
+- localStorage operations (API key saves/loads, preference updates)
+- File processing operations (PDF conversion, HTML conversion)
+- Download triggers (when user downloads converted files)
+- API calls with full timing data (request sent, response received, duration in ms)
+- Polling operations (attempt count, elapsed time)
+
+**Error Tracking:**
+- Validation errors (file size limits, type mismatches)
+- Network errors (API failures, HTTP status codes, timeout errors)
+- 404 errors (invalid routes, automatic logging)
+- Application crashes (via ErrorBoundary integration)
+- API errors with full context (endpoint, request ID, error message, stack trace)
+
+**Performance Metrics:**
+- API response times (milliseconds precision)
+- Polling durations (elapsed time per attempt)
+- Total operation times (end-to-end conversion timing)
+- Network request timing (submit request, poll requests)
+
+**Each log includes:**
+- Sequential ID (persists across navigation, starts at 1)
+- Timestamp (HH:MM:SS format)
+- Type (info/success/error)
+- Descriptive message (what happened)
+- Structured data (file metadata, API responses, error details, timing, request IDs)
+
+### How to Use It (For Claude)
+
+**When debugging:**
+1. Ask user to click "Copy" button in diagnostic panel
+2. User pastes the logs in their message to you
+3. You receive complete context: metadata, statistics, legend, and full log history
+4. Reference specific logs by ID (e.g., "check log #5")
+
+**What you get in copied logs:**
+- **About section**: Explains what the logs are (for user context)
+- **What this tool tracks**: Complete list of all tracked events (navigation, interactions, API calls, errors, performance)
+- **Session details**: Date, time, URL, browser info
+- **Statistics**: Total logs, breakdown by type (errors, successes, info)
+- **Legend**: Explains log format and types
+- **Full log history**: Every event with timestamps and data
+
+**Benefits for you:**
+- Complete operation timeline with millisecond precision
+- Full visibility into user actions leading to errors
+- Network request/response details
+- Error context (what, when, why, stack traces)
+- No need to ask "what did you click?" or "can you check the console?"
+
+### Log Persistence
+
+**Logs persist across:**
+- Page navigation within the site
+- Browser back/forward buttons
+- Route changes
+
+**Logs reset on:**
+- Manual "Clear" button click
+- Page refresh (F5)
+- Browser close
+- Application crash
+
+**Stored in localStorage** (`diagnosticLogs` key) for persistence.
+
+### Logging Standards
+
+When adding features, always log:
+- Component mounts
+- User interactions
+- State changes
+- API calls
+- Validation events
+- Errors and exceptions
+- File operations
+
+See "Diagnostic Logging Maintenance" section below for detailed standards.
+
+---
+
 ## Current Status
 
 **Check CHECKLIST.md for exact progress**
@@ -881,6 +994,6 @@ When adding a feature, ensure you log:
 
 ---
 
-**Last Updated:** 2025-11-10
+**Last Updated:** 2025-11-12
 **Current Status:** Phase 2 complete, ready for Phase 3
 **Next Action:** Build PDF to Markdown tool
