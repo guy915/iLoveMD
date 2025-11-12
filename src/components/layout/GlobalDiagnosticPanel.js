@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function GlobalDiagnosticPanel() {
-  const { logs, clearLogs } = useLogs()
+  const { logs, addLog } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
   const panelRef = useRef(null)
 
@@ -53,18 +53,28 @@ export default function GlobalDiagnosticPanel() {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                clearLogs()
+                // Copy logs to clipboard
+                const logsText = logs.map(log =>
+                  `[${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
+                    log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''
+                  }`
+                ).join('\n\n')
+                navigator.clipboard.writeText(logsText)
+                addLog('info', 'Logs copied to clipboard', {
+                  logCount: logs.length,
+                  timestamp: new Date().toISOString()
+                })
               }}
               className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
             >
-              Clear
+              Copy
             </button>
           </div>
 
-          {/* Logs content */}
-          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px]">
+          {/* Logs content - user-select-text makes it easy to select and copy */}
+          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text">
             {logs.length === 0 ? (
-              <div className="text-gray-400 text-center py-8">
+              <div className="text-gray-400 text-center py-8 select-none">
                 No logs yet. Logs will appear here as you interact with the website.
               </div>
             ) : (
@@ -83,7 +93,7 @@ export default function GlobalDiagnosticPanel() {
                   </span>{' '}
                   {log.message}
                   {log.data && (
-                    <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto">
+                    <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap break-words">
                       {JSON.stringify(log.data, null, 2)}
                     </pre>
                   )}
