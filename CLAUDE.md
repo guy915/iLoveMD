@@ -6,7 +6,7 @@
 
 **Name:** AI Doc Prep
 **Type:** Web application for preparing documents for LLMs
-**Status:** Planning complete, ready for implementation
+**Status:** Phase 3 complete (MVP), Phase 4 next
 **Timeline:** ~1 week build
 **Developer:** First-year CS student, low web dev experience
 
