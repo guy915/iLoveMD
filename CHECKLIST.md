@@ -11,12 +11,13 @@ Track your progress through each implementation phase. Update checkboxes as you 
 **Goal:** Initialize project and set up development environment
 
 - [x] Initialize Next.js project with create-next-app
-  - [x] Choose JavaScript (not TypeScript)
+  - [x] Choose JavaScript (initially - later migrated to TypeScript)
   - [x] Enable ESLint
   - [x] Enable Tailwind CSS
   - [x] Enable src/ directory
   - [x] Enable App Router
   - [x] Enable import alias (@/*)
+  - [x] **Migrated to TypeScript** (2025-11-12) - See Phase 3 notes
 
 - [x] Install dependencies
   - [x] `npm install turndown`

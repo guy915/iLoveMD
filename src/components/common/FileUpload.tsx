@@ -1,33 +1,43 @@
 'use client'
-import { useState, useId, useRef, useMemo, useCallback } from 'react'
+
+import { useState, useId, useRef, useMemo, useCallback, DragEvent, ChangeEvent, KeyboardEvent } from 'react'
 import { FILE_SIZE } from '@/lib/constants'
 import { useLogs } from '@/contexts/LogContext'
 
 /**
+ * FileUpload component props
+ */
+interface FileUploadProps {
+  /** Callback when file is selected */
+  onFileSelect: (file: File) => void
+  /** Accepted file types (e.g., ".pdf,.md") */
+  accept: string
+  /** Maximum file size in bytes */
+  maxSize?: number
+  /** Label text for the upload area */
+  label?: string
+}
+
+/**
  * FileUpload component with drag-and-drop support
- * @param {Object} props
- * @param {Function} props.onFileSelect - Callback when file is selected
- * @param {string} props.accept - Accepted file types (e.g., ".pdf,.md")
- * @param {number} props.maxSize - Maximum file size in bytes
- * @param {string} props.label - Label text for the upload area
  */
 export default function FileUpload({
   onFileSelect,
   accept,
   maxSize = FILE_SIZE.MAX_FILE_SIZE,
   label = "Drop file here or click to browse"
-}) {
+}: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false)
-  const [selectedFile, setSelectedFile] = useState(null)
-  const [error, setError] = useState(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const fileInputId = useId()
-  const fileInputRef = useRef(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
   // Memoize file size calculations to avoid recalculating on every render
   const maxSizeMB = useMemo(() => Math.round(maxSize / FILE_SIZE.BYTES_PER_MB), [maxSize])
 
-  const handleDrag = (e) => {
+  const handleDrag = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -40,7 +50,7 @@ export default function FileUpload({
     }
   }
 
-  const validateAndSelect = useCallback((file) => {
+  const validateAndSelect = useCallback((file: File) => {
     setError(null)
 
     if (!file) return
@@ -67,7 +77,7 @@ export default function FileUpload({
     addLog('success', 'File validated and selected successfully', { fileName: file.name })
   }, [maxSize, maxSizeMB, onFileSelect, addLog])
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
@@ -78,7 +88,7 @@ export default function FileUpload({
     }
   }
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       addLog('info', 'File selected via file browser')
       validateAndSelect(e.target.files[0])
@@ -90,7 +100,7 @@ export default function FileUpload({
     fileInputRef.current?.click()
   }
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       fileInputRef.current?.click()
