@@ -3,12 +3,11 @@ import type { MarkerSubmitResponse, MarkerPollResponse } from '@/types'
 
 interface MarkerOptions {
   paginate: boolean
+  format_lines: boolean
   use_llm: boolean
-  force_ocr: boolean
-  strip_existing_ocr: boolean
   disable_image_extraction: boolean
-  output_format: 'markdown' | 'json' | 'html' | 'chunks'
-  langs: string
+  output_format: 'markdown'
+  langs: 'English'
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
@@ -35,9 +34,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     // Parse options or use defaults
     let options: MarkerOptions = {
       paginate: false,
+      format_lines: false,
       use_llm: false,
-      force_ocr: false,
-      strip_existing_ocr: false,
       disable_image_extraction: false,
       output_format: 'markdown',
       langs: 'English'
@@ -58,18 +56,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     const markerFormData = new FormData()
     markerFormData.append('file', file)
 
-    // Add all options to the request
+    // Add all options to the request (always include output_format and langs)
     markerFormData.append('output_format', options.output_format)
     markerFormData.append('langs', options.langs)
     markerFormData.append('paginate', String(options.paginate))
+    markerFormData.append('format_lines', String(options.format_lines))
     markerFormData.append('use_llm', String(options.use_llm))
-    markerFormData.append('force_ocr', String(options.force_ocr))
 
-    // Add conditional options
-    if (options.strip_existing_ocr) {
-      markerFormData.append('strip_existing_ocr', 'true')
-    }
-
+    // Add conditional option
     if (options.disable_image_extraction) {
       markerFormData.append('disable_image_extraction', 'true')
     }
