@@ -145,6 +145,137 @@ export function LogProvider({ children }) {
       originalLog.apply(console, args)
     }
 
+    // Intercept fetch() for network request visibility
+    const originalFetch = window.fetch
+    window.fetch = async (...args) => {
+      const startTime = Date.now()
+      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || 'Unknown URL'
+      const options = args[1] || {}
+      const method = options.method || 'GET'
+
+      // Filter sensitive headers before logging
+      const sanitizedHeaders = options.headers ?
+        Object.fromEntries(
+          Object.entries(options.headers).map(([key, value]) =>
+            /authorization|api-key|token/i.test(key) ? [key, '[REDACTED]'] : [key, value]
+          )
+        ) : 'None'
+
+      try {
+        addLog('info', 'Network Request (fetch)', {
+          method,
+          url,
+          headers: JSON.stringify(sanitizedHeaders),
+          timestamp: new Date().toISOString()
+        })
+      } catch (logError) {
+        // Don't break fetch if logging fails
+        console.error('Failed to log fetch request:', logError)
+      }
+
+      try {
+        const response = await originalFetch(...args)
+        const duration = Date.now() - startTime
+
+        try {
+          addLog('success', 'Network Response (fetch)', {
+            method,
+            url,
+            status: response.status,
+            statusText: response.statusText,
+            duration: `${duration}ms`,
+            responseSize: response.headers.get('content-length') || 'Unknown',
+            contentType: response.headers.get('content-type'),
+            timestamp: new Date().toISOString()
+          })
+        } catch (logError) {
+          console.error('Failed to log fetch response:', logError)
+        }
+
+        return response
+      } catch (error) {
+        const duration = Date.now() - startTime
+        try {
+          addLog('error', 'Network Error (fetch)', {
+            method,
+            url,
+            error: error?.message || error?.toString(),
+            duration: `${duration}ms`,
+            timestamp: new Date().toISOString()
+          })
+        } catch (logError) {
+          console.error('Failed to log fetch error:', logError)
+        }
+        throw error
+      }
+    }
+
+    // Intercept XMLHttpRequest for network request visibility
+    // Use WeakMap to prevent metadata conflicts with reused XHR objects
+    const xhrMetaMap = new WeakMap()
+    const originalXHROpen = XMLHttpRequest.prototype.open
+    const originalXHRSend = XMLHttpRequest.prototype.send
+
+    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+      // Store metadata for this specific XHR instance
+      xhrMetaMap.set(this, {
+        method,
+        url,
+        startTime: Date.now()
+      })
+
+      try {
+        addLog('info', 'Network Request (XHR)', {
+          method,
+          url,
+          timestamp: new Date().toISOString()
+        })
+      } catch (logError) {
+        console.error('Failed to log XHR request:', logError)
+      }
+
+      return originalXHROpen.apply(this, [method, url, ...rest])
+    }
+
+    XMLHttpRequest.prototype.send = function(...args) {
+      const meta = xhrMetaMap.get(this)
+
+      this.addEventListener('load', () => {
+        const duration = meta ? (Date.now() - meta.startTime) : 0
+
+        try {
+          addLog('success', 'Network Response (XHR)', {
+            method: meta?.method,
+            url: meta?.url,
+            status: this.status,
+            statusText: this.statusText,
+            duration: `${duration}ms`,
+            responseSize: this.response?.length || 'Unknown',
+            timestamp: new Date().toISOString()
+          })
+        } catch (logError) {
+          console.error('Failed to log XHR response:', logError)
+        }
+      })
+
+      this.addEventListener('error', () => {
+        const duration = meta ? (Date.now() - meta.startTime) : 0
+
+        try {
+          addLog('error', 'Network Error (XHR)', {
+            method: meta?.method,
+            url: meta?.url,
+            duration: `${duration}ms`,
+            timestamp: new Date().toISOString()
+          })
+        } catch (logError) {
+          console.error('Failed to log XHR error:', logError)
+        }
+      })
+
+      return originalXHRSend.apply(this, args)
+    }
+
     window.addEventListener('error', handleError)
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
 
@@ -154,6 +285,9 @@ export function LogProvider({ children }) {
       console.error = originalError
       console.warn = originalWarn
       console['log'] = originalLog
+      window.fetch = originalFetch
+      XMLHttpRequest.prototype.open = originalXHROpen
+      XMLHttpRequest.prototype.send = originalXHRSend
     }
   }, [addLog])
 
