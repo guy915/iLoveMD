@@ -1,10 +1,7 @@
 # Contributing to AI Doc Prep
 
-Thank you for your interest in contributing to AI Doc Prep! This document provides guidelines and instructions for contributing to the project.
-
 ## Table of Contents
 
-- [Code of Conduct](#code-of-conduct)
 - [Getting Started](#getting-started)
 - [Development Workflow](#development-workflow)
 - [Code Style](#code-style)
@@ -12,10 +9,6 @@ Thank you for your interest in contributing to AI Doc Prep! This document provid
 - [Submitting Changes](#submitting-changes)
 - [Reporting Bugs](#reporting-bugs)
 - [Suggesting Features](#suggesting-features)
-
-## Code of Conduct
-
-This project follows a simple code of conduct: Be respectful, professional, and constructive in all interactions.
 
 ## Getting Started
 
@@ -48,12 +41,41 @@ This project follows a simple code of conduct: Be respectful, professional, and 
 
 ### Project Structure
 
-See **README.md** for complete project structure. Key directories:
+Key directories:
 - `src/app/` - Next.js pages and API routes (App Router)
 - `src/components/` - React components (layout, common, tools, home)
 - `src/lib/` - Business logic (processors, API clients, utilities)
 - `src/hooks/` - Custom React hooks
 - `public/` - Static assets
+
+#### Draft Project Structure
+
+```
+ai-doc-prep/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── layout.js           # Root layout with diagnostic logging
+│   │   ├── page.js             # Homepage with tool tiles
+│   │   ├── pdf-to-markdown/    # PDF tool (complete)
+│   │   ├── loading.js          # Global loading state
+│   │   ├── not-found.js        # Custom 404 page
+│   │   └── api/
+│   │       └── marker/         # Proxy to Marker API
+│   ├── components/             # React components
+│   │   ├── layout/             # Header, Footer, GlobalDiagnosticPanel
+│   │   ├── common/             # Button, FileUpload, ErrorBoundary
+│   │   └── home/               # ToolTile
+│   ├── contexts/               # React Context providers
+│   │   └── LogContext.js       # Diagnostic logging context
+│   ├── lib/                    # Business logic
+│   │   ├── constants.js        # Centralized constants
+│   │   └── utils/              # downloadUtils, classNames
+│   └── hooks/                  # Custom React hooks
+│       └── useLocalStorage.js  # localStorage wrapper
+├── assets/                     # Test files and resources
+├── public/                     # Static assets
+└── README.md
+```
 
 ## Development Workflow
 
@@ -287,25 +309,7 @@ When contributing, keep these principles in mind:
 ## Key Constraints
 
 - **No TypeScript**: Project uses JavaScript only
-- **No Dark Mode**: Light mode only for simplicity
 - **No Complex State Management**: Keep it component-level
 - **No Server-Side File Storage**: Everything client-side or proxied
 - **No Authentication**: Anonymous by design
 - **No Analytics**: Privacy-first approach
-
-## Questions?
-
-If you have questions about contributing:
-
-1. Check the documentation in the repo
-2. Read CLAUDE.md for project context
-3. Open a discussion on GitHub
-4. Reach out to maintainers
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the same license as the project.
-
----
-
-**Thank you for contributing to AI Doc Prep!**
