@@ -8,6 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Critical Diagnostic Logging Fixes** (2025-11-12):
+  - **Fixed log persistence behavior**:
+    - Changed from `localStorage` to `sessionStorage` in LogContext.js
+    - Logs now reset on tab/browser close (not persist across sessions)
+    - Still persist during navigation within same tab/session
+    - User feedback: "they're not resetting period, this is not what i wanted"
+  - **Implemented 500-log sliding window**:
+    - Added MAX_LOGS constant (500) in LogContext.js
+    - Automatically keeps only latest 500 logs: `.slice(-MAX_LOGS)`
+    - Prevents memory issues from unlimited log growth
+  - **Removed clear button from UI**:
+    - Removed clear button from GlobalDiagnosticPanel.js
+    - User requested: "no need for the clear button"
+    - Header now shows: "Diagnostic Logs (X / max 500)"
+  - **Fixed Ctrl+A text selection**:
+    - Added onKeyDown handler in GlobalDiagnosticPanel.js
+    - Intercepts Ctrl+A to select only log content
+    - Prevents selecting entire page when trying to copy logs
+    - Uses window.getSelection() and document.createRange()
+  - **Uncensored API key in input field**:
+    - Changed input type from "password" to "text" in pdf-to-markdown/page.js
+    - API key now visible as plain text for testing
+    - User feedback: "uncensor the api key, we are just in testing"
+  - **Fixed React hydration error**:
+    - Changed LogContext.js to initialize with empty array on server
+    - Load from sessionStorage only on client mount (useEffect)
+    - Fixes "Text content does not match" error (Server: "0" Client: "10")
+    - Prevents SSR/CSR mismatch on log count display
+  - Build: ✅ | Lint: ✅ | Tested: ✅
+
 - **Log Persistence & Configuration Fixes** (2025-11-11):
   - **Restored test API key as default**:
     - Put back `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ` as default
