@@ -9,13 +9,13 @@ const MAX_LOGS = 500
 
 // Persistent session counter - survives page navigation, resets on browser close
 const getInitialCounter = () => {
-  if (typeof window === 'undefined') return 0
+  if (typeof window === 'undefined') return 1
   try {
     const stored = window.sessionStorage.getItem(LOG_COUNTER_KEY)
-    return stored ? parseInt(stored, 10) : 0
+    return stored ? parseInt(stored, 10) : 1
   } catch (error) {
     console.error('Error loading log counter:', error)
-    return 0
+    return 1
   }
 }
 
@@ -110,7 +110,7 @@ export function LogProvider({ children }) {
 
   const clearLogs = useCallback(() => {
     setLogs([])
-    persistentLogCounter = 0 // Reset counter
+    persistentLogCounter = 1 // Reset counter to 1 (logs start at #1)
     if (typeof window !== 'undefined') {
       try {
         window.sessionStorage.removeItem(LOGS_STORAGE_KEY)
