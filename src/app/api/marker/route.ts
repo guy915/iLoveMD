@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { MarkerSubmitResponse, MarkerPollResponse } from '@/types'
 
+interface MarkerOptions {
+  paginate: boolean
+  use_llm: boolean
+  force_ocr: boolean
+  strip_existing_ocr: boolean
+  disable_image_extraction: boolean
+  output_format: 'markdown' | 'json' | 'html' | 'chunks'
+  langs: string
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const apiKey = formData.get('apiKey') as string | null
+    const optionsJson = formData.get('options') as string | null
 
     if (!file) {
       return NextResponse.json(
@@ -21,16 +32,47 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
+    // Parse options or use defaults
+    let options: MarkerOptions = {
+      paginate: false,
+      use_llm: false,
+      force_ocr: false,
+      strip_existing_ocr: false,
+      disable_image_extraction: false,
+      output_format: 'markdown',
+      langs: 'English'
+    }
+
+    if (optionsJson) {
+      try {
+        options = JSON.parse(optionsJson) as MarkerOptions
+      } catch (err) {
+        console.error('Failed to parse options:', err)
+      }
+    }
+
+    // Log the options being used
+    console.log('[Marker API] Processing with options:', options)
+
     // Prepare form data for Marker API
     const markerFormData = new FormData()
     markerFormData.append('file', file)
 
-    // Default options for now
-    markerFormData.append('output_format', 'markdown')
-    markerFormData.append('langs', 'English')
-    markerFormData.append('paginate', 'false')
-    markerFormData.append('use_llm', 'false')
-    markerFormData.append('force_ocr', 'false')
+    // Add all options to the request
+    markerFormData.append('output_format', options.output_format)
+    markerFormData.append('langs', options.langs)
+    markerFormData.append('paginate', String(options.paginate))
+    markerFormData.append('use_llm', String(options.use_llm))
+    markerFormData.append('force_ocr', String(options.force_ocr))
+
+    // Add conditional options
+    if (options.strip_existing_ocr) {
+      markerFormData.append('strip_existing_ocr', 'true')
+    }
+
+    if (options.disable_image_extraction) {
+      markerFormData.append('disable_image_extraction', 'true')
+    }
 
     // Submit to Marker API
     const response = await fetch('https://www.datalab.to/api/v1/marker', {

@@ -7,6 +7,26 @@ import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
 import type { MarkerSubmitResponse, MarkerPollResponse } from '@/types'
 
+interface MarkerOptions {
+  paginate: boolean
+  use_llm: boolean
+  force_ocr: boolean
+  strip_existing_ocr: boolean
+  disable_image_extraction: boolean
+  output_format: 'markdown' | 'json' | 'html' | 'chunks'
+  langs: string
+}
+
+const DEFAULT_OPTIONS: MarkerOptions = {
+  paginate: false,
+  use_llm: false,
+  force_ocr: false,
+  strip_existing_ocr: false,
+  disable_image_extraction: false,
+  output_format: 'markdown',
+  langs: 'English'
+}
+
 export default function PdfToMarkdownPage() {
   // API key - defaults to test key, not persisted across sessions
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
@@ -15,8 +35,43 @@ export default function PdfToMarkdownPage() {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
 
+  // Options with localStorage persistence
+  const [options, setOptions] = useState<MarkerOptions>(DEFAULT_OPTIONS)
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+
   // Use global logging context (do not destructure clearLogs - we never clear logs)
   const { addLog } = useLogs()
+
+  // Load options from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedOptions = localStorage.getItem('markerOptions')
+      if (savedOptions) {
+        try {
+          const parsed = JSON.parse(savedOptions) as MarkerOptions
+          setOptions(parsed)
+          addLog('info', 'Loaded saved options from localStorage', { options: parsed })
+        } catch (err) {
+          addLog('error', 'Failed to parse saved options', { error: String(err) })
+        }
+      }
+    }
+  }, [addLog])
+
+  // Save options to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('markerOptions', JSON.stringify(options))
+    }
+  }, [options])
+
+  const handleOptionChange = (key: keyof MarkerOptions, value: boolean | string) => {
+    setOptions(prev => {
+      const newOptions = { ...prev, [key]: value }
+      addLog('info', `Option changed: ${key}`, { newValue: value, allOptions: newOptions })
+      return newOptions
+    })
+  }
 
   // Log component mount and API key state
   useEffect(() => {
@@ -67,11 +122,13 @@ export default function PdfToMarkdownPage() {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('apiKey', apiKey)
+      formData.append('options', JSON.stringify(options))
 
       addLog('info', 'Submitting to Marker API via /api/marker endpoint', {
         endpoint: '/api/marker',
         method: 'POST',
-        fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`
+        fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        options: options
       })
 
       const submitStartTime = Date.now()
@@ -171,35 +228,62 @@ export default function PdfToMarkdownPage() {
             status: pollData.status
           })
 
-          // Get the markdown content
-          const markdown = pollData.markdown
+          // Get the content (field name is 'markdown' regardless of output format)
+          const content = pollData.markdown
 
-          if (!markdown) {
-            addLog('error', 'No markdown field in response!', {
+          if (!content) {
+            addLog('error', 'No content in response!', {
               receivedFields: Object.keys(pollData),
               status: pollData.status
             })
-            throw new Error('No markdown content received from API')
+            throw new Error('No content received from API')
           }
 
-          addLog('info', 'Markdown content received', {
-            length: `${markdown.length} characters`,
-            sizeKB: `${(markdown.length / 1024).toFixed(2)}KB`,
-            preview: markdown.substring(0, 200)
+          addLog('info', `Content received (format: ${options.output_format})`, {
+            length: `${content.length} characters`,
+            sizeKB: `${(content.length / 1024).toFixed(2)}KB`,
+            preview: content.substring(0, 200),
+            outputFormat: options.output_format
           })
 
-          const filename = replaceExtension(file.name, 'md')
+          // Determine file extension and mime type based on output format
+          let extension = 'md'
+          let mimeType = 'text/markdown'
+
+          switch (options.output_format) {
+            case 'json':
+              extension = 'json'
+              mimeType = 'application/json'
+              break
+            case 'html':
+              extension = 'html'
+              mimeType = 'text/html'
+              break
+            case 'chunks':
+              extension = 'json'
+              mimeType = 'application/json'
+              break
+            case 'markdown':
+            default:
+              extension = 'md'
+              mimeType = 'text/markdown'
+              break
+          }
+
+          const filename = replaceExtension(file.name, extension)
           addLog('info', `Triggering file download`, {
             originalFile: file.name,
             outputFile: filename,
-            mimeType: 'text/markdown'
+            mimeType: mimeType,
+            outputFormat: options.output_format
           })
 
-          downloadFile(markdown, filename, 'text/markdown')
+          downloadFile(content, filename, mimeType)
 
           addLog('success', 'File download triggered successfully', {
             filename: filename,
-            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
+            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`,
+            outputFormat: options.output_format
           })
 
           setStatus('Conversion complete! File downloaded.')
@@ -280,6 +364,136 @@ export default function PdfToMarkdownPage() {
           onFileSelect={handleFileSelect}
           maxSize={200 * 1024 * 1024} // 200MB
         />
+      </div>
+
+      {/* Options Section */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Conversion Options</h2>
+          <button
+            onClick={() => {
+              setShowAdvancedOptions(!showAdvancedOptions)
+              addLog('info', `Advanced options ${showAdvancedOptions ? 'collapsed' : 'expanded'}`)
+            }}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            type="button"
+          >
+            {showAdvancedOptions ? 'Hide Advanced' : 'Show Advanced'}
+          </button>
+        </div>
+
+        {/* Output Format */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Output Format
+          </label>
+          <select
+            value={options.output_format}
+            onChange={(e) => handleOptionChange('output_format', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={processing}
+          >
+            <option value="markdown">Markdown (.md)</option>
+            <option value="json">JSON (.json)</option>
+            <option value="html">HTML (.html)</option>
+            <option value="chunks">Chunks (.json)</option>
+          </select>
+        </div>
+
+        {/* Basic Options */}
+        <div className="space-y-3 mb-4">
+          <label className="flex items-start">
+            <input
+              type="checkbox"
+              checked={options.paginate}
+              onChange={(e) => handleOptionChange('paginate', e.target.checked)}
+              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              disabled={processing}
+            />
+            <span className="ml-3">
+              <span className="block text-sm font-medium text-gray-900">Add page separators</span>
+              <span className="block text-sm text-gray-500">Include page breaks in the output</span>
+            </span>
+          </label>
+
+          <label className="flex items-start">
+            <input
+              type="checkbox"
+              checked={options.use_llm}
+              onChange={(e) => handleOptionChange('use_llm', e.target.checked)}
+              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              disabled={processing}
+            />
+            <span className="ml-3">
+              <span className="block text-sm font-medium text-gray-900">Use LLM enhancement</span>
+              <span className="block text-sm text-gray-500">Improve accuracy with AI (slower, costs more)</span>
+            </span>
+          </label>
+        </div>
+
+        {/* Advanced Options */}
+        {showAdvancedOptions && (
+          <div className="space-y-3 pt-4 border-t border-gray-200">
+            <label className="flex items-start">
+              <input
+                type="checkbox"
+                checked={options.force_ocr}
+                onChange={(e) => handleOptionChange('force_ocr', e.target.checked)}
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={processing}
+              />
+              <span className="ml-3">
+                <span className="block text-sm font-medium text-gray-900">Force OCR</span>
+                <span className="block text-sm text-gray-500">Run OCR on entire document, even if text exists</span>
+              </span>
+            </label>
+
+            <label className="flex items-start">
+              <input
+                type="checkbox"
+                checked={options.strip_existing_ocr}
+                onChange={(e) => handleOptionChange('strip_existing_ocr', e.target.checked)}
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={processing}
+              />
+              <span className="ml-3">
+                <span className="block text-sm font-medium text-gray-900">Strip existing OCR</span>
+                <span className="block text-sm text-gray-500">Remove all existing OCR text and re-process</span>
+              </span>
+            </label>
+
+            <label className="flex items-start">
+              <input
+                type="checkbox"
+                checked={options.disable_image_extraction}
+                onChange={(e) => handleOptionChange('disable_image_extraction', e.target.checked)}
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={processing}
+              />
+              <span className="ml-3">
+                <span className="block text-sm font-medium text-gray-900">Disable image extraction</span>
+                <span className="block text-sm text-gray-500">Skip extracting images from the PDF</span>
+              </span>
+            </label>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Language
+              </label>
+              <input
+                type="text"
+                value={options.langs}
+                onChange={(e) => handleOptionChange('langs', e.target.value)}
+                placeholder="e.g., English, Spanish, French"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={processing}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Specify the language(s) in the document for better OCR accuracy
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Status Messages */}
