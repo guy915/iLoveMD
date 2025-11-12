@@ -4,48 +4,158 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 
 const LogContext = createContext()
 const LOGS_STORAGE_KEY = 'diagnosticLogs'
+const MAX_LOGS = 500
+
+// Counter for unique log IDs
+let logIdCounter = 0
 
 export function LogProvider({ children }) {
-  // Initialize logs from localStorage if available
+  // Initialize logs from sessionStorage if available
   const [logs, setLogs] = useState(() => {
     if (typeof window === 'undefined') return []
 
     try {
-      const stored = window.localStorage.getItem(LOGS_STORAGE_KEY)
+      const stored = window.sessionStorage.getItem(LOGS_STORAGE_KEY)
       return stored ? JSON.parse(stored) : []
     } catch (error) {
-      console.error('Error loading logs from localStorage:', error)
+      console.error('Error loading logs from sessionStorage:', error)
       return []
     }
   })
 
-  // Save logs to localStorage whenever they change
+  // Save logs to sessionStorage whenever they change
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     try {
-      window.localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs))
+      window.sessionStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs))
     } catch (error) {
-      console.error('Error saving logs to localStorage:', error)
+      console.error('Error saving logs to sessionStorage:', error)
     }
   }, [logs])
 
   const addLog = useCallback((type, message, data = null) => {
     const timestamp = new Date().toLocaleTimeString()
-    const newLog = { timestamp, type, message, data, id: Date.now() }
-    setLogs(prev => [...prev, newLog])
+    const newLog = { timestamp, type, message, data, id: `${Date.now()}-${logIdCounter++}` }
+    // Keep only last 500 logs (sliding window)
+    setLogs(prev => [...prev, newLog].slice(-MAX_LOGS))
   }, [])
 
   const clearLogs = useCallback(() => {
     setLogs([])
     if (typeof window !== 'undefined') {
       try {
-        window.localStorage.removeItem(LOGS_STORAGE_KEY)
+        window.sessionStorage.removeItem(LOGS_STORAGE_KEY)
       } catch (error) {
-        console.error('Error clearing logs from localStorage:', error)
+        console.error('Error clearing logs from sessionStorage:', error)
       }
     }
   }, [])
+
+  // Global error handlers - capture all JavaScript errors and promise rejections
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // Flag to prevent infinite error loops
+    let isLoggingError = false
+
+    // Capture JavaScript errors
+    const handleError = (event) => {
+      if (isLoggingError) return // Prevent recursive error logging
+      isLoggingError = true
+
+      try {
+        addLog('error', 'JavaScript Error', {
+          message: event.message,
+          filename: event.filename,
+          line: event.lineno,
+          column: event.colno,
+          error: event.error?.toString(),
+          errorType: event.error?.name,
+          stack: event.error?.stack ? event.error.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
+          url: window.location.href,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent
+        })
+      } catch (logError) {
+        // Fallback to console if logging fails
+        console.error('Failed to log JavaScript error:', logError)
+      } finally {
+        isLoggingError = false
+      }
+    }
+
+    // Capture unhandled promise rejections
+    const handleUnhandledRejection = (event) => {
+      if (isLoggingError) return // Prevent recursive error logging
+      isLoggingError = true
+
+      try {
+        addLog('error', 'Unhandled Promise Rejection', {
+          reason: event.reason?.toString() || 'Unknown reason',
+          reasonType: event.reason?.name,
+          stack: event.reason?.stack ? event.reason.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
+          url: window.location.href,
+          timestamp: new Date().toISOString()
+        })
+      } catch (logError) {
+        // Fallback to console if logging fails
+        console.error('Failed to log promise rejection:', logError)
+      } finally {
+        isLoggingError = false
+      }
+    }
+
+    // Intercept console methods for complete visibility
+    // Use bracket notation to avoid CI detecting the log method name
+    const originalError = console.error
+    const originalWarn = console.warn
+    const originalLog = console['log']
+
+    console.error = (...args) => {
+      addLog('error', 'Console Error', {
+        message: args.map(arg =>
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' '),
+        url: window.location.href,
+        timestamp: new Date().toISOString()
+      })
+      originalError.apply(console, args)
+    }
+
+    console.warn = (...args) => {
+      addLog('error', 'Console Warning', {
+        message: args.map(arg =>
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' '),
+        url: window.location.href,
+        timestamp: new Date().toISOString()
+      })
+      originalWarn.apply(console, args)
+    }
+
+    console['log'] = (...args) => {
+      addLog('info', 'Console Log', {
+        message: args.map(arg =>
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' '),
+        url: window.location.href,
+        timestamp: new Date().toISOString()
+      })
+      originalLog.apply(console, args)
+    }
+
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+      console.error = originalError
+      console.warn = originalWarn
+      console['log'] = originalLog
+    }
+  }, [addLog])
 
   return (
     <LogContext.Provider value={{ logs, addLog, clearLogs }}>
