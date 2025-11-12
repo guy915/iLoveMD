@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **PDF to Markdown Configuration Options** (2025-11-12):
+  - **Simple, focused options UI** for PDF conversion with localStorage persistence:
+    - **Configuration Options** (all visible):
+      - Add page separators - Include page breaks in output
+      - Format lines - Apply line formatting to improve readability
+      - Use LLM enhancement - Improve accuracy with AI (slower, costs more)
+      - Disable image extraction - Skip extracting images and replace with descriptions (requires LLM)
+    - **Fixed Settings** (always applied):
+      - Output format: Markdown (.md)
+      - Language: English
+  - **localStorage Persistence**:
+    - All option selections saved to localStorage (`markerOptions` key)
+    - Options automatically restore on page load
+    - Persists across browser sessions
+    - Default options used on first visit
+  - **API Integration**:
+    - Options sent to `/api/marker` endpoint as JSON
+    - Backend parses and applies options to Marker API request
+    - All boolean options converted to strings for API compatibility
+    - Conditional options only sent when enabled
+  - **File Download Logic**:
+    - Dynamic file extension based on output format (.md, .json, .html)
+    - Correct MIME types for each format
+    - Downloads maintain original filename with new extension
+  - **Diagnostic Logging**:
+    - Log when options are loaded from localStorage
+    - Log each option change with new value
+    - Log all options included in API request
+    - Log output format in conversion complete message
+    - Log file download details with format information
+  - **UI/UX Improvements**:
+    - Simple, clean interface with all options visible
+    - Disable image extraction checkbox only enabled when LLM is on
+    - Auto-unchecks image extraction when LLM is disabled
+    - All options disabled during processing
+    - Clear descriptions for each option
+    - Professional checkbox layout with labels
+    - Responsive design for all screen sizes
+  - **Implementation Details**:
+    - Interface definition for `MarkerOptions` in both frontend and backend
+    - Type-safe option handling with TypeScript
+    - Fallback to default options if localStorage is empty or corrupted
+    - Options validation and error handling
+  - **Files Modified**:
+    - `src/app/pdf-to-markdown/page.tsx` - Added options UI and state management
+    - `src/app/api/marker/route.ts` - Added options parsing and API integration
+  - Build: ✅ | Lint: ✅ | Tested: ✅
+
 ### Changed
 - **TypeScript Refactoring** (2025-11-12):
   - **Migrated codebase from JavaScript to TypeScript** for improved type safety and developer experience:
