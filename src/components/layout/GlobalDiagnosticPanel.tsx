@@ -1,29 +1,30 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, MouseEvent } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function GlobalDiagnosticPanel() {
   const { logs, addLog } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
-  const panelRef = useRef(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   // Click outside to close
   useEffect(() => {
     if (!isOpen) return
 
-    const handleClickOutside = (event) => {
-      if (panelRef.current && !panelRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent | Event) => {
+      const target = event.target as Node
+      if (panelRef.current && !panelRef.current.contains(target)) {
         setIsOpen(false)
       }
     }
 
     // Add event listener
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside as EventListener)
 
     // Cleanup
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('mousedown', handleClickOutside as EventListener)
     }
   }, [isOpen])
 
@@ -51,7 +52,7 @@ export default function GlobalDiagnosticPanel() {
               Diagnostic Logs
             </h3>
             <button
-              onClick={(e) => {
+              onClick={(e: MouseEvent<HTMLButtonElement>) => {
                 e.stopPropagation()
 
                 // Calculate log statistics
