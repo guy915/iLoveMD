@@ -48,24 +48,12 @@ This project follows a simple code of conduct: Be respectful, professional, and 
 
 ### Project Structure
 
-```
-ai-doc-prep/
-├── src/
-│   ├── app/                 # Next.js pages (App Router)
-│   ├── components/          # React components
-│   │   ├── layout/          # Header, Footer
-│   │   ├── common/          # Reusable UI components
-│   │   ├── tools/           # Tool-specific components
-│   │   └── home/            # Homepage components
-│   ├── lib/                 # Business logic
-│   │   ├── processors/      # File processing logic
-│   │   ├── api/             # API client functions
-│   │   ├── utils/           # Utility functions
-│   │   └── storage/         # localStorage wrappers
-│   └── hooks/               # Custom React hooks
-├── public/                  # Static assets
-└── [documentation files]    # MD files for project docs
-```
+See **README.md** for complete project structure. Key directories:
+- `src/app/` - Next.js pages and API routes (App Router)
+- `src/components/` - React components (layout, common, tools, home)
+- `src/lib/` - Business logic (processors, API clients, utilities)
+- `src/hooks/` - Custom React hooks
+- `public/` - Static assets
 
 ## Development Workflow
 

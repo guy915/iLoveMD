@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Documentation Consolidation & Cleanup** (2025-11-12):
+  - **Removed ~600 lines of redundant and duplicate content** across all documentation files
+  - **CLAUDE.md** (1002 → ~750 lines):
+    - Removed all references to deleted files (IMPLEMENTATION_GUIDE.md, DESIGN_SYSTEM.md, PROJECT_PLAN.md)
+    - Replaced detailed project structure with reference to README.md
+    - Consolidated two testing sections into brief summary referencing CONTRIBUTING.md
+    - Simplified code style section to reference CONTRIBUTING.md for complete guidelines
+    - Updated "Key Documentation Files" table to show only existing files
+    - Updated "What to Do When Starting a Session" with correct file references
+    - Updated "When User Says..." section with accurate references
+  - **CHECKLIST.md** (778 → 517 lines):
+    - Replaced 270-line "Notes & Issues" section with reference to CHANGELOG.md
+    - All historical notes preserved in CHANGELOG.md (no information lost)
+    - Section now reserved for current session notes only
+  - **CONTRIBUTING.md**:
+    - Replaced detailed project structure with brief summary referencing README.md
+    - Kept comprehensive code style guidelines as primary source
+  - **README.md**:
+    - Simplified feature descriptions for unimplemented tools (HTML, Merge)
+    - Added note that PDF advanced options are planned for future releases
+    - Updated Usage section to reflect actual current MVP features
+    - Updated Troubleshooting to remove references to non-existent options
+    - More accurate representation of current project state
+  - **Benefits**:
+    - Eliminated redundancy: project structure, code style, testing guidelines now in single locations
+    - Single source of truth for each type of information
+    - All files reference each other appropriately
+    - Documentation easier to maintain
+    - No information lost (moved to appropriate files)
+  - Build: ✅ | Files changed: 4 | Lines removed: 595 | Lines added: 52
+
 - **Diagnostic Log Copy Feature Improvements** (2025-11-12):
   - **Enhanced copy functionality** in GlobalDiagnosticPanel component:
     - **Added "ABOUT THESE DIAGNOSTIC LOGS" section**:

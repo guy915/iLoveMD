@@ -4,6 +4,26 @@
 
 AI Doc Prep is a client-heavy web application built with Next.js that processes documents for LLM consumption. Most processing happens client-side for privacy and cost efficiency, with API routes used only when necessary.
 
+## Design Philosophy
+
+1. **Privacy First** - No data storage, no tracking, no accounts
+2. **Client-Heavy** - Most processing in browser for privacy and cost
+3. **User's API Keys** - Users bring their own keys, we provide the interface
+4. **Simple** - Single-purpose tools, no complex pipelines
+5. **Free** - Hosted on Vercel free tier, no server costs
+
+## Tech Stack Decisions
+
+| Technology | Choice | Reason |
+|------------|--------|--------|
+| Framework | Next.js 14 (App Router) | Best for learning, great docs, Vercel integration |
+| Styling | Tailwind CSS | Fast development, minimal CSS files |
+| Language | JavaScript | Student's current skill level, simplicity |
+| Hosting | Vercel | Free tier, automatic deployments, zero config |
+| State | Component-level + localStorage + React Context | Simple, no complex state management needed |
+| PDF Conversion | Marker API | Best quality for LLM preparation |
+| HTML Processing | Turndown.js + Readability | Client-side, fast, private |
+
 ## High-Level Architecture
 
 ```
@@ -466,6 +486,25 @@ downloadFile(content, filename)
 - Mobile responsiveness
 - Large file handling
 - Edge cases
+
+## Design System Summary
+
+### Theme
+- **Light mode only** - Dark mode removed for simplicity
+- Clean, minimal design inspired by iLovePDF
+
+### Color Palette
+```
+Primary:    #3b82f6 (blue-500) - Main actions, links
+Success:    #10b981 (green-500) - Successful operations
+Error:      #ef4444 (red-500) - Errors, warnings
+Background: #ffffff - Page background
+Surface:    #f9fafb (gray-50) - Cards, panels
+Text:       #111827 (gray-900) - Primary text
+Border:     #e5e7eb (gray-200) - Dividers
+```
+
+Full design details (typography, spacing, components) are defined in code via Tailwind CSS configuration and component implementations.
 
 ## Deployment Architecture
 
