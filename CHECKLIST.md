@@ -2,7 +2,7 @@
 
 Track your progress through each implementation phase. Update checkboxes as you complete tasks.
 
-**Current Status:** Phase 3 Complete (MVP) | Ready for Phase 4
+**Current Status:** Phase 3
 
 ---
 
@@ -40,7 +40,6 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 - [x] Configure Tailwind
   - [x] Update tailwind.config.js with custom colors
-  - [x] Enable dark mode (class strategy)
   - [x] Test Tailwind works
 
 - [x] Create globals.css
@@ -143,8 +142,6 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 **Phase 2 Complete:** [x]
 
-**Note:** Dark mode support was removed in favor of light mode only. All `dark:` classes have been stripped from components.
-
 ---
 
 ## Phase 3: PDF to Markdown Tool
@@ -179,7 +176,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] 'use client' directive
   - [x] State management (file, processing, status, error)
   - [x] API key input (pre-filled with test key for development)
-  - [x] Options panel (currently simplified, advanced options deferred)
+  - [ ] Options panel
   - [x] File upload integration with FileUpload component
   - [x] Convert button with loading states
   - [x] Status messages with comprehensive logging
@@ -192,7 +189,6 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] Poll for results
   - [x] Handle success and download
   - [x] Comprehensive error handling
-  - Note: Advanced options (output format, paginate, etc.) deferred to future iteration
 
 - [x] API key management
   - [x] Input field (type="text" for testing visibility)
@@ -209,13 +205,13 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [x] Verify file downloads correctly
 - [x] Check error messages display
 - [x] Comprehensive diagnostic logging implemented
-- [ ] Upload large PDF (> 100MB) - deferred
-- [ ] Test all output formats - deferred (currently markdown only)
-- [ ] Test with paginate enabled - deferred
-- [ ] Test with LLM enhancement - deferred
-- [ ] Test fast vs accurate mode - deferred
+- [ ] Upload large PDF (> 100MB)
+- [ ] Test all output formats
+- [ ] Test with paginate enabled
+- [ ] Test with LLM enhancement
+- [ ] Test fast vs accurate mode
 
-**Phase 3 Complete:** [x] - MVP complete, advanced options deferred
+**Phase 3 Complete:** [ ]
 
 ---
 
@@ -410,14 +406,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] Test on Edge (latest)
 - [ ] Fix any browser-specific issues
 
-### 6.5 Dark Mode
-
-- [ ] Verify dark mode works on all pages
-- [ ] Check color contrast in dark mode
-- [ ] Test automatic system preference detection
-- [ ] Add theme toggle (optional, future)
-
-### 6.6 Accessibility
+### 6.5 Accessibility
 
 - [ ] Check keyboard navigation (tab through site)
 - [ ] Add aria-labels where needed
@@ -425,14 +414,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] Test with screen reader (optional)
 - [ ] Check color contrast ratios
 
-### 6.7 Performance
+### 6.6 Performance
 
 - [ ] Check Lighthouse score
 - [ ] Optimize any slow pages
 - [ ] Check bundle size
 - [ ] Lazy load if needed
 
-### 6.8 Final Testing
+### 6.7 Final Testing
 
 - [ ] All features work end-to-end
 - [ ] localStorage persists correctly
@@ -441,14 +430,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] No broken styles
 - [ ] All forms validate properly
 
-### 6.9 Documentation Updates
+### 6.8 Documentation Updates
 
 - [ ] Update README if needed
 - [ ] Add screenshots (optional)
 - [ ] Update any changed API details
 - [ ] Mark all checklist items
 
-### 6.10 Deployment
+### 6.9 Deployment
 
 - [ ] Commit all changes to git
 - [ ] Push to GitHub
@@ -460,13 +449,6 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] Verify all tools work on production
 - [ ] Check API routes work on production
 - [ ] Test with real API keys on production
-
-### 6.11 Post-Deployment
-
-- [ ] Share with friends
-- [ ] Gather initial feedback
-- [ ] Document any issues found
-- [ ] Plan next improvements
 
 **Phase 6 Complete:** [ ]
 
@@ -486,6 +468,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 Track ideas for future versions:
 
+- [ ] Add dark mode
 - [ ] Add token counter tool
 - [ ] Add markdown splitter tool
 - [ ] Implement batch processing
@@ -496,21 +479,3 @@ Track ideas for future versions:
 - [ ] Add tutorial/onboarding
 - [ ] Add custom output filename
 - [ ] Support for more file formats
-
----
-
-## Notes & Issues
-
-**For detailed development history, see CHANGELOG.md**
-
-Use this section for current session notes only:
-
-```
-[Add notes here during active development]
-```
-
----
-
-**Last Updated:** 2025-11-12
-**Current Phase:** Phase 3 Complete (MVP)
-**Next Task:** Begin Phase 4 - HTML to Markdown Tool
