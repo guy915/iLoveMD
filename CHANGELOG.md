@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Hydration Error in GlobalDiagnosticPanel** (2025-11-12):
+  - **Fixed React hydration mismatch** in diagnostic logs button:
+    - Added `suppressHydrationWarning` to log count badge (GlobalDiagnosticPanel.js:39)
+    - Resolved "Text content does not match server-rendered HTML" error
+    - Server renders "0" logs, client may have accumulated logs during hydration
+    - Badge now renders correctly without console errors
+  - Build: ✅ | Lint: ✅ | Files changed: 1
+
+- **API Key Persistence Removed** (2025-11-12):
+  - **Changed API key behavior** in PDF to Markdown tool:
+    - Removed localStorage persistence (replaced `useLocalStorage` with `useState`)
+    - API key now resets to test key on every new session
+    - Test key (`w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`) auto-loads by default
+    - Updated UI text to reflect non-persistent behavior
+    - Confirmed input type is `password` for security
+  - Build: ✅ | Lint: ✅ | Files changed: 1 (pdf-to-markdown/page.js)
+
 ### Changed
 - **Documentation Consolidation & Cleanup** (2025-11-12):
   - **Removed ~600 lines of redundant and duplicate content** across all documentation files
