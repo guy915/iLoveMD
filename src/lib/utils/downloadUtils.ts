@@ -1,10 +1,10 @@
 /**
  * Triggers a file download in the browser
- * @param {string} content - The file content
- * @param {string} filename - The filename to save as
- * @param {string} mimeType - The MIME type of the file
+ * @param content - The file content
+ * @param filename - The filename to save as
+ * @param mimeType - The MIME type of the file
  */
-export function downloadFile(content, filename, mimeType = 'text/markdown') {
+export function downloadFile(content: string, filename: string, mimeType: string = 'text/markdown'): void {
   const blob = new Blob([content], { type: mimeType })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -18,11 +18,11 @@ export function downloadFile(content, filename, mimeType = 'text/markdown') {
 
 /**
  * Replaces file extension with a new one
- * @param {string} filename - The original filename
- * @param {string} newExtension - The new extension (without dot)
- * @returns {string} The filename with new extension
+ * @param filename - The original filename
+ * @param newExtension - The new extension (without dot)
+ * @returns The filename with new extension
  */
-export function replaceExtension(filename, newExtension) {
+export function replaceExtension(filename: string, newExtension: string): string {
   const parts = filename.split('.')
 
   // Handle dotfiles (files starting with .) - they should get extension appended

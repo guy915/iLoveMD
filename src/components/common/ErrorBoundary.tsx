@@ -1,6 +1,24 @@
 'use client'
-import { Component, useCallback } from 'react'
+
+import { Component, ReactNode, ErrorInfo, useCallback } from 'react'
 import { useLogs } from '@/contexts/LogContext'
+
+/**
+ * ErrorBoundary state interface
+ */
+interface ErrorBoundaryState {
+  hasError: boolean
+  error: Error | null
+  errorInfo: ErrorInfo | null
+}
+
+/**
+ * ErrorBoundary class props
+ */
+interface ErrorBoundaryClassProps {
+  children: ReactNode
+  onError?: (error: Error, errorInfo: ErrorInfo) => void
+}
 
 /**
  * Error Boundary component to catch and handle React errors
@@ -12,18 +30,18 @@ import { useLogs } from '@/contexts/LogContext'
  *   <YourComponent />
  * </ErrorBoundary>
  */
-class ErrorBoundaryClass extends Component {
-  constructor(props) {
+class ErrorBoundaryClass extends Component<ErrorBoundaryClassProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryClassProps) {
     super(props)
     this.state = { hasError: false, error: null, errorInfo: null }
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI
     return { hasError: true }
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log to diagnostic panel via callback prop
     if (this.props.onError) {
       this.props.onError(error, errorInfo)
@@ -38,11 +56,11 @@ class ErrorBoundaryClass extends Component {
     })
   }
 
-  handleReset = () => {
+  handleReset = (): void => {
     this.setState({ hasError: false, error: null, errorInfo: null })
   }
 
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
       // Custom fallback UI
       return (
@@ -91,10 +109,14 @@ class ErrorBoundaryClass extends Component {
 }
 
 // Functional wrapper to integrate with LogContext
-export default function ErrorBoundary({ children }) {
+interface ErrorBoundaryProps {
+  children: ReactNode
+}
+
+export default function ErrorBoundary({ children }: ErrorBoundaryProps) {
   const { addLog } = useLogs()
 
-  const handleError = useCallback((error, errorInfo) => {
+  const handleError = useCallback((error: Error, errorInfo: ErrorInfo) => {
     addLog('error', 'React Component Error', {
       error: error?.toString(),
       errorName: error?.name,
@@ -112,4 +134,3 @@ export default function ErrorBoundary({ children }) {
     </ErrorBoundaryClass>
   )
 }
-
