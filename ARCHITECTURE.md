@@ -16,6 +16,35 @@ AI Doc Prep is a client-heavy web application built with Next.js that processes 
 | PDF Conversion | Marker API |
 | HTML Processing | Turndown.js + Readability |
 
+## Draft Project Structure
+
+```
+ai-doc-prep/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── layout.js           # Root layout with diagnostic logging
+│   │   ├── page.js             # Homepage with tool tiles
+│   │   ├── pdf-to-markdown/    # PDF tool (complete)
+│   │   ├── loading.js          # Global loading state
+│   │   ├── not-found.js        # Custom 404 page
+│   │   └── api/
+│   │       └── marker/         # Proxy to Marker API
+│   ├── components/             # React components
+│   │   ├── layout/             # Header, Footer, GlobalDiagnosticPanel
+│   │   ├── common/             # Button, FileUpload, ErrorBoundary
+│   │   └── home/               # ToolTile
+│   ├── contexts/               # React Context providers
+│   │   └── LogContext.js       # Diagnostic logging context
+│   ├── lib/                    # Business logic
+│   │   ├── constants.js        # Centralized constants
+│   │   └── utils/              # downloadUtils, classNames
+│   └── hooks/                  # Custom React hooks
+│       └── useLocalStorage.js  # localStorage wrapper
+├── assets/                     # Test files and resources
+├── public/                     # Static assets
+└── README.md
+```
+
 ## High-Level Architecture
 
 ```
@@ -482,7 +511,6 @@ downloadFile(content, filename)
 ## Design System Summary
 
 ### Theme
-- **Light mode only** - Dark mode removed for simplicity
 - Clean, minimal design inspired by iLovePDF
 
 ### Color Palette
