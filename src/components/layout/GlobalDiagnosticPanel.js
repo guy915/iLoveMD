@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function GlobalDiagnosticPanel() {
-  const { logs, clearLogs } = useLogs()
+  const { logs, addLog } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
   const panelRef = useRef(null)
 
@@ -60,6 +60,10 @@ export default function GlobalDiagnosticPanel() {
                   }`
                 ).join('\n\n')
                 navigator.clipboard.writeText(logsText)
+                addLog('info', 'Logs copied to clipboard', {
+                  logCount: logs.length,
+                  timestamp: new Date().toISOString()
+                })
               }}
               className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
             >
