@@ -27,14 +27,7 @@ export default function PdfToMarkdownPage() {
       apiKeyPresent: keyPresent,
       apiKeyLength: keyLength
     })
-
-    // Log API key state if present
-    if (keyPresent) {
-      addLog('info', 'API key loaded from localStorage', {
-        keyLength: keyLength,
-        apiKey: apiKey  // Full key, no censoring in development
-      })
-    }
+    // Note: We don't log the actual API key value for security
   }, [addLog, apiKey])
 
   const handleFileSelect = (selectedFile) => {

@@ -27,7 +27,8 @@ const DEDUP_WINDOW_MS = 50 // Consider logs within 50ms as duplicates (Strict Mo
 
 // Filter out Next.js internal URLs from logging (framework noise)
 const shouldLogUrl = (url) => {
-  if (!url || url === 'Unknown URL') return true
+  // Filter out missing URLs and opaque Next.js RSC fetches
+  if (!url || url === 'Unknown URL') return false
 
   // Filter Next.js internal/development URLs
   const ignorePatterns = [
@@ -68,8 +69,9 @@ export function LogProvider({ children }) {
 
   const addLog = useCallback((type, message, data = null) => {
     // Create a simple hash for deduplication (exclude timestamp from data for better deduplication)
-    const { timestamp, ...dataForHash } = data || {};
-    const hash = `${type}:${message}:${JSON.stringify(dataForHash)}`
+    // Use destructuring to safely exclude timestamp without mutating the object
+    const { timestamp: _, ...dataForHash } = data || {}
+    const hash = `${type}:${message}:${JSON.stringify(Object.keys(dataForHash).length > 0 ? dataForHash : null)}`
     const now = Date.now()
 
     // Check if we've seen this exact log recently (within deduplication window)
