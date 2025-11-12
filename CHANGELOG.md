@@ -598,7 +598,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 2025-11-10 (Phase 1)
 - Project initialized successfully with Next.js 14 and App Router
-- JavaScript chosen over TypeScript per project requirements
 - Tailwind CSS configured with custom primary colors
 - All core dependencies installed and tested
 - Documentation structure established for easy reference
@@ -611,7 +610,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Framework & Language
 - **Next.js 14 with App Router**: Modern approach, better for learning
-- **JavaScript (not TypeScript)**: Matches student's current skill level
 - **Tailwind CSS**: Faster development, no custom CSS files needed
 
 ### Project Structure
