@@ -32,7 +32,7 @@ export function LogProvider({ children }) {
 
   const addLog = useCallback((type, message, data = null) => {
     const timestamp = new Date().toLocaleTimeString()
-    const newLog = { timestamp, type, message, data, id: Date.now() }
+    const newLog = { timestamp, type, message, data, id: Date.now() + Math.random() }
     setLogs(prev => [...prev, newLog])
   }, [])
 
@@ -46,6 +46,40 @@ export function LogProvider({ children }) {
       }
     }
   }, [])
+
+  // Global error handlers - capture all JavaScript errors and promise rejections
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // Capture JavaScript errors
+    const handleError = (event) => {
+      addLog('error', 'JavaScript Error', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error?.toString(),
+        stack: event.error?.stack?.split('\n').slice(0, 5).join('\n')
+      })
+    }
+
+    // Capture unhandled promise rejections
+    const handleUnhandledRejection = (event) => {
+      addLog('error', 'Unhandled Promise Rejection', {
+        reason: event.reason?.toString() || 'Unknown reason',
+        promise: 'Promise rejected',
+        stack: event.reason?.stack?.split('\n').slice(0, 5).join('\n')
+      })
+    }
+
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [addLog])
 
   return (
     <LogContext.Provider value={{ logs, addLog, clearLogs }}>
