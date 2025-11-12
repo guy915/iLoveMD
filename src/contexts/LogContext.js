@@ -135,21 +135,38 @@ export function LogProvider({ children }) {
       isLoggingError = true
 
       try {
-        addLog('error', 'JavaScript Error', {
-          message: event.message,
-          filename: event.filename,
-          line: event.lineno,
-          column: event.colno,
-          error: event.error?.toString(),
-          errorType: event.error?.name,
-          stack: event.error?.stack ? event.error.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
-          url: window.location.href,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent
-        })
+        // Check if this is a resource loading error (img, script, css, etc.)
+        if (event.target && event.target.tagName && !event.error) {
+          const tagName = event.target.tagName.toLowerCase()
+          const resourceUrl = event.target.src || event.target.href || 'Unknown URL'
+
+          // Only log actual resource failures (not Next.js internal resources)
+          if (shouldLogUrl(resourceUrl)) {
+            addLog('error', 'Resource Loading Failed', {
+              resourceType: tagName,
+              resourceUrl,
+              pageUrl: window.location.href,
+              timestamp: new Date().toISOString()
+            })
+          }
+        } else {
+          // JavaScript error
+          addLog('error', 'JavaScript Error', {
+            message: event.message,
+            filename: event.filename,
+            line: event.lineno,
+            column: event.colno,
+            error: event.error?.toString(),
+            errorType: event.error?.name,
+            stack: event.error?.stack ? event.error.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
+            url: window.location.href,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent
+          })
+        }
       } catch (logError) {
         // Fallback to console if logging fails
-        console.error('Failed to log JavaScript error:', logError)
+        console.error('Failed to log error:', logError)
       } finally {
         isLoggingError = false
       }
@@ -373,11 +390,12 @@ export function LogProvider({ children }) {
       return originalXHRSend.apply(this, args)
     }
 
-    window.addEventListener('error', handleError)
+    // Use capture phase for error events to catch resource loading failures
+    window.addEventListener('error', handleError, true)
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
 
     return () => {
-      window.removeEventListener('error', handleError)
+      window.removeEventListener('error', handleError, true)
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       console.error = originalError
       console.warn = originalWarn
