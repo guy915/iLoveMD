@@ -4,25 +4,17 @@
 
 AI Doc Prep is a client-heavy web application built with Next.js that processes documents for LLM consumption. Most processing happens client-side for privacy and cost efficiency, with API routes used only when necessary.
 
-## Design Philosophy
-
-1. **Privacy First** - No data storage, no tracking, no accounts
-2. **Client-Heavy** - Most processing in browser for privacy and cost
-3. **User's API Keys** - Users bring their own keys, we provide the interface
-4. **Simple** - Single-purpose tools, no complex pipelines
-5. **Free** - Hosted on Vercel free tier, no server costs
-
 ## Tech Stack Decisions
 
-| Technology | Choice | Reason |
-|------------|--------|--------|
-| Framework | Next.js 14 (App Router) | Best for learning, great docs, Vercel integration |
-| Styling | Tailwind CSS | Fast development, minimal CSS files |
-| Language | JavaScript | Student's current skill level, simplicity |
-| Hosting | Vercel | Free tier, automatic deployments, zero config |
-| State | Component-level + localStorage + React Context | Simple, no complex state management needed |
-| PDF Conversion | Marker API | Best quality for LLM preparation |
-| HTML Processing | Turndown.js + Readability | Client-side, fast, private |
+| Technology | Choice |
+|------------|--------|
+| Framework | Next.js 14 (App Router) |
+| Styling | Tailwind CSS |
+| Language | JavaScript |
+| Hosting | Vercel |
+| State | Component-level + localStorage + React Context |
+| PDF Conversion | Marker API |
+| HTML Processing | Turndown.js + Readability |
 
 ## High-Level Architecture
 
