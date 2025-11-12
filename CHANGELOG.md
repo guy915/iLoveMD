@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Diagnostic Log Copy Feature Improvements** (2025-11-12):
+  - **Enhanced copy functionality** in GlobalDiagnosticPanel component:
+    - **Added "ABOUT THESE DIAGNOSTIC LOGS" section**:
+      - Introductory context explaining what diagnostic logs are
+      - Describes the logging system's purpose (tracking interactions, events, errors)
+      - Explains benefits for troubleshooting and debugging
+      - Guides users on sharing logs when asking for help
+      - Makes copied logs accessible to anyone unfamiliar with diagnostic logging
+    - **Added comprehensive metadata section** (renamed to "SESSION DETAILS"):
+      - Session date and time with locale formatting
+      - Session start time (extracted from first log timestamp)
+      - Current URL for context
+      - Browser user agent string for environment details
+    - **Added statistics section** with tree-style formatting:
+      - Total log count at a glance
+      - Breakdown by type: Errors, Success, Info
+      - Visual tree structure (├─, └─) for improved readability
+    - **Added legend section**:
+      - Explains ERROR, SUCCESS, INFO log types with descriptions
+      - Color context (shown in red/green/gray in UI)
+      - Log format structure: `#ID [timestamp] TYPE: message`
+      - Explains ID persistence across navigation
+      - Describes data field (JSON format for additional context)
+    - **Removed "HOW TO USE" section**:
+      - Redundant with introductory context
+      - Simplified copy output
+      - User feedback: not needed
+  - **Benefits**:
+    - Copied logs are fully self-documenting
+    - Complete context for anyone viewing logs (user, Claude, other developers)
+    - Makes issue reporting easier and more effective
+    - Professional, comprehensive format
+    - Easier for Claude to debug with full metadata included
+  - **File Modified**: `src/components/layout/GlobalDiagnosticPanel.js`
+  - Build: ✅ | Lint: ✅ | Tested: ✅
+
 ### Fixed
 - **Log Persistence & Configuration Fixes** (2025-11-11):
   - **Restored test API key as default**:
