@@ -106,9 +106,10 @@ export function LogProvider({ children }) {
       }
     }
 
-    // Intercept console.error and console.warn for additional visibility
+    // Intercept console methods for complete visibility
     const originalError = console.error
     const originalWarn = console.warn
+    const originalLog = console.log
 
     console.error = (...args) => {
       addLog('error', 'Console Error', {
@@ -132,6 +133,17 @@ export function LogProvider({ children }) {
       originalWarn.apply(console, args)
     }
 
+    console.log = (...args) => {
+      addLog('info', 'Console Log', {
+        message: args.map(arg =>
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' '),
+        url: window.location.href,
+        timestamp: new Date().toISOString()
+      })
+      originalLog.apply(console, args)
+    }
+
     window.addEventListener('error', handleError)
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
 
@@ -140,6 +152,7 @@ export function LogProvider({ children }) {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       console.error = originalError
       console.warn = originalWarn
+      console.log = originalLog
     }
   }, [addLog])
 
