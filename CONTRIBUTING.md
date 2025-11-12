@@ -76,7 +76,7 @@ git checkout -b feature/your-feature-name
 
 ### General Guidelines
 
-- **Language**: JavaScript (ES6+), NOT TypeScript
+- **Language**: JavaScript (ES6+)
 - **Framework**: Next.js 14 with App Router
 - **Styling**: Tailwind CSS only (no custom CSS files)
 - **State Management**: Component-level + localStorage (no Redux/Context)
@@ -279,7 +279,6 @@ When contributing, keep these principles in mind:
 
 ## Key Constraints
 
-- **No TypeScript**: Project uses JavaScript only
 - **No Complex State Management**: Keep it component-level
 - **No Server-Side File Storage**: Everything client-side or proxied
 - **No Authentication**: Anonymous by design
