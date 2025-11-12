@@ -10,7 +10,7 @@ AI Doc Prep is a client-heavy web application built with Next.js that processes 
 |------------|--------|
 | Framework | Next.js 14 (App Router) |
 | Styling | Tailwind CSS |
-| Language | JavaScript |
+| Languages | JavaScript + TypeScript + CSS + HTML |
 | Hosting | Vercel |
 | State | Component-level + localStorage + React Context |
 | PDF Conversion | Marker API |
