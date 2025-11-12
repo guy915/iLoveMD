@@ -1,3 +1,5 @@
+import type { NavLink, ToolCard } from '@/types'
+
 /**
  * Shared constants for AI Doc Prep application
  */
@@ -16,19 +18,19 @@ export const FILE_SIZE = {
   MAX_FILE_SIZE: GB, // 1GB
   MAX_MERGE_FILES: 50,
   MAX_TOTAL_MERGE_SIZE: GB, // 1GB total
-}
+} as const
 
 // Navigation links for header
-export const NAV_LINKS = [
+export const NAV_LINKS: readonly NavLink[] = [
   { href: '/pdf-to-markdown', label: 'PDF to Markdown', shortLabel: 'PDF' },
   { href: '/html-to-markdown', label: 'HTML to Markdown', shortLabel: 'HTML' },
   { href: '/merge-markdown', label: 'Merge Markdown', shortLabel: 'Markdown' },
   { href: '/help', label: 'Help', shortLabel: 'Help' },
   { href: '/about', label: 'About', shortLabel: 'About' },
-]
+] as const
 
 // Tool cards for homepage
-export const TOOL_CARDS = [
+export const TOOL_CARDS: readonly ToolCard[] = [
   {
     title: 'PDF to Markdown',
     description: 'Convert PDF documents to clean, LLM-optimized markdown using Marker AI. Supports complex layouts, tables, equations, and optional OCR for scanned documents.',
@@ -44,14 +46,14 @@ export const TOOL_CARDS = [
     description: 'Combine multiple markdown files into one. Drag to reorder, customize separators, and optionally generate a table of contents.',
     href: '/merge-markdown',
   },
-]
+] as const
 
 // API endpoints
 export const API_ENDPOINTS = {
   MARKER: '/api/marker',
-}
+} as const
 
 // LocalStorage keys
 export const STORAGE_KEYS = {
   MARKER_API_KEY: 'markerApiKey',
-}
+} as const

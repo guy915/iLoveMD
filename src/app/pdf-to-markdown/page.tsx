@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, ChangeEvent } from 'react'
 import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
+import type { MarkerSubmitResponse, MarkerPollResponse } from '@/types'
 
 export default function PdfToMarkdownPage() {
   // API key - defaults to test key, not persisted across sessions
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
-  const [file, setFile] = useState(null)
+  const [file, setFile] = useState<File | null>(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
@@ -29,7 +30,7 @@ export default function PdfToMarkdownPage() {
     // Note: We don't log the actual API key value for security
   }, [addLog, apiKey])
 
-  const handleFileSelect = (selectedFile) => {
+  const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile)
     setError('')
   }
@@ -80,7 +81,7 @@ export default function PdfToMarkdownPage() {
       })
       const submitDuration = Date.now() - submitStartTime
 
-      const submitData = await submitResponse.json()
+      const submitData = await submitResponse.json() as MarkerSubmitResponse
 
       addLog('success', `Submit response received (${submitDuration}ms)`, {
         status: submitResponse.status,
@@ -90,7 +91,10 @@ export default function PdfToMarkdownPage() {
       })
 
       if (!submitResponse.ok || !submitData.success) {
-        addLog('error', 'Submission failed', submitData)
+        addLog('error', 'Submission failed', {
+          error: submitData.error,
+          details: submitData.details
+        })
         throw new Error(submitData.error || 'Failed to submit file')
       }
 
@@ -110,7 +114,7 @@ export default function PdfToMarkdownPage() {
       const maxPolls = 150 // 5 minutes max (150 * 2 seconds)
       let pollCount = 0
 
-      const poll = async () => {
+      const poll = async (): Promise<void> => {
         if (pollCount >= maxPolls) {
           const timeoutDuration = Date.now() - pollingStartTime
           addLog('error', `Polling timeout after ${pollCount} attempts (${(timeoutDuration / 1000).toFixed(1)}s)`)
@@ -126,7 +130,7 @@ export default function PdfToMarkdownPage() {
         })
 
         const pollResponse = await fetch(
-          `/api/marker?checkUrl=${encodeURIComponent(checkUrl)}`,
+          `/api/marker?checkUrl=${encodeURIComponent(checkUrl || '')}`,
           {
             headers: {
               'x-api-key': apiKey
@@ -135,7 +139,7 @@ export default function PdfToMarkdownPage() {
         )
         const pollDuration = Date.now() - pollStartTime
 
-        const pollData = await pollResponse.json()
+        const pollData = await pollResponse.json() as MarkerPollResponse
 
         addLog('info', `Poll response received (${pollDuration}ms)`, {
           status: pollData.status,
@@ -164,8 +168,7 @@ export default function PdfToMarkdownPage() {
           // Log what we received
           addLog('info', 'API response structure', {
             fields: Object.keys(pollData),
-            outputFormat: pollData.output_format,
-            pageCount: pollData.page_count
+            status: pollData.status
           })
 
           // Get the markdown content
@@ -216,15 +219,16 @@ export default function PdfToMarkdownPage() {
 
     } catch (err) {
       const totalDuration = Date.now() - conversionStartTime
+      const error = err as Error
 
-      addLog('error', `Conversion failed: ${err.message}`, {
-        error: err.message,
-        errorType: err.name,
+      addLog('error', `Conversion failed: ${error.message}`, {
+        error: error.message,
+        errorType: error.name,
         duration: `${(totalDuration / 1000).toFixed(1)}s`,
-        stack: err.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
+        stack: error.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
       })
 
-      setError(err.message || 'An error occurred during conversion')
+      setError(error.message || 'An error occurred during conversion')
       setProcessing(false)
       setStatus('')
     }
@@ -250,7 +254,7 @@ export default function PdfToMarkdownPage() {
         <input
           type="password"
           value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
           placeholder="Enter your API key"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           disabled={processing}
@@ -275,7 +279,6 @@ export default function PdfToMarkdownPage() {
           accept=".pdf,application/pdf"
           onFileSelect={handleFileSelect}
           maxSize={200 * 1024 * 1024} // 200MB
-          disabled={processing}
         />
       </div>
 

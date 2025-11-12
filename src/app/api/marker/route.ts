@@ -1,18 +1,21 @@
-export async function POST(request) {
+import { NextRequest, NextResponse } from 'next/server'
+import type { MarkerSubmitResponse, MarkerPollResponse } from '@/types'
+
+export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
   try {
     const formData = await request.formData()
-    const file = formData.get('file')
-    const apiKey = formData.get('apiKey')
+    const file = formData.get('file') as File | null
+    const apiKey = formData.get('apiKey') as string | null
 
     if (!file) {
-      return Response.json(
+      return NextResponse.json(
         { success: false, error: 'No file provided' },
         { status: 400 }
       )
     }
 
     if (!apiKey) {
-      return Response.json(
+      return NextResponse.json(
         { success: false, error: 'API key is required' },
         { status: 400 }
       )
@@ -38,7 +41,12 @@ export async function POST(request) {
       body: markerFormData,
     })
 
-    const data = await response.json()
+    const data = await response.json() as {
+      error?: string
+      message?: string
+      request_id?: string
+      request_check_url?: string
+    }
 
     if (!response.ok) {
       // Log the full error for debugging
@@ -48,7 +56,7 @@ export async function POST(request) {
         data: data
       })
 
-      return Response.json(
+      return NextResponse.json(
         {
           success: false,
           error: data.error || data.message || `API error: ${response.status}`,
@@ -59,7 +67,7 @@ export async function POST(request) {
     }
 
     // Return the request_check_url for polling
-    return Response.json({
+    return NextResponse.json({
       success: true,
       request_id: data.request_id,
       request_check_url: data.request_check_url,
@@ -67,7 +75,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Marker API error:', error)
-    return Response.json(
+    return NextResponse.json(
       { success: false, error: 'Failed to process request' },
       { status: 500 }
     )
@@ -75,14 +83,14 @@ export async function POST(request) {
 }
 
 // Poll endpoint to check status
-export async function GET(request) {
+export async function GET(request: NextRequest): Promise<NextResponse<MarkerPollResponse>> {
   try {
     const { searchParams } = new URL(request.url)
     const checkUrl = searchParams.get('checkUrl')
     const apiKey = request.headers.get('x-api-key')
 
     if (!checkUrl || !apiKey) {
-      return Response.json(
+      return NextResponse.json(
         { success: false, error: 'Missing parameters' },
         { status: 400 }
       )
@@ -96,10 +104,15 @@ export async function GET(request) {
       },
     })
 
-    const data = await response.json()
+    const data = await response.json() as {
+      error?: string
+      status?: string
+      markdown?: string
+      progress?: number
+    }
 
     if (!response.ok) {
-      return Response.json(
+      return NextResponse.json(
         {
           success: false,
           error: data.error || 'Failed to check status'
@@ -109,11 +122,16 @@ export async function GET(request) {
     }
 
     // Wrap response with success flag for consistency
-    return Response.json({ success: true, ...data })
+    return NextResponse.json({
+      success: true,
+      status: data.status as 'pending' | 'processing' | 'complete' | 'error' | undefined,
+      markdown: data.markdown,
+      progress: data.progress
+    })
 
   } catch (error) {
     console.error('Poll error:', error)
-    return Response.json(
+    return NextResponse.json(
       { success: false, error: 'Failed to check status' },
       { status: 500 }
     )

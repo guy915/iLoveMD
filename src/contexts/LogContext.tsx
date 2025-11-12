@@ -1,14 +1,15 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import type { LogEntry, LogType, LogContextValue } from '@/types'
 
-const LogContext = createContext()
+const LogContext = createContext<LogContextValue | undefined>(undefined)
 const LOGS_STORAGE_KEY = 'diagnosticLogs'
 const LOG_COUNTER_KEY = 'diagnosticLogCounter'
 const MAX_LOGS = 500
 
 // Persistent session counter - survives page navigation, resets on browser close
-const getInitialCounter = () => {
+const getInitialCounter = (): number => {
   if (typeof window === 'undefined') return 1
   try {
     const stored = window.sessionStorage.getItem(LOG_COUNTER_KEY)
@@ -22,11 +23,11 @@ const getInitialCounter = () => {
 let persistentLogCounter = getInitialCounter()
 
 // Track recent logs for deduplication (prevents React Strict Mode double-mounting duplicates)
-const recentLogs = new Map() // key: hash, value: timestamp
+const recentLogs = new Map<string, number>() // key: hash, value: timestamp
 const DEDUP_WINDOW_MS = 50 // Consider logs within 50ms as duplicates (Strict Mode is fast)
 
 // Filter out Next.js internal URLs from logging (framework noise)
-const shouldLogUrl = (url) => {
+const shouldLogUrl = (url: string | undefined): boolean => {
   // Filter out missing URLs and opaque Next.js RSC fetches
   if (!url || url === 'Unknown URL') return false
 
@@ -42,9 +43,13 @@ const shouldLogUrl = (url) => {
   return !ignorePatterns.some(pattern => url.includes(pattern))
 }
 
-export function LogProvider({ children }) {
+interface LogProviderProps {
+  children: ReactNode
+}
+
+export function LogProvider({ children }: LogProviderProps) {
   // Initialize logs from sessionStorage if available
-  const [logs, setLogs] = useState(() => {
+  const [logs, setLogs] = useState<LogEntry[]>(() => {
     if (typeof window === 'undefined') return []
 
     try {
@@ -67,7 +72,7 @@ export function LogProvider({ children }) {
     }
   }, [logs])
 
-  const addLog = useCallback((type, message, data = null) => {
+  const addLog = useCallback((type: LogType, message: string, data: Record<string, unknown> | null = null) => {
     // Create a simple hash for deduplication (exclude timestamp from data for better deduplication)
     // Use destructuring to safely exclude timestamp without mutating the object
     const { timestamp: _, ...dataForHash } = data || {}
@@ -103,7 +108,7 @@ export function LogProvider({ children }) {
       }
     }
 
-    const newLog = { timestamp, type, message, data, id }
+    const newLog: LogEntry = { timestamp, type, message, data, id }
     // Keep only last 500 logs (sliding window)
     setLogs(prev => [...prev, newLog].slice(-MAX_LOGS))
   }, [])
@@ -129,15 +134,16 @@ export function LogProvider({ children }) {
     let isLoggingError = false
 
     // Capture JavaScript errors
-    const handleError = (event) => {
+    const handleError = (event: ErrorEvent) => {
       if (isLoggingError) return // Prevent recursive error logging
       isLoggingError = true
 
       try {
         // Check if this is a resource loading error (img, script, css, etc.)
-        if (event.target && event.target.tagName && !event.error) {
-          const tagName = event.target.tagName.toLowerCase()
-          const resourceUrl = event.target.src || event.target.href || 'Unknown URL'
+        if (event.target && (event.target as HTMLElement).tagName && !event.error) {
+          const target = event.target as HTMLElement & { src?: string; href?: string }
+          const tagName = target.tagName.toLowerCase()
+          const resourceUrl = target.src || target.href || 'Unknown URL'
 
           // Only log actual resource failures (not Next.js internal resources)
           if (shouldLogUrl(resourceUrl)) {
@@ -172,15 +178,16 @@ export function LogProvider({ children }) {
     }
 
     // Capture unhandled promise rejections
-    const handleUnhandledRejection = (event) => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       if (isLoggingError) return // Prevent recursive error logging
       isLoggingError = true
 
       try {
+        const reason = event.reason as Error | undefined
         addLog('error', 'Unhandled Promise Rejection', {
-          reason: event.reason?.toString() || 'Unknown reason',
-          reasonType: event.reason?.name,
-          stack: event.reason?.stack ? event.reason.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
+          reason: reason?.toString() || 'Unknown reason',
+          reasonType: reason?.name,
+          stack: reason?.stack ? reason.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
           url: window.location.href,
           timestamp: new Date().toISOString()
         })
@@ -198,7 +205,7 @@ export function LogProvider({ children }) {
     const originalWarn = console.warn
     const originalLog = console['log']
 
-    console.error = (...args) => {
+    console.error = (...args: unknown[]) => {
       addLog('error', 'Console Error', {
         message: args.map(arg =>
           typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
@@ -209,7 +216,7 @@ export function LogProvider({ children }) {
       originalError.apply(console, args)
     }
 
-    console.warn = (...args) => {
+    console.warn = (...args: unknown[]) => {
       addLog('error', 'Console Warning', {
         message: args.map(arg =>
           typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
@@ -220,7 +227,7 @@ export function LogProvider({ children }) {
       originalWarn.apply(console, args)
     }
 
-    console['log'] = (...args) => {
+    console['log'] = (...args: unknown[]) => {
       const message = args.map(arg =>
         typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(' ')
@@ -241,9 +248,9 @@ export function LogProvider({ children }) {
 
     // Intercept fetch() for network request visibility
     const originalFetch = window.fetch
-    window.fetch = async (...args) => {
+    window.fetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
       const startTime = Date.now()
-      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || 'Unknown URL'
+      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || 'Unknown URL'
       const options = args[1] || {}
       const method = options.method || 'GET'
 
@@ -299,10 +306,11 @@ export function LogProvider({ children }) {
 
         if (shouldLog) {
           try {
+            const err = error as Error
             addLog('error', 'Network Error (fetch)', {
               method,
               url,
-              error: error?.message || error?.toString(),
+              error: err?.message || err?.toString(),
               duration: `${duration}ms`,
               timestamp: new Date().toISOString()
             })
@@ -317,16 +325,29 @@ export function LogProvider({ children }) {
 
     // Intercept XMLHttpRequest for network request visibility
     // Use WeakMap to prevent metadata conflicts with reused XHR objects
-    const xhrMetaMap = new WeakMap()
+    interface XHRMetadata {
+      method: string
+      url: string
+      startTime: number
+      shouldLog: boolean
+    }
+    const xhrMetaMap = new WeakMap<XMLHttpRequest, XHRMetadata>()
     const originalXHROpen = XMLHttpRequest.prototype.open
     const originalXHRSend = XMLHttpRequest.prototype.send
 
-    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+    XMLHttpRequest.prototype.open = function(
+      method: string,
+      url: string | URL,
+      async?: boolean,
+      username?: string | null,
+      password?: string | null
+    ) {
+      const urlString = url.toString()
       // Store metadata for this specific XHR instance
-      const shouldLog = shouldLogUrl(url)
+      const shouldLog = shouldLogUrl(urlString)
       xhrMetaMap.set(this, {
         method,
-        url,
+        url: urlString,
         startTime: Date.now(),
         shouldLog
       })
@@ -335,7 +356,7 @@ export function LogProvider({ children }) {
         try {
           addLog('info', 'Network Request (XHR)', {
             method,
-            url,
+            url: urlString,
             timestamp: new Date().toISOString()
           })
         } catch (logError) {
@@ -343,10 +364,10 @@ export function LogProvider({ children }) {
         }
       }
 
-      return originalXHROpen.apply(this, [method, url, ...rest])
+      return originalXHROpen.call(this, method, url, async ?? true, username, password)
     }
 
-    XMLHttpRequest.prototype.send = function(...args) {
+    XMLHttpRequest.prototype.send = function(body?: XMLHttpRequestBodyInit | Document | null) {
       const meta = xhrMetaMap.get(this)
 
       this.addEventListener('load', () => {
@@ -386,7 +407,7 @@ export function LogProvider({ children }) {
         }
       })
 
-      return originalXHRSend.apply(this, args)
+      return originalXHRSend.call(this, body)
     }
 
     // Use capture phase for error events to catch resource loading failures
@@ -412,7 +433,7 @@ export function LogProvider({ children }) {
   )
 }
 
-export function useLogs() {
+export function useLogs(): LogContextValue {
   const context = useContext(LogContext)
   if (!context) {
     throw new Error('useLogs must be used within LogProvider')

@@ -1,4 +1,5 @@
 'use client'
+
 import Link from 'next/link'
 import { useState, useCallback, useEffect } from 'react'
 import { NAV_LINKS } from '@/lib/constants'
@@ -34,7 +35,7 @@ export default function Header() {
   }, [addLog])
 
   // Log navigation clicks
-  const handleNavClick = useCallback((linkLabel, linkHref) => {
+  const handleNavClick = useCallback((linkLabel: string, linkHref: string) => {
     addLog('info', `Navigation clicked: ${linkLabel}`, { href: linkHref })
   }, [addLog])
 

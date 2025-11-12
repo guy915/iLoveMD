@@ -1,15 +1,24 @@
 'use client'
+
 import Link from 'next/link'
 import { useLogs } from '@/contexts/LogContext'
 
 /**
- * ToolTile component for displaying tool cards on the homepage
- * @param {Object} props
- * @param {string} props.title - Tool title
- * @param {string} props.description - Tool description
- * @param {string} props.href - Link to tool page
+ * ToolTile component props
  */
-export default function ToolTile({ title, description, href }) {
+interface ToolTileProps {
+  /** Tool title */
+  title: string
+  /** Tool description */
+  description: string
+  /** Link to tool page */
+  href: string
+}
+
+/**
+ * ToolTile component for displaying tool cards on the homepage
+ */
+export default function ToolTile({ title, description, href }: ToolTileProps) {
   const { addLog } = useLogs()
 
   const handleClick = () => {

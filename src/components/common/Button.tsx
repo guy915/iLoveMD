@@ -1,16 +1,24 @@
+'use client'
+
 import { cn } from '@/lib/utils/classNames'
+import type { ButtonHTMLAttributes } from 'react'
+
+/**
+ * Button component props extending native button attributes
+ */
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Button content */
+  children: React.ReactNode
+  /** Whether button is in loading state */
+  loading?: boolean
+  /** Button variant */
+  variant?: 'primary' | 'secondary'
+  /** Custom loading text */
+  loadingText?: string
+}
 
 /**
  * Button component with variants and loading state
- * @param {Object} props
- * @param {React.ReactNode} props.children - Button content
- * @param {Function} props.onClick - Click handler
- * @param {boolean} props.disabled - Whether button is disabled
- * @param {boolean} props.loading - Whether button is in loading state
- * @param {string} props.variant - Button variant ('primary' or 'secondary')
- * @param {string} props.type - Button type ('button', 'submit', or 'reset')
- * @param {string} props.className - Additional CSS classes
- * @param {string} props.loadingText - Custom loading text
  */
 export default function Button({
   children,
@@ -22,7 +30,7 @@ export default function Button({
   className,
   loadingText = 'Processing...',
   ...rest
-}) {
+}: ButtonProps) {
   const baseClasses = "px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
   const variantClasses = variant === 'primary'
     ? "bg-primary-600 text-white hover:bg-primary-700"
