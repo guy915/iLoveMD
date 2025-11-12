@@ -53,13 +53,62 @@ export default function GlobalDiagnosticPanel() {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                // Copy logs to clipboard with IDs
+
+                // Calculate log statistics
+                const errorCount = logs.filter(log => log.type === 'error').length
+                const successCount = logs.filter(log => log.type === 'success').length
+                const infoCount = logs.filter(log => log.type === 'info').length
+
+                // Get session info
+                const now = new Date()
+                const sessionStart = logs.length > 0 ? logs[0].timestamp : now.toLocaleTimeString()
+                const currentUrl = typeof window !== 'undefined' ? window.location.href : 'Unknown'
+                const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'
+
+                // Format metadata section
+                const metadata = `=== DIAGNOSTIC LOG SESSION ===
+Date: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}
+Session Start: ${sessionStart}
+Current URL: ${currentUrl}
+Browser: ${userAgent}
+
+=== STATISTICS ===
+Total Logs: ${logs.length}
+├─ Errors: ${errorCount}
+├─ Success: ${successCount}
+└─ Info: ${infoCount}
+
+=== LEGEND ===
+ERROR   - Errors, failures, exceptions (shown in red)
+SUCCESS - Successful operations, completions (shown in green)
+INFO    - General information, events (shown in gray)
+
+Log Format: #ID [timestamp] TYPE: message
+- ID: Sequential log number (persists across navigation)
+- Timestamp: When the event occurred
+- Data: Additional context (JSON format)
+
+=== HOW TO USE ===
+When reporting issues to Claude (AI assistant):
+1. Copy these logs (already done!)
+2. Paste in your message to Claude
+3. Describe what you were doing when the issue occurred
+4. Claude can use log IDs to reference specific events (e.g., "check log #5")
+
+=== LOGS ===
+`
+
+                // Format logs
                 const logsText = logs.map(log =>
                   `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
                     log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''
                   }`
                 ).join('\n\n')
-                navigator.clipboard.writeText(logsText)
+
+                // Combine metadata + logs
+                const fullCopy = metadata + logsText
+
+                navigator.clipboard.writeText(fullCopy)
                 addLog('info', 'Logs copied to clipboard', {
                   logCount: logs.length,
                   timestamp: new Date().toISOString()
