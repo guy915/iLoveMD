@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Phase 3: PDF to Markdown Tool - Core Implementation** (2025-11-12):
+  - **Marker API Route** (`src/app/api/marker/route.js`):
+    - POST endpoint to submit PDF files to Marker API
+      - Accepts file and API key via FormData
+      - Forwards to https://www.datalab.to/api/v1/marker
+      - Returns request_id and request_check_url for polling
+      - Hardcoded sensible defaults (markdown output, no pagination, no LLM, no OCR)
+    - GET endpoint to poll for conversion status
+      - Checks conversion progress via request_check_url
+      - Returns status and markdown content when complete
+    - Full error handling for API failures (401, 413, 500, etc.)
+    - Server-side proxying prevents CORS issues
+  - **Download Utilities** (`src/lib/utils/downloadUtils.js`):
+    - `downloadFile(content, filename, mimeType)` - Triggers browser file download
+    - `getFileExtension(filename)` - Extracts file extension
+    - `replaceExtension(filename, newExt)` - Replaces file extension
+    - `formatFileSize(bytes)` - Formats bytes to human-readable (KB, MB, GB)
+    - Handles edge cases (dotfiles, files without extensions)
+  - **PDF Tool Page** (`src/app/pdf-to-markdown/page.js`):
+    - API key management:
+      - Password input field
+      - Defaults to test key: `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
+      - Link to get API key from Datalab.to
+      - Validation before conversion
+    - File upload integration:
+      - Uses FileUpload component
+      - Accepts PDF files up to 200MB
+      - Drag-and-drop and browse support
+    - Conversion workflow:
+      - Submit PDF to API route
+      - Poll for results every 2 seconds
+      - Maximum 5 minute timeout (150 polls)
+      - Download markdown file when complete
+    - Comprehensive diagnostic logging:
+      - Component mount logging
+      - File selection and validation
+      - API request/response logging
+      - Poll progress tracking (attempt number, elapsed time)
+      - Millisecond-precision timing for all operations
+      - Success and error logging with full context
+    - User feedback:
+      - Status messages during conversion
+      - Error messages with actionable details
+      - Loading states on buttons
+      - "How it works" section with instructions
+  - **Deferred Features** (not critical for MVP):
+    - Options panel UI (output format, paginate, LLM, OCR, mode, page range, max pages)
+    - Currently using hardcoded defaults - can be added later
+  - **Testing**:
+    - ✅ Build successful - no compilation errors
+    - ✅ Code structure verified
+    - ⏳ Awaiting browser testing by user
+  - Build: ✅ | Lint: ✅
+
 ### Fixed
 - **Log Persistence & Configuration Fixes** (2025-11-11):
   - **Restored test API key as default**:
@@ -470,9 +525,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Duration**: ~1 hour
 **Components Built**: useLocalStorage, Header, Footer, Button, FileUpload, ToolTile, Homepage
 
-### Phase 3: PDF Tool (Ready to Start)
+### Phase 3: PDF Tool (2025-11-12)
 **Goal**: Implement PDF conversion using Marker API
-**Status**: Not started
+**Status**: Core implementation complete (awaiting browser testing)
+**Duration**: Code implemented
+**Components Built**: Marker API route, download utilities, PDF tool page
+**Notes**: Options panel deferred; using hardcoded defaults for MVP
 
 ### Phase 4: HTML Tool (Upcoming)
 **Goal**: Implement HTML conversion with client-side processing
