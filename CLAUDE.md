@@ -4,8 +4,8 @@
 
 ## Project Overview
 
-**Name:** AI Doc Prep
-**Type:** Web application for preparing documents for LLMs
+- **Name:** AI Doc Prep
+- **Type:** Web application for preparing documents for LLMs
 
 ### What It Does
 
