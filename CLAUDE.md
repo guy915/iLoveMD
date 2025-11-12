@@ -6,7 +6,7 @@
 
 **Name:** AI Doc Prep
 **Type:** Web application for preparing documents for LLMs
-**Status:** Planning complete, ready for implementation
+**Status:** Phase 3 in progress - PDF tool implemented, testing and refinement ongoing
 **Timeline:** ~1 week build
 **Developer:** First-year CS student, low web dev experience
 
@@ -48,8 +48,9 @@ Domain:        ai-doc-prep.vercel.app
 
 **Check CHECKLIST.md for exact progress**
 
-Current phase: **Phase 2 Complete**
-Next task: **Phase 3 - PDF to Markdown Tool**
+Current phase: **Phase 3 - In Progress**
+Completed: Project setup, Core UI, PDF tool MVP (API route, page, logging)
+Next task: **Test PDF tool with real files, add options panel**
 
 ---
 
