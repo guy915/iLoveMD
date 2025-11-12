@@ -48,7 +48,7 @@ export default function GlobalDiagnosticPanel() {
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
             <h3 className="text-lg font-semibold text-white">
-              Diagnostic Logs ({logs.length})
+              Diagnostic Logs
             </h3>
             <button
               onClick={(e) => {
