@@ -9,13 +9,13 @@ const MAX_LOGS = 500
 
 // Persistent session counter - survives page navigation, resets on browser close
 const getInitialCounter = () => {
-  if (typeof window === 'undefined') return 0
+  if (typeof window === 'undefined') return 1
   try {
     const stored = window.sessionStorage.getItem(LOG_COUNTER_KEY)
-    return stored ? parseInt(stored, 10) : 0
+    return stored ? parseInt(stored, 10) : 1
   } catch (error) {
     console.error('Error loading log counter:', error)
-    return 0
+    return 1
   }
 }
 
@@ -27,7 +27,8 @@ const DEDUP_WINDOW_MS = 50 // Consider logs within 50ms as duplicates (Strict Mo
 
 // Filter out Next.js internal URLs from logging (framework noise)
 const shouldLogUrl = (url) => {
-  if (!url || url === 'Unknown URL') return true
+  // Filter out missing URLs and opaque Next.js RSC fetches
+  if (!url || url === 'Unknown URL') return false
 
   // Filter Next.js internal/development URLs
   const ignorePatterns = [
@@ -67,8 +68,10 @@ export function LogProvider({ children }) {
   }, [logs])
 
   const addLog = useCallback((type, message, data = null) => {
-    // Create a simple hash for deduplication
-    const hash = `${type}:${message}:${JSON.stringify(data)}`
+    // Create a simple hash for deduplication (exclude timestamp from data for better deduplication)
+    // Use destructuring to safely exclude timestamp without mutating the object
+    const { timestamp: _, ...dataForHash } = data || {}
+    const hash = `${type}:${message}:${JSON.stringify(Object.keys(dataForHash).length > 0 ? dataForHash : null)}`
     const now = Date.now()
 
     // Check if we've seen this exact log recently (within deduplication window)
@@ -107,7 +110,7 @@ export function LogProvider({ children }) {
 
   const clearLogs = useCallback(() => {
     setLogs([])
-    persistentLogCounter = 0 // Reset counter
+    persistentLogCounter = 1 // Reset counter to 1 (logs start at #1)
     if (typeof window !== 'undefined') {
       try {
         window.sessionStorage.removeItem(LOGS_STORAGE_KEY)
@@ -131,21 +134,38 @@ export function LogProvider({ children }) {
       isLoggingError = true
 
       try {
-        addLog('error', 'JavaScript Error', {
-          message: event.message,
-          filename: event.filename,
-          line: event.lineno,
-          column: event.colno,
-          error: event.error?.toString(),
-          errorType: event.error?.name,
-          stack: event.error?.stack ? event.error.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
-          url: window.location.href,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent
-        })
+        // Check if this is a resource loading error (img, script, css, etc.)
+        if (event.target && event.target.tagName && !event.error) {
+          const tagName = event.target.tagName.toLowerCase()
+          const resourceUrl = event.target.src || event.target.href || 'Unknown URL'
+
+          // Only log actual resource failures (not Next.js internal resources)
+          if (shouldLogUrl(resourceUrl)) {
+            addLog('error', 'Resource Loading Failed', {
+              resourceType: tagName,
+              resourceUrl,
+              pageUrl: window.location.href,
+              timestamp: new Date().toISOString()
+            })
+          }
+        } else {
+          // JavaScript error
+          addLog('error', 'JavaScript Error', {
+            message: event.message,
+            filename: event.filename,
+            line: event.lineno,
+            column: event.colno,
+            error: event.error?.toString(),
+            errorType: event.error?.name,
+            stack: event.error?.stack ? event.error.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
+            url: window.location.href,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent
+          })
+        }
       } catch (logError) {
         // Fallback to console if logging fails
-        console.error('Failed to log JavaScript error:', logError)
+        console.error('Failed to log error:', logError)
       } finally {
         isLoggingError = false
       }
@@ -201,13 +221,21 @@ export function LogProvider({ children }) {
     }
 
     console['log'] = (...args) => {
-      addLog('info', 'Console Log', {
-        message: args.map(arg =>
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' '),
-        url: window.location.href,
-        timestamp: new Date().toISOString()
-      })
+      const message = args.map(arg =>
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ')
+
+      // Filter out Next.js dev server noise
+      const shouldLogConsole = !message.startsWith('[Fast Refresh]')
+
+      if (shouldLogConsole) {
+        addLog('info', 'Console Log', {
+          message,
+          url: window.location.href,
+          timestamp: new Date().toISOString()
+        })
+      }
+
       originalLog.apply(console, args)
     }
 
@@ -361,11 +389,12 @@ export function LogProvider({ children }) {
       return originalXHRSend.apply(this, args)
     }
 
-    window.addEventListener('error', handleError)
+    // Use capture phase for error events to catch resource loading failures
+    window.addEventListener('error', handleError, true)
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
 
     return () => {
-      window.removeEventListener('error', handleError)
+      window.removeEventListener('error', handleError, true)
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       console.error = originalError
       console.warn = originalWarn
