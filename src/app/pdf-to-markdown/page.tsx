@@ -5,16 +5,7 @@ import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
-import type { MarkerSubmitResponse, MarkerPollResponse } from '@/types'
-
-interface MarkerOptions {
-  paginate: boolean
-  format_lines: boolean
-  use_llm: boolean
-  disable_image_extraction: boolean
-  output_format: 'markdown'
-  langs: 'English'
-}
+import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
 
 const DEFAULT_OPTIONS: MarkerOptions = {
   paginate: false,
@@ -35,6 +26,7 @@ export default function PdfToMarkdownPage() {
 
   // Options with localStorage persistence
   const [options, setOptions] = useState<MarkerOptions>(DEFAULT_OPTIONS)
+  const [hasLoadedOptions, setHasLoadedOptions] = useState(false)
 
   // Use global logging context (do not destructure clearLogs - we never clear logs)
   const { addLog } = useLogs()
@@ -45,22 +37,25 @@ export default function PdfToMarkdownPage() {
       const savedOptions = localStorage.getItem('markerOptions')
       if (savedOptions) {
         try {
-          const parsed = JSON.parse(savedOptions) as MarkerOptions
-          setOptions(parsed)
-          addLog('info', 'Loaded saved options from localStorage', { options: parsed })
+          const parsed = JSON.parse(savedOptions) as Partial<MarkerOptions>
+          // Merge with defaults to handle missing fields from old versions
+          const mergedOptions = { ...DEFAULT_OPTIONS, ...parsed }
+          setOptions(mergedOptions)
+          addLog('info', 'Loaded saved options from localStorage', { options: mergedOptions })
         } catch (err) {
-          addLog('error', 'Failed to parse saved options', { error: String(err) })
+          addLog('error', 'Failed to parse saved options, using defaults', { error: String(err) })
         }
       }
+      setHasLoadedOptions(true)
     }
   }, [addLog])
 
-  // Save options to localStorage whenever they change
+  // Save options to localStorage whenever they change (after initial load)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && hasLoadedOptions) {
       localStorage.setItem('markerOptions', JSON.stringify(options))
     }
-  }, [options])
+  }, [options, hasLoadedOptions])
 
   const handleOptionChange = (key: keyof MarkerOptions, value: boolean | string) => {
     setOptions(prev => {

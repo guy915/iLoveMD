@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { MarkerSubmitResponse, MarkerPollResponse } from '@/types'
+import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
 
-interface MarkerOptions {
-  paginate: boolean
-  format_lines: boolean
-  use_llm: boolean
-  disable_image_extraction: boolean
-  output_format: 'markdown'
+const DEFAULT_OPTIONS: MarkerOptions = {
+  paginate: false,
+  format_lines: false,
+  use_llm: false,
+  disable_image_extraction: false,
+  output_format: 'markdown',
   langs: 'English'
 }
 
@@ -32,20 +32,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     }
 
     // Parse options or use defaults
-    let options: MarkerOptions = {
-      paginate: false,
-      format_lines: false,
-      use_llm: false,
-      disable_image_extraction: false,
-      output_format: 'markdown',
-      langs: 'English'
-    }
+    let options: MarkerOptions = DEFAULT_OPTIONS
 
     if (optionsJson) {
       try {
-        options = JSON.parse(optionsJson) as MarkerOptions
+        const parsed = JSON.parse(optionsJson) as Partial<MarkerOptions>
+        // Merge with defaults to handle missing fields
+        options = { ...DEFAULT_OPTIONS, ...parsed }
       } catch (err) {
-        console.error('Failed to parse options:', err)
+        console.error('[Marker API] Failed to parse options:', err, 'Raw JSON:', optionsJson)
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid options format',
+            details: { message: String(err), raw: optionsJson }
+          },
+          { status: 400 }
+        )
       }
     }
 
@@ -56,17 +59,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     const markerFormData = new FormData()
     markerFormData.append('file', file)
 
-    // Add all options to the request (always include output_format and langs)
+    // Add all options to the request (consistent string conversion for all booleans)
     markerFormData.append('output_format', options.output_format)
     markerFormData.append('langs', options.langs)
     markerFormData.append('paginate', String(options.paginate))
     markerFormData.append('format_lines', String(options.format_lines))
     markerFormData.append('use_llm', String(options.use_llm))
-
-    // Add conditional option
-    if (options.disable_image_extraction) {
-      markerFormData.append('disable_image_extraction', 'true')
-    }
+    markerFormData.append('disable_image_extraction', String(options.disable_image_extraction))
 
     // Submit to Marker API
     const response = await fetch('https://www.datalab.to/api/v1/marker', {
