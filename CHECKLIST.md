@@ -720,10 +720,58 @@ Use this section to track issues, blockers, or notes during implementation:
     - Encouraged Claude to enhance logging based on preferences
   - Build and lint: All passing
   - Complete session history now visible across entire site
+
+- 2025-11-12: Diagnostic Log Copy Feature Improvements
+  - **Enhanced log copy functionality** (`src/components/layout/GlobalDiagnosticPanel.js`):
+    - Added comprehensive metadata section:
+      - Session date and time (formatted with locale)
+      - Session start time (from first log)
+      - Current URL (for context)
+      - Browser user agent string
+    - Added statistics section with tree-style formatting:
+      - Total log count
+      - Breakdown by type (errors, successes, info)
+      - Visual tree structure for better readability
+    - Added legend section explaining:
+      - Log types (ERROR, SUCCESS, INFO) with descriptions
+      - Log format structure (#ID [timestamp] TYPE: message)
+      - ID persistence across navigation
+      - Data field explanation
+    - Added introductory context section:
+      - Explains what diagnostic logs are
+      - Describes the logging system's purpose
+      - Highlights usefulness for troubleshooting
+      - Guides users on sharing logs when getting help
+    - **Added "WHAT THIS TOOL TRACKS" section**:
+      - Complete list of all tracked events organized by category
+      - Navigation & Page Events (loads, clicks, route changes, 404s)
+      - User Interactions (uploads, validation, buttons, forms)
+      - Application Events (localStorage, file processing, API calls, polling)
+      - Error Tracking (validation, network, 404s, crashes)
+      - Performance Metrics (response times, durations, timing)
+      - Makes it crystal clear what's being logged and why
+    - Renamed "DIAGNOSTIC LOG SESSION" to "SESSION DETAILS" for clarity
+    - Removed "HOW TO USE" section (redundant with introductory context)
+  - **CLAUDE.md documentation updates**:
+    - Added comprehensive "Diagnostic Logging Tool (Built for Claude)" section at top
+    - Expanded "What It Logs" with specific detailed tracking information
+    - Listed all currently tracked events with examples
+    - Updated "What you get in copied logs" to include tracking list
+    - Ensures future Claude sessions know about this debugging tool
+  - **Benefits**:
+    - Copied logs are now fully self-documenting and self-explanatory
+    - Complete transparency about what's being tracked
+    - Future Claude knows exactly what data is available
+    - Complete context provided for anyone viewing the logs
+    - Makes it easier for users to report issues
+    - Provides Claude with all necessary metadata for debugging
+    - Professional, comprehensive format
+  - Build and lint: All passing
+  - Ready to merge diagnostic logging improvements
 ```
 
 ---
 
-**Last Updated:** 2025-11-11
+**Last Updated:** 2025-11-12
 **Current Phase:** Phase 2 Complete
 **Next Task:** Begin Phase 3 - PDF to Markdown Tool
