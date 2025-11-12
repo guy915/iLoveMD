@@ -18,23 +18,16 @@ AI Doc Prep provides simple, single-purpose tools to convert and prepare documen
 ### PDF to Markdown ✅ (Available Now)
 - Convert PDF files to clean markdown using Marker AI
 - Support for complex layouts (tables, equations, code blocks)
-- Optional OCR for scanned documents
-- Optional LLM enhancement for highest accuracy
-- Customizable output formats (markdown, JSON, HTML, chunks)
 - Comprehensive diagnostic logging for debugging
+- Uses your own Marker API key (get one free at [datalab.to](https://www.datalab.to/))
+
+**Note:** Advanced options (OCR, LLM enhancement, multiple output formats) are planned for future releases.
 
 ### HTML to Markdown (Coming Soon)
-- Convert HTML files or web pages to markdown
-- Two input methods: file upload or URL
-- Client-side preprocessing for speed and privacy
-- Clean extraction of main content
+Convert HTML files or web pages to markdown with client-side processing for privacy.
 
 ### Merge Markdowns (Coming Soon)
-- Combine multiple markdown files into one
-- Drag-and-drop reordering
-- Customizable separators and formatting
-- Optional table of contents generation
-- Handles up to 50 files, 1GB total
+Combine multiple markdown files into one with customizable separators.
 
 ## Tech Stack
 
@@ -113,15 +106,11 @@ ai-doc-prep/
 2. Enter your Marker API key (stored locally in your browser)
    - Get your free API key at [datalab.to](https://www.datalab.to/)
 3. Upload a PDF file (up to 1GB)
-4. Configure options (optional):
-   - Output format (markdown/JSON/HTML/chunks)
-   - Paginate (include page numbers)
-   - Use LLM enhancement (slower but more accurate)
-   - Force OCR (for scanned documents)
-   - Mode (fast/accurate)
-5. Click "Convert to Markdown"
-6. Wait for processing (may take a few minutes for large files)
-7. Download automatically starts when complete
+4. Click "Convert to Markdown"
+5. Wait for processing (may take a few minutes for large files)
+6. Download automatically starts when complete
+
+**Note:** Advanced configuration options (output formats, OCR, LLM enhancement, etc.) are planned for future releases.
 
 ### Diagnostic Logging
 
@@ -229,13 +218,11 @@ This is a personal hobby project, but suggestions and feedback are welcome!
 ### "File too large" error
 - Maximum file size is 1GB
 - Try splitting large PDFs before conversion
-- Consider using page range option for large PDFs
 
 ### Processing takes too long
 - Large files can take several minutes
-- Try "Fast" mode instead of "Accurate"
-- Disable LLM enhancement for faster processing
-- Use page range to process only needed pages
+- Check your internet connection
+- Ensure the Marker API service is online
 
 ### Download not working
 - Check browser download settings
