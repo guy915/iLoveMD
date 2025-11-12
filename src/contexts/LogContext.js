@@ -6,6 +6,9 @@ const LogContext = createContext()
 const LOGS_STORAGE_KEY = 'diagnosticLogs'
 const MAX_LOGS = 500
 
+// Counter for unique log IDs
+let logIdCounter = 0
+
 export function LogProvider({ children }) {
   // Initialize logs from sessionStorage if available
   const [logs, setLogs] = useState(() => {
@@ -33,7 +36,7 @@ export function LogProvider({ children }) {
 
   const addLog = useCallback((type, message, data = null) => {
     const timestamp = new Date().toLocaleTimeString()
-    const newLog = { timestamp, type, message, data, id: Date.now() + Math.random() }
+    const newLog = { timestamp, type, message, data, id: `${Date.now()}-${logIdCounter++}` }
     // Keep only last 500 logs (sliding window)
     setLogs(prev => [...prev, newLog].slice(-MAX_LOGS))
   }, [])
@@ -53,31 +56,54 @@ export function LogProvider({ children }) {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    // Flag to prevent infinite error loops
+    let isLoggingError = false
+
     // Capture JavaScript errors
     const handleError = (event) => {
-      addLog('error', 'JavaScript Error', {
-        message: event.message,
-        filename: event.filename,
-        line: event.lineno,
-        column: event.colno,
-        error: event.error?.toString(),
-        errorType: event.error?.name,
-        stack: event.error?.stack?.split('\n').slice(0, 8).join('\n'), // More stack trace lines
-        url: window.location.href,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent
-      })
+      if (isLoggingError) return // Prevent recursive error logging
+      isLoggingError = true
+
+      try {
+        addLog('error', 'JavaScript Error', {
+          message: event.message,
+          filename: event.filename,
+          line: event.lineno,
+          column: event.colno,
+          error: event.error?.toString(),
+          errorType: event.error?.name,
+          stack: event.error?.stack ? event.error.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
+          url: window.location.href,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent
+        })
+      } catch (logError) {
+        // Fallback to console if logging fails
+        console.error('Failed to log JavaScript error:', logError)
+      } finally {
+        isLoggingError = false
+      }
     }
 
     // Capture unhandled promise rejections
     const handleUnhandledRejection = (event) => {
-      addLog('error', 'Unhandled Promise Rejection', {
-        reason: event.reason?.toString() || 'Unknown reason',
-        reasonType: event.reason?.name,
-        stack: event.reason?.stack?.split('\n').slice(0, 8).join('\n'),
-        url: window.location.href,
-        timestamp: new Date().toISOString()
-      })
+      if (isLoggingError) return // Prevent recursive error logging
+      isLoggingError = true
+
+      try {
+        addLog('error', 'Unhandled Promise Rejection', {
+          reason: event.reason?.toString() || 'Unknown reason',
+          reasonType: event.reason?.name,
+          stack: event.reason?.stack ? event.reason.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
+          url: window.location.href,
+          timestamp: new Date().toISOString()
+        })
+      } catch (logError) {
+        // Fallback to console if logging fails
+        console.error('Failed to log promise rejection:', logError)
+      } finally {
+        isLoggingError = false
+      }
     }
 
     // Intercept console.error and console.warn for additional visibility
