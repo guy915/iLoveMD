@@ -73,6 +73,36 @@ timeline of what happened during your session, making it easier to troubleshoot 
 and understand application behavior. If you encounter problems, share these logs when
 asking for help - they contain valuable context for debugging.
 
+=== WHAT THIS TOOL TRACKS ===
+Navigation & Page Events:
+- Page loads and component mounts
+- Navigation link clicks (header menu, logo, tool tiles)
+- Mobile menu toggles
+- Route changes and browser navigation
+
+User Interactions:
+- File uploads (drag-drop, browser selection)
+- File validation (success and failures with metadata)
+- Button clicks and form submissions
+- All tool interactions
+
+Application Events:
+- localStorage operations (API key saves, preference updates)
+- File processing operations
+- Download triggers
+- API calls with timing (request/response, duration)
+
+Error Tracking:
+- Validation errors (file size, type mismatches)
+- Network errors (API failures, timeouts)
+- 404 errors (invalid routes)
+- Application crashes (via ErrorBoundary)
+
+Performance Metrics:
+- API response times (milliseconds)
+- Polling durations
+- Total operation times
+
 === SESSION DETAILS ===
 Date: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}
 Session Start: ${sessionStart}
