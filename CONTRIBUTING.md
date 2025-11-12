@@ -41,41 +41,12 @@
 
 ### Project Structure
 
-Key directories:
+See `ARCHITECTURE.md` for more details. Key directories:
 - `src/app/` - Next.js pages and API routes (App Router)
 - `src/components/` - React components (layout, common, tools, home)
 - `src/lib/` - Business logic (processors, API clients, utilities)
 - `src/hooks/` - Custom React hooks
 - `public/` - Static assets
-
-#### Draft Project Structure
-
-```
-ai-doc-prep/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── layout.js           # Root layout with diagnostic logging
-│   │   ├── page.js             # Homepage with tool tiles
-│   │   ├── pdf-to-markdown/    # PDF tool (complete)
-│   │   ├── loading.js          # Global loading state
-│   │   ├── not-found.js        # Custom 404 page
-│   │   └── api/
-│   │       └── marker/         # Proxy to Marker API
-│   ├── components/             # React components
-│   │   ├── layout/             # Header, Footer, GlobalDiagnosticPanel
-│   │   ├── common/             # Button, FileUpload, ErrorBoundary
-│   │   └── home/               # ToolTile
-│   ├── contexts/               # React Context providers
-│   │   └── LogContext.js       # Diagnostic logging context
-│   ├── lib/                    # Business logic
-│   │   ├── constants.js        # Centralized constants
-│   │   └── utils/              # downloadUtils, classNames
-│   └── hooks/                  # Custom React hooks
-│       └── useLocalStorage.js  # localStorage wrapper
-├── assets/                     # Test files and resources
-├── public/                     # Static assets
-└── README.md
-```
 
 ## Development Workflow
 
