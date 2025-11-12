@@ -330,67 +330,32 @@ When adding a feature, ensure you log:
 
 ## Session Management
 
-### What to Do When Starting a Session
+### When Starting a Session
 
-1. **Read CHECKLIST.md** - See current progress and any blockers
-2. **Read CHANGELOG.md** - Understand recent changes and decisions
-3. **Reference ARCHITECTURE.md** - For technical design and decisions
-4. **Reference CONTRIBUTING.md** - For code style and conventions
-5. **Ask user:** "Should we continue where you left off, or...?"
+1. Read all documentation **fully**
+2. Explore the codebase
+3. Ask questions
 
-### Feature Implementation Workflow
+### When Finishing a Session
 
-**IMPORTANT: After completing ANY feature or phase, ALWAYS update documentation in this order:**
+1. **Test Before Committing**
+   - Run `npm run build` - Must pass without errors
+   - Run `npm run lint` - Must pass without errors
+   - Manual testing - Test the feature in browser (happy path + edge cases)
+   - API testing (if applicable) - Test API routes work correctly
 
-1. **Update CHECKLIST.md**
-   - Mark completed tasks with [x]
-   - Update phase status
-   - Add notes in "Notes & Issues" section
-   - Update footer with current phase
+2. **Update Documentation**
+   - Update CHANGELOG.md
+   - Update CHECKLIST.md
+   - Update README.md *(optional)*
+   - Update ARCHITECTURE.md *(optional)*
+   - Update CONTRIBUTING.md *(optional)*
+   - Update CLAUDE.md *(optional)*
 
-2. **Update CHANGELOG.md**
-   - Add all changes under appropriate version/phase
-   - List what was Added, Changed, Fixed, or Removed
-   - Include technical decisions and testing results
-   - Update phase milestones
-
-3. **Update CLAUDE.md** (if needed)
-   - Update "Current Status" section
-   - Add any new patterns or decisions to relevant sections
-
-4. **Commit and Push**
+3. **Commit and Push**
    - Commit code changes first
    - Then commit documentation updates
    - Push all changes to branch
-
-**Never skip documentation updates!** It ensures continuity between sessions.
-
-### Session Handoff
-
-**At end of each session:**
-1. Complete Feature Implementation Workflow (above)
-2. Verify all changes committed and pushed
-3. Ensure CHANGELOG.md is current
-4. Leave clear notes for next session
-
-**At start of next session:**
-1. Read this file (CLAUDE.md)
-2. Read CHECKLIST.md for status
-3. Read latest CHANGELOG.md entries
-4. Check Notes section for context
-5. Ask user where to continue
-
----
-
-## Key Design Principles
-
-- **Privacy first:** No data storage, no tracking, client-side processing
-- **User's API keys:** Users provide their own keys (we don't pay for services)
-- **Simple:** Single-purpose tools, no over-engineering
-- **No TypeScript:** JavaScript only (student preference)
-- **No complex state:** Component-level + localStorage only
-
-See **ARCHITECTURE.md** for detailed design decisions and constraints.
 
 ---
 
@@ -400,39 +365,6 @@ See **ARCHITECTURE.md** for detailed design decisions and constraints.
 
 **Currently hardcoded in:**
 - `src/app/pdf-to-markdown/page.js` (line 12) - Pre-filled as default value in useLocalStorage hook
-
-**TODO before production:**
-- Remove hardcoded API key from pdf-to-markdown/page.js
-- Change default value from the key to empty string: `useLocalStorage('markerApiKey', '')`
-- Test that users are properly prompted to enter their own key
-
----
-
-## Common Commands & Troubleshooting
-
-See **CONTRIBUTING.md** for development commands and **README.md** for troubleshooting guide.
-
----
-
-## Helpful Context
-
-### Student's Background
-- **First-year CS student**
-- **Low web dev experience** - Be clear and educational
-- **Comfortable with:** Git, basic JavaScript
-- **Learning:** React, Next.js, web architecture
-- **Mac user, Cursor IDE**
-
-### Project Goals
-1. **Learning:** Understand modern web development
-2. **Utility:** Actually use this tool personally
-3. **Portfolio:** Demonstrate skills
-4. **Simple:** Don't over-complicate
-
-### Timeline
-- **Target:** ~1 week from start to deployment
-- **No pressure:** This is a hobby project
-- **Flexible:** Can extend if needed
 
 ---
 
@@ -450,36 +382,9 @@ When adding features with new dependencies, test commands, or API endpoints, con
 
 ## What NOT to Do
 
-- **Don't use TypeScript** - Project is JavaScript only
 - **Don't add complex state management** - Keep it simple
 - **Don't store files server-side** - Everything client/proxy only
 - **Don't add features not in plan** - Ask user first
 - **Don't add authentication or analytics** - Privacy-first, no tracking
 - **Don't use emojis** - Use text labels instead
 - **Don't skip testing or documentation updates** - Always update docs with code changes
-
----
-
-## When User Says...
-
-**"Let's continue"** → Read CHECKLIST.md, find current phase, continue
-**"How do I style this?"** → Reference CONTRIBUTING.md code style section
-**"Why did we decide X?"** → Check ARCHITECTURE.md tech decisions table
-**"It's not working"** → Ask for diagnostic logs, debug systematically
-**"Let's add a feature"** → Discuss if it fits scope, update docs if yes
-
----
-
-## Remember
-
-- **Simplicity is key** - Don't over-engineer
-- **Privacy matters** - No data storage/tracking
-- **Education focus** - Explain decisions to student
-- **User's in control** - Ask before major changes
-- **Have fun** - It's a learning project!
-
----
-
-**Last Updated:** 2025-11-12
-**Current Status:** Phase 3 complete (MVP), ready for Phase 4
-**Next Action:** Build HTML to Markdown tool
