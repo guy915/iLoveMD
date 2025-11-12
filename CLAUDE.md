@@ -17,115 +17,73 @@ Converts documents to markdown (optimized for LLMs) with 3 tools:
 2. **HTML → Markdown** - Client-side processing (Turndown.js)
 3. **Merge Markdowns** - Combines multiple .md files
 
-### Key Philosophy
-- **Privacy first:** No data storage, no accounts, no tracking
-- **User's API keys:** We provide interface, they pay for services
-- **Client-heavy:** Most processing in browser
-- **Simple:** Single-purpose tools, no complex pipelines
-- **Free:** Hosted on Vercel free tier
+---
+
+## Session Management
+
+### When Starting a Session
+
+1. Read **all** documentation **fully**
+2. Explore the codebase
+3. Ask questions
+
+### When Finishing a Session
+
+1. **Test Before Committing**
+   - Run `npm run build` - Must pass without errors
+   - Run `npm run lint` - Must pass without errors
+   - Manual testing - Test the feature in browser (happy path + edge cases)
+   - API testing (if applicable) - Test API routes work correctly
+
+2. **Update Documentation**
+   - Update CHANGELOG.md
+   - Update CHECKLIST.md
+   - Update README.md *(optional)*
+   - Update ARCHITECTURE.md *(optional)*
+   - Update CONTRIBUTING.md *(optional)*
+   - Update CLAUDE.md *(optional)*
+
+3. **Commit and Push**
+   - Commit code changes first
+   - Then commit documentation updates
+   - Push all changes to branch
 
 ---
 
-## Tech Stack
+## Development API Keys
 
-- **Framework:** Next.js 14+ (App Router)
-- **Styling:** Tailwind CSS
-- **Language:** JavaScript (NOT TypeScript)
-- **Hosting:** Vercel
+**Test Marker API Key:** `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
 
-See **ARCHITECTURE.md** for complete tech stack details and dependencies.
+**Currently hardcoded in:**
+- `src/app/pdf-to-markdown/page.js` (line 12) - Pre-filled as default value in useLocalStorage hook
 
 ---
 
-## Current Status
+## CI/CD Pipeline
 
-**Check CHECKLIST.md for exact progress**
+The project has automated CI/CD workflows in `.github/workflows/`:
+- **Build verification** on Node 18.x and 20.x
+- **Security audits** for dependencies
+- **Code quality checks** (console.log detection, bundle size)
+- **PR labeling** and automation
 
-Current phase: **Phase 3 Complete (MVP)**
-Next task: **Phase 4 - HTML to Markdown Tool**
-
-**Note:** Phase 3 implemented core PDF conversion functionality. Advanced options (multiple output formats, pagination, LLM enhancement, etc.) are deferred to future iterations.
-
----
-
-## Key Documentation Files
-
-When you need details, reference these:
-
-| File | Purpose | When to Read |
-|------|---------|--------------|
-| **CHECKLIST.md** | Progress tracker | Start of every session to see status |
-| **ARCHITECTURE.md** | Technical design & decisions | When unclear about data flow or tech choices |
-| **CONTRIBUTING.md** | Code style & workflow | When writing code or submitting changes |
-| **README.md** | User-facing docs | When writing help content |
-| **CHANGELOG.md** | Development history | To understand what changed and why |
-
----
-
-## Architecture Quick Reference
-
-See **ARCHITECTURE.md** for complete technical details including:
-- Data flows for all three tools
-- State management strategy
-- localStorage schema
-- Project structure
-- Component architecture
-- API route specifications
-
----
-
-## Implementation Phases
-
-See **CHECKLIST.md** for the complete implementation checklist with detailed task breakdowns for all 6 phases.
-
----
-
-## Development Guidelines
-
-See **CONTRIBUTING.md** for complete guidelines including:
-- Code style and naming conventions
-- Testing procedures (build, lint, manual testing)
-- Git workflow and commit message format
-- Pull request process
-
-**Quick reminders:**
-- JavaScript only (NOT TypeScript)
-- Tailwind CSS only (no custom CSS)
-- No emojis in code or UI
-- Always run `npm run build` and `npm run lint` before pushing
-- Keep commits and PRs small and focused
+When adding features with new dependencies, test commands, or API endpoints, consider updating the CI/CD workflows accordingly.
 
 ---
 
 ## Diagnostic Logging System
 
-**IMPORTANT: This application has a comprehensive diagnostic logging system built specifically for Claude to debug issues remotely.**
-
 ### What It Is
 
-A website-wide logging panel that captures every user interaction, application event, and error across all pages. Think of it as Claude's eyes and ears into what's happening in the user's browser.
+Website-wide logging panel that captures every user interaction, application event, and error across all pages. Think of it as Claude's eyes and ears into what's happening in the user's browser.
 
-### Purpose: Built For Claude
-
-**The diagnostic logging system is primarily a tool for Claude (the AI assistant) to debug issues effectively.**
+Logs are the primary debugging tool - they replace the inability to see the browser console, network tab, or application state directly. Claude should feel free to continue developing and enhancing the logging system based on debugging needs.
 
 While users can view the logs, the primary purpose is to give Claude complete visibility into:
 - What the user did (step by step)
 - What the application did in response
 - Where and why things failed
 - Timing and performance of operations
-
-**For the user:** Logs provide transparency and are useful for copying/pasting to Claude when asking for help.
-
-**For Claude:** Logs are the primary debugging tool - they replace the inability to see the browser console, network tab, or application state directly. Claude should feel free to continue developing and enhancing the logging system based on debugging needs.
-
-### Where to Find It
-
-**In the Header** - Next to the logo on every page, there's a "Diagnostic Logs" button with a badge showing log count.
-
-**Always visible** - Never hides, even when empty (shows "No logs yet" message).
-
-**Click to expand/collapse** - Shows full log panel with all events.
 
 ### What It Logs
 
@@ -171,47 +129,7 @@ While users can view the logs, the primary purpose is to give Claude complete vi
 - Descriptive message (what happened)
 - Structured data (file metadata, API responses, error details, timing, request IDs)
 
-### How to Use It (For Claude)
-
-**When debugging:**
-1. Ask user to click "Copy" button in diagnostic panel
-2. User pastes the logs in their message to you
-3. You receive complete context: metadata, statistics, legend, and full log history
-4. Reference specific logs by ID (e.g., "check log #5")
-
-**What you get in copied logs:**
-- **About section**: Explains what the logs are (for user context)
-- **What this tool tracks**: Complete list of all tracked events
-- **Session details**: Date, time, URL, browser info
-- **Statistics**: Total logs, breakdown by type (errors, successes, info)
-- **Legend**: Explains log format and types
-- **Full log history**: Every event with timestamps and data
-
-**Benefits for Claude:**
-- Complete operation timeline with millisecond precision
-- Full visibility into user actions leading to errors
-- Network request/response details
-- Error context (what, when, why, stack traces)
-- No need to ask "what did you click?" or "can you check the console?"
-
-### Log Persistence
-
-**Logs persist across:**
-- Page navigation within the site
-- Browser back/forward buttons
-- Route changes
-
-**Logs reset on:**
-- Manual "Clear" button click
-- Page refresh (F5)
-- Browser close
-- Application crash
-
-**Stored in sessionStorage** (`diagnosticLogs` key) for persistence.
-
 ### How to Maintain Logging
-
-**Logging Philosophy:** Log EVERYTHING - Every user interaction, every state change, every error.
 
 The diagnostic logging system exists to:
 - **Trace user actions** - Know exactly what the user did before an error
@@ -222,7 +140,7 @@ The diagnostic logging system exists to:
 
 ### What to Log
 
-**ALWAYS log these events:**
+**Log these events:**
 
 **User Interactions:**
 - Button clicks (with button label/purpose)
@@ -323,60 +241,6 @@ When adding a feature, ensure you log:
 - [ ] All errors and edge cases
 - [ ] All file operations (if applicable)
 - [ ] All navigation (if feature changes routes)
-
-**Never assume something is too small to log.** The goal is comprehensive traceability.
-
----
-
-## Session Management
-
-### When Starting a Session
-
-1. Read all documentation **fully**
-2. Explore the codebase
-3. Ask questions
-
-### When Finishing a Session
-
-1. **Test Before Committing**
-   - Run `npm run build` - Must pass without errors
-   - Run `npm run lint` - Must pass without errors
-   - Manual testing - Test the feature in browser (happy path + edge cases)
-   - API testing (if applicable) - Test API routes work correctly
-
-2. **Update Documentation**
-   - Update CHANGELOG.md
-   - Update CHECKLIST.md
-   - Update README.md *(optional)*
-   - Update ARCHITECTURE.md *(optional)*
-   - Update CONTRIBUTING.md *(optional)*
-   - Update CLAUDE.md *(optional)*
-
-3. **Commit and Push**
-   - Commit code changes first
-   - Then commit documentation updates
-   - Push all changes to branch
-
----
-
-## Development API Keys
-
-**Test Marker API Key:** `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
-
-**Currently hardcoded in:**
-- `src/app/pdf-to-markdown/page.js` (line 12) - Pre-filled as default value in useLocalStorage hook
-
----
-
-## CI/CD Pipeline
-
-The project has automated CI/CD workflows in `.github/workflows/`:
-- **Build verification** on Node 18.x and 20.x
-- **Security audits** for dependencies
-- **Code quality checks** (console.log detection, bundle size)
-- **PR labeling** and automation
-
-When adding features with new dependencies, test commands, or API endpoints, consider updating the CI/CD workflows accordingly.
 
 ---
 
