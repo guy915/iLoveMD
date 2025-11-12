@@ -1,16 +1,18 @@
 'use client'
 import { Component } from 'react'
+import { useLogs } from '@/contexts/LogContext'
 
 /**
  * Error Boundary component to catch and handle React errors
  * Prevents entire app from crashing when a component throws an error
+ * Integrates with diagnostic logging system
  *
  * Usage:
  * <ErrorBoundary>
  *   <YourComponent />
  * </ErrorBoundary>
  */
-class ErrorBoundary extends Component {
+class ErrorBoundaryClass extends Component {
   constructor(props) {
     super(props)
     this.state = { hasError: false, error: null, errorInfo: null }
@@ -22,8 +24,14 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log error details for debugging
+    // Log to diagnostic panel via callback prop
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo)
+    }
+
+    // Log to console for development
     console.error('Error caught by ErrorBoundary:', error, errorInfo)
+
     this.setState({
       error,
       errorInfo
@@ -44,7 +52,7 @@ class ErrorBoundary extends Component {
               Something went wrong
             </h2>
             <p className="text-gray-600 mb-4">
-              An error occurred while rendering this component. Please try refreshing the page.
+              A React component error occurred. The error has been logged to the diagnostic panel.
             </p>
 
             {this.state.error && (
@@ -62,7 +70,7 @@ class ErrorBoundary extends Component {
             <div className="flex gap-3">
               <button
                 onClick={this.handleReset}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Try Again
               </button>
@@ -82,4 +90,26 @@ class ErrorBoundary extends Component {
   }
 }
 
-export default ErrorBoundary
+// Functional wrapper to integrate with LogContext
+export default function ErrorBoundary({ children }) {
+  const { addLog } = useLogs()
+
+  const handleError = (error, errorInfo) => {
+    addLog('error', 'React Component Error', {
+      error: error?.toString(),
+      errorName: error?.name,
+      errorMessage: error?.message,
+      componentStack: errorInfo?.componentStack?.split('\n').slice(0, 10).join('\n') || 'No component stack',
+      stack: error?.stack?.split('\n').slice(0, 8).join('\n') || 'No stack trace',
+      url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  return (
+    <ErrorBoundaryClass onError={handleError}>
+      {children}
+    </ErrorBoundaryClass>
+  )
+}
+

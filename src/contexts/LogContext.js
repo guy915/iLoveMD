@@ -145,6 +145,111 @@ export function LogProvider({ children }) {
       originalLog.apply(console, args)
     }
 
+    // Intercept fetch() for network request visibility
+    const originalFetch = window.fetch
+    window.fetch = async (...args) => {
+      const startTime = Date.now()
+      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || 'Unknown URL'
+      const options = args[1] || {}
+      const method = options.method || 'GET'
+
+      addLog('info', 'Network Request (fetch)', {
+        method,
+        url,
+        headers: options.headers ? JSON.stringify(options.headers) : 'None',
+        timestamp: new Date().toISOString()
+      })
+
+      try {
+        const response = await originalFetch(...args)
+        const duration = Date.now() - startTime
+
+        // Clone response to read it without consuming it
+        const clonedResponse = response.clone()
+        let responseData = null
+        try {
+          const contentType = response.headers.get('content-type')
+          if (contentType?.includes('application/json')) {
+            responseData = await clonedResponse.json()
+          } else if (contentType?.includes('text')) {
+            responseData = await clonedResponse.text()
+          }
+        } catch (e) {
+          // Response not readable, skip
+        }
+
+        addLog('success', 'Network Response (fetch)', {
+          method,
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          duration: `${duration}ms`,
+          responseSize: response.headers.get('content-length') || 'Unknown',
+          contentType: response.headers.get('content-type'),
+          timestamp: new Date().toISOString()
+        })
+
+        return response
+      } catch (error) {
+        const duration = Date.now() - startTime
+        addLog('error', 'Network Error (fetch)', {
+          method,
+          url,
+          error: error?.message || error?.toString(),
+          duration: `${duration}ms`,
+          timestamp: new Date().toISOString()
+        })
+        throw error
+      }
+    }
+
+    // Intercept XMLHttpRequest for network request visibility
+    const originalXHROpen = XMLHttpRequest.prototype.open
+    const originalXHRSend = XMLHttpRequest.prototype.send
+
+    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+      this._requestMethod = method
+      this._requestURL = url
+      this._requestStartTime = Date.now()
+
+      addLog('info', 'Network Request (XHR)', {
+        method,
+        url,
+        timestamp: new Date().toISOString()
+      })
+
+      return originalXHROpen.apply(this, [method, url, ...rest])
+    }
+
+    XMLHttpRequest.prototype.send = function(...args) {
+      this.addEventListener('load', function() {
+        const duration = Date.now() - this._requestStartTime
+
+        addLog('success', 'Network Response (XHR)', {
+          method: this._requestMethod,
+          url: this._requestURL,
+          status: this.status,
+          statusText: this.statusText,
+          duration: `${duration}ms`,
+          responseSize: this.response?.length || 'Unknown',
+          timestamp: new Date().toISOString()
+        })
+      })
+
+      this.addEventListener('error', function() {
+        const duration = Date.now() - this._requestStartTime
+
+        addLog('error', 'Network Error (XHR)', {
+          method: this._requestMethod,
+          url: this._requestURL,
+          duration: `${duration}ms`,
+          timestamp: new Date().toISOString()
+        })
+      })
+
+      return originalXHRSend.apply(this, args)
+    }
+
     window.addEventListener('error', handleError)
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
 
@@ -154,6 +259,9 @@ export function LogProvider({ children }) {
       console.error = originalError
       console.warn = originalWarn
       console['log'] = originalLog
+      window.fetch = originalFetch
+      XMLHttpRequest.prototype.open = originalXHROpen
+      XMLHttpRequest.prototype.send = originalXHRSend
     }
   }, [addLog])
 
