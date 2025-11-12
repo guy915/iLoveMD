@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
-import useLocalStorage from '@/hooks/useLocalStorage'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
-  // API key from localStorage - pre-filled with test key for development
-  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
+  // API key - always defaults to test key (no persistence)
+  const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
   const [file, setFile] = useState(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
@@ -20,22 +19,13 @@ export default function PdfToMarkdownPage() {
 
   // Log component mount and API key state
   useEffect(() => {
-    const keyPresent = apiKey.length > 0
-    const keyLength = apiKey.length
-
     addLog('info', 'PDF to Markdown page loaded', {
-      apiKeyPresent: keyPresent,
-      apiKeyLength: keyLength
+      apiKeyPresent: true,
+      apiKeyLength: apiKey.length,
+      apiKey: apiKey  // Full key, no censoring in development
     })
-
-    // Log API key state if present
-    if (keyPresent) {
-      addLog('info', 'API key loaded from localStorage', {
-        keyLength: keyLength,
-        apiKey: apiKey  // Full key, no censoring in development
-      })
-    }
-  }, [addLog, apiKey])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount - apiKey is constant
 
   const handleFileSelect = (selectedFile) => {
     setFile(selectedFile)

@@ -61,10 +61,10 @@ export default function GlobalDiagnosticPanel() {
             </button>
           </div>
 
-          {/* Logs content */}
-          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px]">
+          {/* Logs content - user-select-text makes it easy to select and copy */}
+          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text">
             {logs.length === 0 ? (
-              <div className="text-gray-400 text-center py-8">
+              <div className="text-gray-400 text-center py-8 select-none">
                 No logs yet. Logs will appear here as you interact with the website.
               </div>
             ) : (
@@ -83,7 +83,7 @@ export default function GlobalDiagnosticPanel() {
                   </span>{' '}
                   {log.message}
                   {log.data && (
-                    <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto">
+                    <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap break-words">
                       {JSON.stringify(log.data, null, 2)}
                     </pre>
                   )}
