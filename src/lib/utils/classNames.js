@@ -31,19 +31,4 @@ export function cn(...classes) {
     .trim()
 }
 
-/**
- * Helper function for conditional class names
- * @param {boolean} condition - Condition to check
- * @param {string} truthyClass - Class to apply if condition is true
- * @param {string} falsyClass - Class to apply if condition is false
- * @returns {string} The appropriate class name
- *
- * @example
- * conditional(isActive, 'bg-blue-500', 'bg-gray-500')
- * // => 'bg-blue-500' if isActive, otherwise 'bg-gray-500'
- */
-export function conditional(condition, truthyClass, falsyClass = '') {
-  return condition ? truthyClass : falsyClass
-}
-
 export default cn
