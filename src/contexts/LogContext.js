@@ -68,10 +68,7 @@ export function LogProvider({ children }) {
 
   const addLog = useCallback((type, message, data = null) => {
     // Create a simple hash for deduplication (exclude timestamp from data for better deduplication)
-    const dataForHash = data ? { ...data } : null
-    if (dataForHash && 'timestamp' in dataForHash) {
-      delete dataForHash.timestamp
-    }
+    const { timestamp, ...dataForHash } = data || {};
     const hash = `${type}:${message}:${JSON.stringify(dataForHash)}`
     const now = Date.now()
 
