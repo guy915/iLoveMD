@@ -11,7 +11,7 @@ let logIdCounter = 0
 
 // Track recent logs for deduplication (prevents React Strict Mode double-mounting duplicates)
 const recentLogs = new Map() // key: hash, value: timestamp
-const DEDUP_WINDOW_MS = 100 // Consider logs within 100ms as duplicates
+const DEDUP_WINDOW_MS = 50 // Consider logs within 50ms as duplicates (Strict Mode is fast)
 
 // Filter out Next.js internal URLs from logging (framework noise)
 const shouldLogUrl = (url) => {

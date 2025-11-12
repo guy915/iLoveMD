@@ -53,9 +53,9 @@ export default function GlobalDiagnosticPanel() {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                // Copy logs to clipboard
+                // Copy logs to clipboard with IDs
                 const logsText = logs.map(log =>
-                  `[${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
+                  `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
                     log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''
                   }`
                 ).join('\n\n')
@@ -89,7 +89,7 @@ export default function GlobalDiagnosticPanel() {
                 >
                   <div className="flex items-start gap-2">
                     <span className="text-gray-600 text-xs font-mono select-all" title="Log ID (click to select)">
-                      #{log.id.split('-')[1]}
+                      #{log.id}
                     </span>
                     <div className="flex-1">
                       <span className="text-gray-500">[{log.timestamp}]</span>{' '}
