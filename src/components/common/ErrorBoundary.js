@@ -1,5 +1,5 @@
 'use client'
-import { Component } from 'react'
+import { Component, useCallback } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 
 /**
@@ -94,7 +94,7 @@ class ErrorBoundaryClass extends Component {
 export default function ErrorBoundary({ children }) {
   const { addLog } = useLogs()
 
-  const handleError = (error, errorInfo) => {
+  const handleError = useCallback((error, errorInfo) => {
     addLog('error', 'React Component Error', {
       error: error?.toString(),
       errorName: error?.name,
@@ -104,7 +104,7 @@ export default function ErrorBoundary({ children }) {
       url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
       timestamp: new Date().toISOString()
     })
-  }
+  }, [addLog])
 
   return (
     <ErrorBoundaryClass onError={handleError}>
