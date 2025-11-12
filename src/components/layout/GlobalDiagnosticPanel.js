@@ -87,16 +87,23 @@ export default function GlobalDiagnosticPanel() {
                     'text-gray-300'
                   }`}
                 >
-                  <span className="text-gray-500">[{log.timestamp}]</span>{' '}
-                  <span className="font-bold">
-                    {log.type.toUpperCase()}:
-                  </span>{' '}
-                  {log.message}
-                  {log.data && (
-                    <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap break-words">
-                      {JSON.stringify(log.data, null, 2)}
-                    </pre>
-                  )}
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-600 text-xs font-mono select-all" title="Log ID (click to select)">
+                      #{log.id.split('-')[1]}
+                    </span>
+                    <div className="flex-1">
+                      <span className="text-gray-500">[{log.timestamp}]</span>{' '}
+                      <span className="font-bold">
+                        {log.type.toUpperCase()}:
+                      </span>{' '}
+                      {log.message}
+                      {log.data && (
+                        <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap break-words">
+                          {JSON.stringify(log.data, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))
             )}
