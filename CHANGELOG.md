@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - Explains benefits for troubleshooting and debugging
       - Guides users on sharing logs when asking for help
       - Makes copied logs accessible to anyone unfamiliar with diagnostic logging
+    - **Added "WHAT THIS TOOL TRACKS" section** (NEW):
+      - Complete categorized list of all tracked events
+      - **Navigation & Page Events**: Page loads, link clicks, mobile menu, route changes, 404 errors
+      - **User Interactions**: File uploads, validation, button clicks, form submissions
+      - **Application Events**: localStorage operations, file processing, downloads, API calls with timing, polling operations
+      - **Error Tracking**: Validation errors, network errors, 404s, application crashes
+      - **Performance Metrics**: API response times, polling durations, total operation times
+      - Makes it crystal clear what data is being captured and why
+      - Complete transparency for users and debugging context for Claude
     - **Added comprehensive metadata section** (renamed to "SESSION DETAILS"):
       - Session date and time with locale formatting
       - Session start time (extracted from first log timestamp)
@@ -35,13 +44,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - Redundant with introductory context
       - Simplified copy output
       - User feedback: not needed
+  - **CLAUDE.md Documentation Updates** (NEW):
+    - **Added comprehensive "Diagnostic Logging Tool (Built for Claude)" section**:
+      - Positioned prominently near top of file for visibility
+      - Explains what the tool is and why it exists (built for Claude to debug)
+      - Shows where to find it (Header, always visible)
+      - Detailed "What It Logs" section with specific examples
+      - Usage instructions for future Claude sessions
+      - Explains log persistence behavior
+      - Documents what Claude receives in copied logs
+      - Lists benefits for debugging (timeline, visibility, context)
+    - **Expanded "What It Logs" section** with specific tracking details:
+      - Listed all currently tracked events with concrete examples
+      - Documented performance metrics tracking
+      - Added "What this tool tracks" to copied logs benefits list
+    - Ensures future Claude sessions immediately know about this debugging tool
   - **Benefits**:
-    - Copied logs are fully self-documenting
+    - Copied logs are fully self-documenting and self-explanatory
+    - Complete transparency about what's being tracked (no hidden logging)
+    - Future Claude sessions know exactly what debugging data is available
     - Complete context for anyone viewing logs (user, Claude, other developers)
     - Makes issue reporting easier and more effective
     - Professional, comprehensive format
     - Easier for Claude to debug with full metadata included
-  - **File Modified**: `src/components/layout/GlobalDiagnosticPanel.js`
+  - **Files Modified**:
+    - `src/components/layout/GlobalDiagnosticPanel.js` (copy functionality)
+    - `CLAUDE.md` (documentation for future Claude sessions)
   - Build: ✅ | Lint: ✅ | Tested: ✅
 
 ### Fixed
