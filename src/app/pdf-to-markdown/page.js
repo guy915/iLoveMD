@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
-import useLocalStorage from '@/hooks/useLocalStorage'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
-  // API key from localStorage - pre-filled with test key for development
-  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
+  // API key always resets to test key on page load (no persistence)
+  const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
   const [file, setFile] = useState(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')

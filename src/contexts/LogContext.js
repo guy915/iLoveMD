@@ -47,6 +47,40 @@ export function LogProvider({ children }) {
     }
   }, [])
 
+  // Global error handlers - capture all uncaught errors
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // Capture uncaught JavaScript errors
+    const handleError = (event) => {
+      addLog('error', `Uncaught error: ${event.message}`, {
+        message: event.message,
+        filename: event.filename,
+        line: event.lineno,
+        column: event.colno,
+        error: event.error?.toString(),
+        stack: event.error?.stack?.split('\n').slice(0, 5).join('\n')
+      })
+    }
+
+    // Capture unhandled promise rejections
+    const handleRejection = (event) => {
+      addLog('error', `Unhandled promise rejection: ${event.reason}`, {
+        reason: event.reason?.toString(),
+        stack: event.reason?.stack?.split('\n').slice(0, 5).join('\n'),
+        promise: event.promise?.toString()
+      })
+    }
+
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleRejection)
+
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleRejection)
+    }
+  }, [addLog])
+
   return (
     <LogContext.Provider value={{ logs, addLog, clearLogs }}>
       {children}

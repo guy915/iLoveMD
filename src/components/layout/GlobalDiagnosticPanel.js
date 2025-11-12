@@ -61,8 +61,8 @@ export default function GlobalDiagnosticPanel() {
             </button>
           </div>
 
-          {/* Logs content */}
-          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px]">
+          {/* Logs content - user-select-text enables text selection/copy */}
+          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text">
             {logs.length === 0 ? (
               <div className="text-gray-400 text-center py-8">
                 No logs yet. Logs will appear here as you interact with the website.
