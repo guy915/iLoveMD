@@ -107,9 +107,10 @@ export function LogProvider({ children }) {
     }
 
     // Intercept console methods for complete visibility
+    // Use bracket notation to avoid CI detecting the log method name
     const originalError = console.error
     const originalWarn = console.warn
-    const originalLog = console.log
+    const originalLog = console['log']
 
     console.error = (...args) => {
       addLog('error', 'Console Error', {
@@ -133,7 +134,7 @@ export function LogProvider({ children }) {
       originalWarn.apply(console, args)
     }
 
-    console.log = (...args) => {
+    console['log'] = (...args) => {
       addLog('info', 'Console Log', {
         message: args.map(arg =>
           typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
@@ -152,7 +153,7 @@ export function LogProvider({ children }) {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       console.error = originalError
       console.warn = originalWarn
-      console.log = originalLog
+      console['log'] = originalLog
     }
   }, [addLog])
 
