@@ -4,10 +4,22 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 
 const LogContext = createContext()
 const LOGS_STORAGE_KEY = 'diagnosticLogs'
+const LOG_COUNTER_KEY = 'diagnosticLogCounter'
 const MAX_LOGS = 500
 
-// Counter for unique log IDs
-let logIdCounter = 0
+// Persistent session counter - survives page navigation, resets on browser close
+const getInitialCounter = () => {
+  if (typeof window === 'undefined') return 0
+  try {
+    const stored = window.sessionStorage.getItem(LOG_COUNTER_KEY)
+    return stored ? parseInt(stored, 10) : 0
+  } catch (error) {
+    console.error('Error loading log counter:', error)
+    return 0
+  }
+}
+
+let persistentLogCounter = getInitialCounter()
 
 // Track recent logs for deduplication (prevents React Strict Mode double-mounting duplicates)
 const recentLogs = new Map() // key: hash, value: timestamp
@@ -77,16 +89,29 @@ export function LogProvider({ children }) {
     }
 
     const timestamp = new Date().toLocaleTimeString()
-    const newLog = { timestamp, type, message, data, id: `${Date.now()}-${logIdCounter++}` }
+    const id = persistentLogCounter++
+
+    // Save counter to sessionStorage for persistence across navigation
+    if (typeof window !== 'undefined') {
+      try {
+        window.sessionStorage.setItem(LOG_COUNTER_KEY, persistentLogCounter.toString())
+      } catch (error) {
+        console.error('Error saving log counter:', error)
+      }
+    }
+
+    const newLog = { timestamp, type, message, data, id }
     // Keep only last 500 logs (sliding window)
     setLogs(prev => [...prev, newLog].slice(-MAX_LOGS))
   }, [])
 
   const clearLogs = useCallback(() => {
     setLogs([])
+    persistentLogCounter = 0 // Reset counter
     if (typeof window !== 'undefined') {
       try {
         window.sessionStorage.removeItem(LOGS_STORAGE_KEY)
+        window.sessionStorage.removeItem(LOG_COUNTER_KEY)
       } catch (error) {
         console.error('Error clearing logs from sessionStorage:', error)
       }
