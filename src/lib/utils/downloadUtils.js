@@ -17,16 +17,6 @@ export function downloadFile(content, filename, mimeType = 'text/markdown') {
 }
 
 /**
- * Gets file extension from filename
- * @param {string} filename - The filename
- * @returns {string} The extension without the dot
- */
-export function getFileExtension(filename) {
-  const parts = filename.split('.')
-  return parts.length > 1 ? parts[parts.length - 1] : ''
-}
-
-/**
  * Replaces file extension with a new one
  * @param {string} filename - The original filename
  * @param {string} newExtension - The new extension (without dot)
@@ -43,17 +33,4 @@ export function replaceExtension(filename, newExtension) {
 
   // No extension or dotfile - append new extension
   return `${filename}.${newExtension}`
-}
-
-/**
- * Formats bytes to human readable format
- * @param {number} bytes - The number of bytes
- * @returns {string} Formatted string like "1.5 MB"
- */
-export function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
