@@ -4,45 +4,52 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 
 const LogContext = createContext()
 const LOGS_STORAGE_KEY = 'diagnosticLogs'
+const MAX_LOGS = 500
 
 export function LogProvider({ children }) {
-  // Initialize logs from localStorage if available
-  const [logs, setLogs] = useState(() => {
-    if (typeof window === 'undefined') return []
+  // Initialize with empty array on server to avoid hydration errors
+  // Load from sessionStorage only on client after mount
+  const [logs, setLogs] = useState([])
 
-    try {
-      const stored = window.localStorage.getItem(LOGS_STORAGE_KEY)
-      return stored ? JSON.parse(stored) : []
-    } catch (error) {
-      console.error('Error loading logs from localStorage:', error)
-      return []
-    }
-  })
-
-  // Save logs to localStorage whenever they change
+  // Load logs from sessionStorage on client mount only
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     try {
-      window.localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs))
+      const stored = window.sessionStorage.getItem(LOGS_STORAGE_KEY)
+      if (stored) {
+        setLogs(JSON.parse(stored))
+      }
     } catch (error) {
-      console.error('Error saving logs to localStorage:', error)
+      console.error('Error loading logs from sessionStorage:', error)
+    }
+  }, [])
+
+  // Save logs to sessionStorage whenever they change
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    try {
+      window.sessionStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs))
+    } catch (error) {
+      console.error('Error saving logs to sessionStorage:', error)
     }
   }, [logs])
 
   const addLog = useCallback((type, message, data = null) => {
     const timestamp = new Date().toLocaleTimeString()
     const newLog = { timestamp, type, message, data, id: Date.now() }
-    setLogs(prev => [...prev, newLog])
+    // Keep only the latest 500 logs (sliding window)
+    setLogs(prev => [...prev, newLog].slice(-MAX_LOGS))
   }, [])
 
   const clearLogs = useCallback(() => {
     setLogs([])
     if (typeof window !== 'undefined') {
       try {
-        window.localStorage.removeItem(LOGS_STORAGE_KEY)
+        window.sessionStorage.removeItem(LOGS_STORAGE_KEY)
       } catch (error) {
-        console.error('Error clearing logs from localStorage:', error)
+        console.error('Error clearing logs from sessionStorage:', error)
       }
     }
   }, [])

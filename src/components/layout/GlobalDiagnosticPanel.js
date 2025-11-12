@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function GlobalDiagnosticPanel() {
-  const { logs, clearLogs } = useLogs()
+  const { logs } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
   const panelRef = useRef(null)
 
@@ -48,21 +48,27 @@ export default function GlobalDiagnosticPanel() {
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
             <h3 className="text-lg font-semibold text-white">
-              Diagnostic Logs ({logs.length})
+              Diagnostic Logs ({logs.length} / max 500)
             </h3>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                clearLogs()
-              }}
-              className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
-            >
-              Clear
-            </button>
           </div>
 
-          {/* Logs content - user-select-text enables text selection/copy */}
-          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text">
+          {/* Logs content - enable text selection with keyboard shortcuts */}
+          <div
+            className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text"
+            onKeyDown={(e) => {
+              // Allow Ctrl+A to select all text within the logs panel
+              if (e.ctrlKey && e.key === 'a') {
+                e.stopPropagation()
+                // Select all text in this div
+                const selection = window.getSelection()
+                const range = document.createRange()
+                range.selectNodeContents(e.currentTarget)
+                selection.removeAllRanges()
+                selection.addRange(range)
+                e.preventDefault()
+              }
+            }}
+          >
             {logs.length === 0 ? (
               <div className="text-gray-400 text-center py-8">
                 No logs yet. Logs will appear here as you interact with the website.

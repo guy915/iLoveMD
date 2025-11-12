@@ -256,7 +256,7 @@ export default function PdfToMarkdownPage() {
           Marker API Key
         </label>
         <input
-          type="password"
+          type="text"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
           placeholder="Enter your API key"
