@@ -9,6 +9,10 @@ const MAX_LOGS = 500
 // Counter for unique log IDs
 let logIdCounter = 0
 
+// Track recent logs for deduplication (prevents React Strict Mode double-mounting duplicates)
+const recentLogs = new Map() // key: hash, value: timestamp
+const DEDUP_WINDOW_MS = 100 // Consider logs within 100ms as duplicates
+
 export function LogProvider({ children }) {
   // Initialize logs from sessionStorage if available
   const [logs, setLogs] = useState(() => {
@@ -35,6 +39,27 @@ export function LogProvider({ children }) {
   }, [logs])
 
   const addLog = useCallback((type, message, data = null) => {
+    // Create a simple hash for deduplication
+    const hash = `${type}:${message}:${JSON.stringify(data)}`
+    const now = Date.now()
+
+    // Check if we've seen this exact log recently (within deduplication window)
+    const lastSeen = recentLogs.get(hash)
+    if (lastSeen && (now - lastSeen) < DEDUP_WINDOW_MS) {
+      // Skip duplicate log (React Strict Mode double-mounting)
+      return
+    }
+
+    // Record this log in recent logs
+    recentLogs.set(hash, now)
+
+    // Clean up old entries from deduplication map (keep last 50)
+    if (recentLogs.size > 50) {
+      const entries = Array.from(recentLogs.entries())
+      entries.sort((a, b) => a[1] - b[1]) // Sort by timestamp
+      entries.slice(0, entries.length - 50).forEach(([key]) => recentLogs.delete(key))
+    }
+
     const timestamp = new Date().toLocaleTimeString()
     const newLog = { timestamp, type, message, data, id: `${Date.now()}-${logIdCounter++}` }
     // Keep only last 500 logs (sliding window)
