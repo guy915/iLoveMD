@@ -596,10 +596,134 @@ Use this section to track issues, blockers, or notes during implementation:
     - 85% faster than original sequential approach (5 min → 35 sec)
   - Updated comprehensive workflow documentation
   - All tests passing - ready for Phase 3
+
+- 2025-11-11: Global Diagnostic Logging Panel (Initial Implementation)
+  - Implemented website-wide diagnostic logging system:
+    - Created LogContext with React Context API for global state management
+    - Built GlobalDiagnosticPanel component with hover/expand behavior
+    - Panel appears in top-right corner when logs exist, auto-hides when empty
+    - Expands to show full diagnostic details on mouse hover
+    - Shows log count in collapsed state for quick status
+    - Full details include timestamps, log types (info/success/error), and structured data
+    - Clear logs button for resetting diagnostic history
+    - Integrated into root layout for accessibility across all pages
+    - Updated PDF tool to use global logging instead of local state
+  - Features:
+    - Position: Fixed top-right, always accessible
+    - Color-coded by log type (info=gray, success=green, error=red)
+    - Supports structured data display (JSON pretty-print)
+    - Non-intrusive design - only visible when needed
+  - Build and lint tests passing
+  - Ready to continue Phase 3 implementation
+
+- 2025-11-11: Comprehensive Diagnostic Logging System
+  - Major overhaul of diagnostic logging for complete application traceability:
+    - **Panel Relocation**: Moved from fixed top-right to Header next to logo
+    - **Interaction Change**: Changed from hover to click-based toggle
+    - **Always Visible**: Shows empty state instead of hiding when no logs
+    - **Better Accessibility**: Always accessible in header across all pages
+  - Comprehensive logging added throughout application:
+    - **Header Component**: Page loads, all navigation clicks, mobile menu toggles, logo clicks
+    - **FileUpload Component**: File drag events, file drops, browser selection, validation (success/failure)
+    - **ToolTile Component**: Tool card clicks with destination tracking
+    - **PDF Tool**: Comprehensive logging already in place (maintained)
+    - **404 Page**: Automatic error logging with pathname tracking
+    - **All logs include structured context data** for effective debugging
+  - New pages created:
+    - `src/app/not-found.js` - Custom 404 with automatic error logging
+    - `src/app/loading.js` - Global loading state for better UX
+  - Documentation updates (CLAUDE.md):
+    - Added **CI/CD Pipeline Maintenance** section
+      - When to update workflows as features are added
+      - CI/CD update checklist for new features
+      - Example scenarios for common updates
+    - Added **Diagnostic Logging Maintenance** section
+      - Logging philosophy: "Log EVERYTHING"
+      - Comprehensive list of what to log (interactions, state, errors)
+      - How to add logging to new components
+      - Logging standards and best practices
+      - Logging checklist for new features
+    - Updated Tech Stack to reflect React Context usage
+    - Updated Project Structure with new directories and files
+  - Logging standards established:
+    - Types: 'info' (actions/state), 'success' (completions), 'error' (failures)
+    - Always include descriptive messages with context
+    - Include structured data for complex events
+    - Sanitize sensitive information (no API keys, passwords)
+  - Build and lint tests: All passing
+  - Ready for continued feature development with comprehensive tracing
+
+- 2025-11-11: Diagnostic Logging Enhancements & Bug Fixes
+  - **Fixed Critical Issues**:
+    - **Removed hardcoded test API key** - Default is now empty, users must provide their own
+    - **Fixed log persistence** - Logs no longer clear during operations (only manual clear or page refresh)
+    - **Added click-outside detection** - Diagnostic panel closes when clicking outside (better UX)
+  - **Comprehensive Timing & Operation Tracking**:
+    - All network operations now include timing in milliseconds
+    - Submit request timing tracked
+    - Poll request timing tracked per attempt
+    - Total conversion time tracked end-to-end
+    - Polling elapsed time shown on each attempt
+  - **Enhanced PDF Tool Logging**:
+    - Component mount logging with API key state
+    - localStorage operations logged (API key load/update with sanitized preview)
+    - File metadata logging (name, size, type)
+    - API endpoint details (method, URL, request IDs)
+    - Poll progress tracking (attempt number, elapsed time)
+    - Network details (HTTP status codes, response structure)
+    - Success details (page count, output format, markdown size)
+    - Error context (type, message, stack trace, duration)
+  - **Improved Error Handling**:
+    - Errors now include full context (duration, type, stack trace)
+    - Validation errors logged with file details
+    - Network errors include endpoint and timing information
+    - Timeout errors show poll attempts and elapsed time
+  - **Benefits for Debugging**:
+    - Complete operation timeline with precise timing
+    - Full network request/response visibility
+    - Context for every error with stack traces
+    - Progress tracking through multi-step operations
+    - localStorage operation visibility
+    - Easy to trace any user action leading to issues
+  - All logs maintain standards:
+    - Descriptive messages with context
+    - Structured data for complex information
+    - Timing where relevant
+    - Sensitive data sanitized (API keys show preview only)
+  - Build and lint: All passing
+  - All functionality tested and verified
+
+- 2025-11-11: Log Persistence & Configuration Fixes
+  - **Restored test API key as default**:
+    - Put back `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ` as default value
+    - Pre-fills API key field for easier development testing
+  - **Removed API key censoring in logs**:
+    - Changed from sanitized preview (****...****) to full key display
+    - No censoring needed in development phase
+    - Improves debugging of API-related issues
+  - **Fixed log persistence across page navigation**:
+    - Logs now stored in localStorage (key: 'diagnosticLogs')
+    - Persist when navigating between pages within site (home → help → pdf tool)
+    - Only reset on: manual clear, browser close, page refresh, crash
+    - Never reset when switching between subpages
+  - **LogContext implementation** (`src/contexts/LogContext.js`):
+    - Initialize state from localStorage on mount
+    - Auto-save logs to localStorage on every change
+    - Load logs from localStorage when component mounts
+    - Clear from localStorage when clearLogs() called
+    - SSR-safe with window checks
+  - **Documentation updates** (`CLAUDE.md`):
+    - Added "Purpose: Logs Are For Claude" section
+    - Clarified logs are primarily for Claude's debugging
+    - Explained user benefit (copy/paste to Claude for help)
+    - Noted logs replace browser console/network tab visibility
+    - Encouraged Claude to enhance logging based on preferences
+  - Build and lint: All passing
+  - Complete session history now visible across entire site
 ```
 
 ---
 
-**Last Updated:** 2025-11-10
+**Last Updated:** 2025-11-11
 **Current Phase:** Phase 2 Complete
 **Next Task:** Begin Phase 3 - PDF to Markdown Tool
