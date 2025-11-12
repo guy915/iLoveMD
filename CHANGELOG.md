@@ -9,20 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **PDF to Markdown Configuration Options** (2025-11-12):
-  - **Comprehensive options UI** for PDF conversion with localStorage persistence:
-    - **Output Format Dropdown**:
-      - Markdown (.md) - Default markdown output
-      - JSON (.json) - Structured JSON output
-      - HTML (.html) - HTML output
-      - Chunks (.json) - Chunked JSON output for RAG
-    - **Basic Options** (always visible):
+  - **Simple, focused options UI** for PDF conversion with localStorage persistence:
+    - **Configuration Options** (all visible):
       - Add page separators - Include page breaks in output
+      - Format lines - Apply line formatting to improve readability
       - Use LLM enhancement - Improve accuracy with AI (slower, costs more)
-    - **Advanced Options** (collapsible section):
-      - Force OCR - Run OCR on entire document, even if text exists
-      - Strip existing OCR - Remove all existing OCR text and re-process
-      - Disable image extraction - Skip extracting images from PDF
-      - Language input field - Specify language(s) for better OCR accuracy
+      - Disable image extraction - Skip extracting images and replace with descriptions (requires LLM)
+    - **Fixed Settings** (always applied):
+      - Output format: Markdown (.md)
+      - Language: English
   - **localStorage Persistence**:
     - All option selections saved to localStorage (`markerOptions` key)
     - Options automatically restore on page load
@@ -44,7 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Log output format in conversion complete message
     - Log file download details with format information
   - **UI/UX Improvements**:
-    - Show/Hide Advanced options toggle
+    - Simple, clean interface with all options visible
+    - Disable image extraction checkbox only enabled when LLM is on
+    - Auto-unchecks image extraction when LLM is disabled
     - All options disabled during processing
     - Clear descriptions for each option
     - Professional checkbox layout with labels
