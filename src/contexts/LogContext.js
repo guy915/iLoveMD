@@ -13,6 +13,22 @@ let logIdCounter = 0
 const recentLogs = new Map() // key: hash, value: timestamp
 const DEDUP_WINDOW_MS = 100 // Consider logs within 100ms as duplicates
 
+// Filter out Next.js internal URLs from logging (framework noise)
+const shouldLogUrl = (url) => {
+  if (!url || url === 'Unknown URL') return true
+
+  // Filter Next.js internal/development URLs
+  const ignorePatterns = [
+    '/__nextjs_original-stack-frame', // Stack trace fetches
+    '/_next/static',                   // Static assets
+    '/__nextjs',                       // Next.js internals
+    '/webpack-hmr',                    // Hot module reload
+    '/_next/webpack-hmr'               // Hot module reload
+  ]
+
+  return !ignorePatterns.some(pattern => url.includes(pattern))
+}
+
 export function LogProvider({ children }) {
   // Initialize logs from sessionStorage if available
   const [logs, setLogs] = useState(() => {
@@ -178,6 +194,9 @@ export function LogProvider({ children }) {
       const options = args[1] || {}
       const method = options.method || 'GET'
 
+      // Filter out Next.js internal URLs from logging
+      const shouldLog = shouldLogUrl(url)
+
       // Filter sensitive headers before logging
       const sanitizedHeaders = options.headers ?
         Object.fromEntries(
@@ -186,51 +205,59 @@ export function LogProvider({ children }) {
           )
         ) : 'None'
 
-      try {
-        addLog('info', 'Network Request (fetch)', {
-          method,
-          url,
-          headers: JSON.stringify(sanitizedHeaders),
-          timestamp: new Date().toISOString()
-        })
-      } catch (logError) {
-        // Don't break fetch if logging fails
-        console.error('Failed to log fetch request:', logError)
+      if (shouldLog) {
+        try {
+          addLog('info', 'Network Request (fetch)', {
+            method,
+            url,
+            headers: JSON.stringify(sanitizedHeaders),
+            timestamp: new Date().toISOString()
+          })
+        } catch (logError) {
+          // Don't break fetch if logging fails
+          console.error('Failed to log fetch request:', logError)
+        }
       }
 
       try {
         const response = await originalFetch(...args)
         const duration = Date.now() - startTime
 
-        try {
-          addLog('success', 'Network Response (fetch)', {
-            method,
-            url,
-            status: response.status,
-            statusText: response.statusText,
-            duration: `${duration}ms`,
-            responseSize: response.headers.get('content-length') || 'Unknown',
-            contentType: response.headers.get('content-type'),
-            timestamp: new Date().toISOString()
-          })
-        } catch (logError) {
-          console.error('Failed to log fetch response:', logError)
+        if (shouldLog) {
+          try {
+            addLog('success', 'Network Response (fetch)', {
+              method,
+              url,
+              status: response.status,
+              statusText: response.statusText,
+              duration: `${duration}ms`,
+              responseSize: response.headers.get('content-length') || 'Unknown',
+              contentType: response.headers.get('content-type'),
+              timestamp: new Date().toISOString()
+            })
+          } catch (logError) {
+            console.error('Failed to log fetch response:', logError)
+          }
         }
 
         return response
       } catch (error) {
         const duration = Date.now() - startTime
-        try {
-          addLog('error', 'Network Error (fetch)', {
-            method,
-            url,
-            error: error?.message || error?.toString(),
-            duration: `${duration}ms`,
-            timestamp: new Date().toISOString()
-          })
-        } catch (logError) {
-          console.error('Failed to log fetch error:', logError)
+
+        if (shouldLog) {
+          try {
+            addLog('error', 'Network Error (fetch)', {
+              method,
+              url,
+              error: error?.message || error?.toString(),
+              duration: `${duration}ms`,
+              timestamp: new Date().toISOString()
+            })
+          } catch (logError) {
+            console.error('Failed to log fetch error:', logError)
+          }
         }
+
         throw error
       }
     }
@@ -243,20 +270,24 @@ export function LogProvider({ children }) {
 
     XMLHttpRequest.prototype.open = function(method, url, ...rest) {
       // Store metadata for this specific XHR instance
+      const shouldLog = shouldLogUrl(url)
       xhrMetaMap.set(this, {
         method,
         url,
-        startTime: Date.now()
+        startTime: Date.now(),
+        shouldLog
       })
 
-      try {
-        addLog('info', 'Network Request (XHR)', {
-          method,
-          url,
-          timestamp: new Date().toISOString()
-        })
-      } catch (logError) {
-        console.error('Failed to log XHR request:', logError)
+      if (shouldLog) {
+        try {
+          addLog('info', 'Network Request (XHR)', {
+            method,
+            url,
+            timestamp: new Date().toISOString()
+          })
+        } catch (logError) {
+          console.error('Failed to log XHR request:', logError)
+        }
       }
 
       return originalXHROpen.apply(this, [method, url, ...rest])
@@ -268,33 +299,37 @@ export function LogProvider({ children }) {
       this.addEventListener('load', () => {
         const duration = meta ? (Date.now() - meta.startTime) : 0
 
-        try {
-          addLog('success', 'Network Response (XHR)', {
-            method: meta?.method,
-            url: meta?.url,
-            status: this.status,
-            statusText: this.statusText,
-            duration: `${duration}ms`,
-            responseSize: this.response?.length || 'Unknown',
-            timestamp: new Date().toISOString()
-          })
-        } catch (logError) {
-          console.error('Failed to log XHR response:', logError)
+        if (meta?.shouldLog) {
+          try {
+            addLog('success', 'Network Response (XHR)', {
+              method: meta?.method,
+              url: meta?.url,
+              status: this.status,
+              statusText: this.statusText,
+              duration: `${duration}ms`,
+              responseSize: this.response?.length || 'Unknown',
+              timestamp: new Date().toISOString()
+            })
+          } catch (logError) {
+            console.error('Failed to log XHR response:', logError)
+          }
         }
       })
 
       this.addEventListener('error', () => {
         const duration = meta ? (Date.now() - meta.startTime) : 0
 
-        try {
-          addLog('error', 'Network Error (XHR)', {
-            method: meta?.method,
-            url: meta?.url,
-            duration: `${duration}ms`,
-            timestamp: new Date().toISOString()
-          })
-        } catch (logError) {
-          console.error('Failed to log XHR error:', logError)
+        if (meta?.shouldLog) {
+          try {
+            addLog('error', 'Network Error (XHR)', {
+              method: meta?.method,
+              url: meta?.url,
+              duration: `${duration}ms`,
+              timestamp: new Date().toISOString()
+            })
+          } catch (logError) {
+            console.error('Failed to log XHR error:', logError)
+          }
         }
       })
 
