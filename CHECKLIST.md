@@ -742,10 +742,26 @@ Use this section to track issues, blockers, or notes during implementation:
       - Describes the logging system's purpose
       - Highlights usefulness for troubleshooting
       - Guides users on sharing logs when getting help
+    - **Added "WHAT THIS TOOL TRACKS" section**:
+      - Complete list of all tracked events organized by category
+      - Navigation & Page Events (loads, clicks, route changes, 404s)
+      - User Interactions (uploads, validation, buttons, forms)
+      - Application Events (localStorage, file processing, API calls, polling)
+      - Error Tracking (validation, network, 404s, crashes)
+      - Performance Metrics (response times, durations, timing)
+      - Makes it crystal clear what's being logged and why
     - Renamed "DIAGNOSTIC LOG SESSION" to "SESSION DETAILS" for clarity
     - Removed "HOW TO USE" section (redundant with introductory context)
+  - **CLAUDE.md documentation updates**:
+    - Added comprehensive "Diagnostic Logging Tool (Built for Claude)" section at top
+    - Expanded "What It Logs" with specific detailed tracking information
+    - Listed all currently tracked events with examples
+    - Updated "What you get in copied logs" to include tracking list
+    - Ensures future Claude sessions know about this debugging tool
   - **Benefits**:
-    - Copied logs are now self-documenting
+    - Copied logs are now fully self-documenting and self-explanatory
+    - Complete transparency about what's being tracked
+    - Future Claude knows exactly what data is available
     - Complete context provided for anyone viewing the logs
     - Makes it easier for users to report issues
     - Provides Claude with all necessary metadata for debugging
