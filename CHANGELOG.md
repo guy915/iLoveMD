@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Codebase Cleanup** (2025-11-12):
+  - **Removed unused code and files** (~100 lines removed):
+    - **Deleted entire unused hook**: `/src/hooks/useLocalStorage.js` (46 lines)
+      - Hook was never imported or used anywhere in the codebase
+      - API key state handled directly with useState() instead
+    - **Removed unused constants** from `/src/lib/constants.js`:
+      - `ERROR_MESSAGES` object (8 lines) - never imported or used
+      - `SUCCESS_MESSAGES` object (5 lines) - never imported or used
+      - `FETCH_URL` from `API_ENDPOINTS` - no fetch-url API route exists
+      - `PDF_OPTIONS`, `HTML_OPTIONS`, `MERGE_OPTIONS` from `STORAGE_KEYS` - features not yet implemented
+      - `formatFileSize()` function (10 lines) - never imported or used
+    - **Removed unused utility functions**:
+      - `getFileExtension()` from `/src/lib/utils/downloadUtils.js` (4 lines) - never imported
+      - `conditional()` from `/src/lib/utils/classNames.js` (4 lines) - never imported
+      - `formatFileSize()` from `/src/lib/utils/downloadUtils.js` (7 lines) - never imported
+    - **Removed 9 .gitkeep placeholder files** from directories:
+      - `/src/hooks/.gitkeep`, `/src/lib/utils/.gitkeep`, `/src/lib/storage/.gitkeep`
+      - `/src/lib/api/.gitkeep`, `/src/lib/processors/.gitkeep`
+      - `/src/components/home/.gitkeep`, `/src/components/tools/.gitkeep`
+      - `/src/components/layout/.gitkeep`, `/src/components/common/.gitkeep`
+      - These were added in Phase 1 to track empty directories but are no longer needed
+    - **Removed redundant console.error** from `/src/app/pdf-to-markdown/page.js`:
+      - Line 219: `console.error('Conversion error:', err)` was redundant
+      - Error already logged via diagnostic logging system with addLog()
+      - Follows CLAUDE.md guideline to use diagnostic logging instead of console
+  - **Benefits**:
+    - Cleaner, more maintainable codebase
+    - Reduced code surface area (~100 lines removed)
+    - No dead code or unused utilities
+    - Consistent with project philosophy (only code that's actually used)
+    - Zero functional changes - all removed code was unused
+  - Build: ✅ | Lint: ✅ | Tests: Manual verification passed
+
 ### Fixed
 - **Hydration Error in GlobalDiagnosticPanel** (2025-11-12):
   - **Fixed React hydration mismatch** in diagnostic logs button:

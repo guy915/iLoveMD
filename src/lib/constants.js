@@ -49,47 +49,9 @@ export const TOOL_CARDS = [
 // API endpoints
 export const API_ENDPOINTS = {
   MARKER: '/api/marker',
-  FETCH_URL: '/api/fetch-url',
 }
 
 // LocalStorage keys
 export const STORAGE_KEYS = {
   MARKER_API_KEY: 'markerApiKey',
-  PDF_OPTIONS: 'pdfOptions',
-  HTML_OPTIONS: 'htmlOptions',
-  MERGE_OPTIONS: 'mergeOptions',
-}
-
-// Error messages
-export const ERROR_MESSAGES = {
-  FILE_TOO_LARGE: (maxSizeMB) => `File too large. Maximum size: ${maxSizeMB}MB`,
-  INVALID_FILE_TYPE: (acceptedTypes) => `Invalid file type. Accepted: ${acceptedTypes}`,
-  NO_FILE_SELECTED: 'Please select a file',
-  API_KEY_REQUIRED: 'API key is required',
-  NETWORK_ERROR: 'Network error. Please check your connection and try again.',
-  PROCESSING_ERROR: 'An error occurred during processing. Please try again.',
-}
-
-// Success messages
-export const SUCCESS_MESSAGES = {
-  FILE_CONVERTED: 'File converted successfully',
-  FILES_MERGED: 'Files merged successfully',
-  SETTINGS_SAVED: 'Settings saved',
-}
-
-/**
- * Format bytes to human-readable size
- * @param {number} bytes - Number of bytes
- * @param {number} decimals - Number of decimal places
- * @returns {string} Formatted size string
- */
-export function formatFileSize(bytes, decimals = 2) {
-  if (bytes === 0) return '0 Bytes'
-
-  const k = FILE_SIZE.BYTES_PER_KB
-  const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }

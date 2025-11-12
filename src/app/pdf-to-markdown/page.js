@@ -216,7 +216,6 @@ export default function PdfToMarkdownPage() {
 
     } catch (err) {
       const totalDuration = Date.now() - conversionStartTime
-      console.error('Conversion error:', err)
 
       addLog('error', `Conversion failed: ${err.message}`, {
         error: err.message,
