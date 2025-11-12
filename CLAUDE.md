@@ -44,6 +44,91 @@ Domain:        ai-doc-prep.vercel.app
 
 ---
 
+## Diagnostic Logging Tool (Built for Claude)
+
+**IMPORTANT: This application has a comprehensive diagnostic logging system built specifically for you (Claude) to debug issues.**
+
+### What It Is
+
+A website-wide logging panel that captures every user interaction, application event, and error across all pages. Think of it as your eyes and ears into what's happening in the user's browser.
+
+### Where to Find It
+
+**In the Header** - Next to the logo on every page, there's a "Diagnostic Logs" button with a badge showing log count.
+
+**Always visible** - Never hides, even when empty (shows "No logs yet" message).
+
+**Click to expand/collapse** - Shows full log panel with all events.
+
+### What It Logs
+
+**Everything:**
+- Page navigation (loads, route changes)
+- User interactions (clicks, uploads, form submissions)
+- API calls (requests, responses, timing)
+- File operations (validation, processing, downloads)
+- Errors (validation failures, network errors, crashes)
+- State changes (localStorage operations, component lifecycle)
+
+**Each log includes:**
+- Sequential ID (persists across navigation)
+- Timestamp (when it happened)
+- Type (info/success/error)
+- Descriptive message
+- Structured data (file metadata, API responses, error details, timing)
+
+### How to Use It (For Claude)
+
+**When debugging:**
+1. Ask user to click "Copy" button in diagnostic panel
+2. User pastes the logs in their message to you
+3. You receive complete context: metadata, statistics, legend, and full log history
+4. Reference specific logs by ID (e.g., "check log #5")
+
+**What you get in copied logs:**
+- **About section**: Explains what the logs are (for user context)
+- **Session details**: Date, time, URL, browser info
+- **Statistics**: Total logs, breakdown by type (errors, successes, info)
+- **Legend**: Explains log format and types
+- **Full log history**: Every event with timestamps and data
+
+**Benefits for you:**
+- Complete operation timeline with millisecond precision
+- Full visibility into user actions leading to errors
+- Network request/response details
+- Error context (what, when, why, stack traces)
+- No need to ask "what did you click?" or "can you check the console?"
+
+### Log Persistence
+
+**Logs persist across:**
+- Page navigation within the site
+- Browser back/forward buttons
+- Route changes
+
+**Logs reset on:**
+- Manual "Clear" button click
+- Page refresh (F5)
+- Browser close
+- Application crash
+
+**Stored in localStorage** (`diagnosticLogs` key) for persistence.
+
+### Logging Standards
+
+When adding features, always log:
+- Component mounts
+- User interactions
+- State changes
+- API calls
+- Validation events
+- Errors and exceptions
+- File operations
+
+See "Diagnostic Logging Maintenance" section below for detailed standards.
+
+---
+
 ## Current Status
 
 **Check CHECKLIST.md for exact progress**
