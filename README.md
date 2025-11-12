@@ -1,6 +1,6 @@
 # AI Doc Prep
 
-A website for pre-processing documents for LLMs and RAG.
+A website for preprocessing documents for LLMs and RAG.
 
 ## Overview
 
