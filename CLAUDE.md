@@ -18,17 +18,17 @@ Converts documents to markdown (optimized for LLMs) with 3 tools:
 
 ## Session Management
 
-### When Starting a Session
+### Session Initialization
 
 1. Read **all** documentation **fully**
 2. Explore the codebase
 3. Ask questions
 
-Your first to-do's should be these steps (a session will begin with a system prompt, followed by an initial user request).
+These steps should be your first to-do (a session will begin with a system prompt, followed by an initial user request).
 
-**IMPORTANT: Never skip session initialization steps!**
+**IMPORTANT: Don't skip session initialization steps.**
 
-### When Finishing a Session
+### Session Conclusion
 
 1. **Test Before Committing**
    - Run `npm run build` - Must pass without errors
@@ -48,8 +48,6 @@ Your first to-do's should be these steps (a session will begin with a system pro
    - Commit code changes first
    - Then commit documentation updates
    - Push all changes to branch
-  
-**IMPORTANT: Never skip session conclusion steps!**
 
 ---
 
@@ -250,9 +248,6 @@ When adding a feature, ensure you log:
 ## What NOT to Do
 
 - **Don't add complex state management** - Keep it simple
-- **Don't store files server-side** - Everything client/proxy only
 - **Don't add features not in plan** - Ask user first
-- **Don't add authentication or analytics** - Privacy-first, no tracking
-- **Don't use emojis** - Use text labels instead
-- **Don't skip session inialization framework** - Always include the steps in your initial to-do's
-- **Don't skip testing or documentation updates** - Always update docs with code changes
+- **Don't use emojis** - Keep it professional
+- **Don't skip session inialization and conclusion** - Keep it consistent
