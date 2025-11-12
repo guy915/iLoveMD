@@ -48,14 +48,14 @@ export default function GlobalDiagnosticPanel() {
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
             <h3 className="text-lg font-semibold text-white">
-              Diagnostic Logs ({logs.length})
+              Diagnostic Logs
             </h3>
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                // Copy logs to clipboard
+                // Copy logs to clipboard with IDs
                 const logsText = logs.map(log =>
-                  `[${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
+                  `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
                     log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''
                   }`
                 ).join('\n\n')
@@ -87,16 +87,23 @@ export default function GlobalDiagnosticPanel() {
                     'text-gray-300'
                   }`}
                 >
-                  <span className="text-gray-500">[{log.timestamp}]</span>{' '}
-                  <span className="font-bold">
-                    {log.type.toUpperCase()}:
-                  </span>{' '}
-                  {log.message}
-                  {log.data && (
-                    <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap break-words">
-                      {JSON.stringify(log.data, null, 2)}
-                    </pre>
-                  )}
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-600 text-xs font-mono select-all" title="Log ID (click to select)">
+                      #{log.id}
+                    </span>
+                    <div className="flex-1">
+                      <span className="text-gray-500">[{log.timestamp}]</span>{' '}
+                      <span className="font-bold">
+                        {log.type.toUpperCase()}:
+                      </span>{' '}
+                      {log.message}
+                      {log.data && (
+                        <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap break-words">
+                          {JSON.stringify(log.data, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))
             )}
