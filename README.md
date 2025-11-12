@@ -1,48 +1,27 @@
 # AI Doc Prep
 
-A free, privacy-focused web application for preparing documents for Large Language Models (LLMs). Convert PDFs to markdown optimized for AI consumption.
-
-## Vision
-
-A simple, privacy-focused tool where users bring their own API keys and we provide the interface. Most processing happens client-side for privacy and cost efficiency. No accounts, no tracking, no data storage.
+A website for pre-processing documents for LLMs and RAG.
 
 ## Overview
 
 AI Doc Prep provides simple, single-purpose tools to convert and prepare documents specifically for LLM workflows like ChatGPT, Claude, and other AI assistants. Everything converts to markdown because that's what LLMs digest best.
 
-**Live Site:** `ai-doc-prep.vercel.app` (when deployed)
-**Status:** In development - PDF tool complete, HTML and Merge tools coming soon
-
 ## Features
 
-### PDF to Markdown ✅ (Available Now)
-- Convert PDF files to clean markdown using Marker AI
-- Support for complex layouts (tables, equations, code blocks)
-- Comprehensive diagnostic logging for debugging
-- Uses your own Marker API key (get one free at [datalab.to](https://www.datalab.to/))
-
-**Note:** Advanced options (OCR, LLM enhancement, multiple output formats) are planned for future releases.
+### PDF to Markdown (In Progress)
+Convert PDF files to clean markdown using Marker
 
 ### HTML to Markdown (Coming Soon)
-Convert HTML files or web pages to markdown with client-side processing for privacy.
+Convert HTML files or web pages to markdown.
 
 ### Merge Markdowns (Coming Soon)
-Combine multiple markdown files into one with customizable separators.
-
-## Tech Stack
-
-- **Framework:** Next.js 14+ (App Router)
-- **Styling:** Tailwind CSS
-- **Language:** JavaScript/React
-- **Hosting:** Vercel (free tier)
-- **APIs:** Marker API by Datalab
+Merge Markdown files.
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ installed
-- A Marker API key (free for personal use) from [datalab.to](https://www.datalab.to/)
 
 ### Installation
 
