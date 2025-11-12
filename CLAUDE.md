@@ -6,7 +6,7 @@
 
 **Name:** AI Doc Prep
 **Type:** Web application for preparing documents for LLMs
-**Status:** Planning complete, ready for implementation
+**Status:** Phase 3 complete (MVP), Phase 4 next
 **Timeline:** ~1 week build
 **Developer:** First-year CS student, low web dev experience
 
@@ -161,8 +161,10 @@ See "Diagnostic Logging Maintenance" section below for detailed standards.
 
 **Check CHECKLIST.md for exact progress**
 
-Current phase: **Phase 2 Complete**
-Next task: **Phase 3 - PDF to Markdown Tool**
+Current phase: **Phase 3 Complete (MVP)**
+Next task: **Phase 4 - HTML to Markdown Tool**
+
+**Note:** Phase 3 implemented core PDF conversion functionality. Advanced options (multiple output formats, pagination, LLM enhancement, etc.) are deferred to future iterations.
 
 ---
 
@@ -182,48 +184,12 @@ Next task: **Phase 3 - PDF to Markdown Tool**
 
 ## Project Structure
 
-```
-ai-doc-prep/
-├── src/
-│   ├── app/                    # Pages (Next.js App Router)
-│   │   ├── page.js            # Homepage with 3 tiles
-│   │   ├── layout.js          # Root layout (Header/Footer)
-│   │   ├── not-found.js       # 404 page with logging
-│   │   ├── loading.js         # Global loading state
-│   │   ├── pdf-to-markdown/   # PDF tool page
-│   │   ├── html-to-markdown/  # HTML tool page
-│   │   ├── merge-markdown/    # Merge tool page
-│   │   ├── help/              # Help/FAQ page
-│   │   ├── about/             # About page
-│   │   └── api/               # API routes
-│   │       ├── marker/        # Proxy to Marker API
-│   │       └── fetch-url/     # Fetch HTML (CORS bypass)
-│   │
-│   ├── components/
-│   │   ├── layout/            # Header, Footer, GlobalDiagnosticPanel
-│   │   ├── common/            # Button, FileUpload, ErrorBoundary, etc.
-│   │   ├── home/              # ToolTile
-│   │   └── tools/             # Tool-specific components
-│   │
-│   ├── contexts/
-│   │   └── LogContext.js      # Global diagnostic logging context
-│   │
-│   ├── lib/
-│   │   ├── processors/        # Business logic for each tool
-│   │   ├── api/               # API client functions
-│   │   ├── utils/             # File handling, downloads
-│   │   └── storage/           # localStorage wrapper
-│   │
-│   └── hooks/
-│       └── useLocalStorage.js # Custom hook for persistence
-│
-├── assets/
-│   ├── test/                  # Test files for development
-│   │   └── sample.pdf         # Minimal test PDF (572 bytes)
-│   └── README.md              # Assets documentation
-│
-└── [Documentation files listed below]
-```
+See **README.md** for the complete project structure. Key directories:
+- `src/app/` - Pages and API routes (Next.js App Router)
+- `src/components/` - React components (layout, common, tools)
+- `src/contexts/` - React Context providers (LogContext for diagnostic logging)
+- `src/lib/` - Business logic and utilities
+- `src/hooks/` - Custom React hooks
 
 ---
 
@@ -234,11 +200,10 @@ When you need details, reference these:
 | File | Purpose | When to Read |
 |------|---------|--------------|
 | **CHECKLIST.md** | Progress tracker | Start of every session to see status |
-| **IMPLEMENTATION_GUIDE.md** | Step-by-step code | When implementing features |
-| **ARCHITECTURE.md** | Technical design | When unclear about data flow |
-| **DESIGN_SYSTEM.md** | UI/UX specs | When styling components |
-| **PROJECT_PLAN.md** | Master plan | When need big picture |
+| **ARCHITECTURE.md** | Technical design & decisions | When unclear about data flow or tech choices |
+| **CONTRIBUTING.md** | Code style & workflow | When writing code or submitting changes |
 | **README.md** | User-facing docs | When writing help content |
+| **CHANGELOG.md** | Development history | To understand what changed and why |
 
 ---
 
@@ -429,182 +394,12 @@ git checkout -b claude/network-logging-[SESSION_ID]
 
 ---
 
-## Testing Before Pushing Code
-
-**CRITICAL: Always test changes before committing and pushing to GitHub.**
-
-### Pre-Push Testing Checklist
-
-Run these tests in order before every push:
-
-#### 1. Build & Lint Check (Required)
-```bash
-npm run build    # Must pass without errors
-npm run lint     # Check for code quality issues
-```
-
-#### 2. Development Server Test (Required)
-```bash
-npm run dev      # Start in background
-# Wait 3-5 seconds for server to start
-```
-
-#### 3. API Endpoint Testing with curl (If applicable)
-
-**Test API routes locally:**
-```bash
-# Test POST endpoints
-curl -X POST http://localhost:3000/api/marker \
-  -F "file=@assets/test/sample.pdf" \
-  -F "apiKey=test_key" \
-  -w "\nHTTP: %{http_code}\n"
-
-# Test GET endpoints
-curl http://localhost:3000/api/marker?param=value \
-  -H "x-api-key: test_key"
-```
-
-**Test external APIs directly:**
-```bash
-# Test if external API is reachable and working
-curl -X POST https://www.datalab.to/api/v1/marker \
-  -H "X-Api-Key: YOUR_KEY" \
-  -F "file=@assets/test/sample.pdf" \
-  -F "output_format=markdown" \
-  -w "\nHTTP: %{http_code}\n"
-```
-
-#### 4. Response Structure Validation
-
-**Check response format:**
-- Verify JSON structure matches expected format
-- Confirm success/error flags are present
-- Check all required fields exist
-- Validate error messages are user-friendly
-
-#### 5. Code Cleanup & Refactoring (Required)
-
-**Before committing, clean up the code:**
-
-**Remove clutter:**
-- Delete unused imports, variables, functions
-- Remove commented-out code blocks
-- Clean up debug statements (console.log, etc.)
-- Remove temporary test code
-
-**Refactor for clarity:**
-- Extract repeated code into reusable functions
-- Simplify complex conditionals
-- Improve variable/function names for clarity
-- Break down large functions into smaller ones
-
-**Optimize performance:**
-- Remove unnecessary re-renders (React)
-- Optimize database queries or API calls
-- Reduce bundle size where possible
-- Cache expensive computations
-
-**Code hygiene:**
-- Consistent formatting (let Prettier handle this)
-- Add missing error handling
-- Ensure proper async/await usage
-- Validate all user inputs
-
-**Quick checks:**
-```bash
-# Find debug code left behind
-grep -r "console.log" src/ --exclude-dir=node_modules
-
-# Check for TODO/FIXME comments
-grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules
-```
-
-#### 6. Documentation Updates (Required)
-
-**Before committing, ensure all docs are updated:**
-- [ ] CHECKLIST.md - Mark completed tasks
-- [ ] CHANGELOG.md - Document changes made
-- [ ] CLAUDE.md - Update if workflow/structure changed
-- [ ] Code comments - Add/update as needed
-- [ ] README files - Update if features changed
-
-### What Can Be Tested
-
-**✓ Can Test:**
-- Build/compilation errors
-- Lint errors and warnings
-- Local API routes (localhost)
-- External API accessibility
-- Response formats and structures
-- File operations
-- Code logic and structure
-
-**✗ Cannot Test:**
-- Browser UI interactions (no Selenium)
-- Visual appearance
-- Client-side JavaScript execution
-- Full end-to-end user flows
-- Download behavior in browser
-
-### Testing Workflow Example
-
-```bash
-# 1. Build check
-npm run build
-
-# 2. Start dev server
-npm run dev &
-sleep 5
-
-# 3. Test API endpoint
-curl -X POST http://localhost:3000/api/marker \
-  -F "file=@assets/test/sample.pdf" \
-  -F "apiKey=test"
-
-# 4. Check logs for errors
-# Review terminal output
-
-# 5. Code cleanup check
-grep -r "console.log" src/ --exclude-dir=node_modules
-grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules
-# Review code for refactoring opportunities
-
-# 6. Update documentation
-# Update CHECKLIST.md, CLAUDE.md, CHANGELOG.md, etc.
-
-# 7. If all good, commit
-git add .
-git commit -m "Descriptive message"
-git push
-```
-
-### Error Response Checklist
-
-When testing APIs, verify:
-- [ ] 400 errors return helpful messages
-- [ ] 401/403 errors indicate auth issues
-- [ ] 500 errors are caught and logged
-- [ ] Error details are included for debugging
-- [ ] Success responses have consistent structure
-
-### When to Skip User Testing
-
-Only push without user browser testing if:
-- Documentation-only changes
-- Build configuration changes
-- Code comments/formatting
-- Non-functional changes
-
-**For any functional code changes, user should test in browser after push.**
-
----
-
 ## What to Do When Starting a Session
 
-1. **Read CHECKLIST.md** - See current progress
-2. **Check last "Notes & Issues" section** - Understand any blockers
-3. **Reference IMPLEMENTATION_GUIDE.md** - Get phase-specific code
-4. **Reference DESIGN_SYSTEM.md** - For styling/components
+1. **Read CHECKLIST.md** - See current progress and any blockers
+2. **Read CHANGELOG.md** - Understand recent changes and decisions
+3. **Reference ARCHITECTURE.md** - For technical design and decisions
+4. **Reference CONTRIBUTING.md** - For code style and conventions
 5. **Ask user:** "Should we continue where you left off, or...?"
 
 ---
@@ -627,71 +422,26 @@ Only push without user browser testing if:
 
 ## Code Style Preferences
 
-### Component Structure
-```javascript
-'use client'  // When needed
-import { useState } from 'react'
-import useLocalStorage from '@/hooks/useLocalStorage'
+See **CONTRIBUTING.md** for complete code style guidelines. Quick reference:
 
-export default function ComponentName() {
-  // State
-  const [localState, setLocalState] = useState(null)
-  const [storedValue, setStoredValue] = useLocalStorage('key', defaultValue)
-
-  // Handlers
-  const handleAction = () => { }
-
-  // Render
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      {/* Content */}
-    </div>
-  )
-}
-```
-
-### Styling
-- **Use Tailwind classes** - No custom CSS unless necessary
-- **Responsive:** Use `md:` and `lg:` breakpoints
-- **Dark mode:** Use `dark:` variant classes
-- **Spacing:** Follow 4px base unit (gap-4, p-6, etc.)
-- **No Emojis:** Never use emojis in code, UI, or documentation - use text labels instead
-
-### File Naming
-- **Components:** PascalCase (e.g., `Button.js`)
-- **Utilities:** camelCase (e.g., `downloadUtils.js`)
-- **Pages:** lowercase (e.g., `page.js`)
-- **Hooks:** camelCase with 'use' prefix (e.g., `useLocalStorage.js`)
+- **Language:** JavaScript (NOT TypeScript)
+- **Components:** PascalCase with 'use client' directive when needed
+- **Styling:** Tailwind CSS only, light mode only, 4px spacing base
+- **File Naming:** Components (PascalCase), utilities (camelCase), hooks (use prefix)
+- **No Emojis:** Use text labels instead of emojis everywhere
 
 ---
 
-## Testing Approach
+## Testing Guidelines
 
-### Manual Testing Priority
-1. **Happy path:** Each tool with normal files
-2. **Edge cases:** Large files, empty files, invalid inputs
-3. **Error scenarios:** No API key, network errors, invalid files
-4. **Responsive:** Mobile/tablet/desktop
-5. **Cross-browser:** Chrome, Firefox, Safari
+See **CONTRIBUTING.md** for complete testing guidelines. Before pushing code:
 
-### Test Files Available
-**In Repository (assets/test/):**
-- `sample.pdf` - Minimal test PDF (572 bytes, 1 page) for quick testing
+1. **Build Check:** `npm run build` must pass without errors
+2. **Lint Check:** `npm run lint` must pass
+3. **Manual Testing:** Test the feature in browser (happy path + edge cases)
+4. **API Testing:** Use curl to test API routes if applicable
 
-**Additional Test Files Needed:**
-- Small PDF (~1MB)
-- Large PDF (~100MB)
-- Scanned PDF (for OCR testing)
-- Simple HTML file
-- Complex website URL
-- Multiple markdown files
-
-### Quick Testing
-```bash
-# Use the included sample PDF for quick testing
-# Location: /assets/test/sample.pdf
-# This is a minimal valid PDF for development testing
-```
+**Test file available:** `assets/test/sample.pdf` (572 bytes, minimal valid PDF)
 
 ---
 
@@ -749,10 +499,9 @@ export default function ComponentName() {
 ## When User Says...
 
 **"Let's continue"** → Read CHECKLIST.md, find current phase, continue
-**"Start Phase X"** → Read relevant section of IMPLEMENTATION_GUIDE.md
-**"How do I style this?"** → Reference DESIGN_SYSTEM.md
-**"Why did we decide X?"** → Check PROJECT_PLAN.md or ARCHITECTURE.md
-**"It's not working"** → Debug systematically, check console errors
+**"How do I style this?"** → Reference CONTRIBUTING.md code style section
+**"Why did we decide X?"** → Check ARCHITECTURE.md tech decisions table
+**"It's not working"** → Ask for diagnostic logs, debug systematically
 **"Let's add a feature"** → Discuss if it fits scope, update docs if yes
 
 ---
@@ -778,11 +527,7 @@ export default function ComponentName() {
    - Update "Next Action" at footer
    - Add any new patterns or decisions to relevant sections
 
-4. **Update PROJECT_PLAN.md** (if needed)
-   - Mark implementation phases as complete
-   - Update project status
-
-5. **Commit and Push**
+4. **Commit and Push**
    - Commit code changes first
    - Then commit documentation updates
    - Push all changes to branch
@@ -995,5 +740,5 @@ When adding a feature, ensure you log:
 ---
 
 **Last Updated:** 2025-11-12
-**Current Status:** Phase 2 complete, ready for Phase 3
-**Next Action:** Build PDF to Markdown tool
+**Current Status:** Phase 3 complete (MVP), ready for Phase 4
+**Next Action:** Build HTML to Markdown tool
