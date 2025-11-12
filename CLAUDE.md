@@ -28,19 +28,12 @@ Converts documents to markdown (optimized for LLMs) with 3 tools:
 
 ## Tech Stack
 
-```
-Framework:     Next.js 14+ (App Router)
-Styling:       Tailwind CSS
-Language:      JavaScript (NOT TypeScript)
-State:         Component-level + localStorage + React Context (LogContext)
-Hosting:       Vercel (free)
-Domain:        ai-doc-prep.vercel.app
-```
+- **Framework:** Next.js 14+ (App Router)
+- **Styling:** Tailwind CSS
+- **Language:** JavaScript (NOT TypeScript)
+- **Hosting:** Vercel
 
-### External Dependencies
-- `turndown` - HTML to Markdown conversion
-- `@mozilla/readability` - HTML content extraction
-- Marker API (Datalab.to) - PDF to Markdown (user's key)
+See **ARCHITECTURE.md** for complete tech stack details and dependencies.
 
 ---
 
@@ -71,130 +64,36 @@ When you need details, reference these:
 
 ## Architecture Quick Reference
 
-### Data Flows
-
-**PDF Tool:**
-```
-Client → /api/marker → Marker API → Result → Download
-```
-
-**HTML Tool (File):**
-```
-Client → Process locally (Turndown.js) → Download
-```
-
-**HTML Tool (URL):**
-```
-Client → /api/fetch-url → Fetch HTML → Process locally → Download
-```
-
-**Merge Tool:**
-```
-Client → Process locally → Download
-```
-
-### State Management
-
-**Component-level state:** File, processing status, errors
-**localStorage:** API keys, user preferences
-**React Context:** LogContext for diagnostic logging
-**No global state:** Each tool page is independent
-
-### localStorage Schema
-```javascript
-{
-  "markerApiKey": "string",
-  "pdfOptions": { paginate, useLLM, forceOCR, mode, outputFormat },
-  "htmlOptions": { preserveImages, preserveLinks },
-  "mergeOptions": { separatorStyle, generateTOC, ordering }
-}
-```
-
-**Note:** Light mode only - dark mode removed for simplicity.
-
-### Project Structure
-
-Key directories:
-- `src/app/` - Pages and API routes (Next.js App Router)
-- `src/components/` - React components (layout, common, tools)
-- `src/contexts/` - React Context providers (LogContext for diagnostic logging)
-- `src/lib/` - Business logic and utilities
-- `src/hooks/` - Custom React hooks
-
-See **README.md** for the complete project structure.
+See **ARCHITECTURE.md** for complete technical details including:
+- Data flows for all three tools
+- State management strategy
+- localStorage schema
+- Project structure
+- Component architecture
+- API route specifications
 
 ---
 
 ## Implementation Phases
 
-1. **Phase 1 (Day 1):** Project setup - Next.js, dependencies, structure ✅
-2. **Phase 2 (Day 1-2):** Core UI - Header, Footer, Homepage, reusable components ✅
-3. **Phase 3 (Day 2-3):** PDF tool - API route + tool page ✅ (MVP)
-4. **Phase 4 (Day 3-4):** HTML tool - URL fetching + processing ⏳
-5. **Phase 5 (Day 4-5):** Merge tool - Multi-file handling ⏳
-6. **Phase 6 (Day 5-7):** Polish - Help/About pages, testing, deploy ⏳
-
-**Always check CHECKLIST.md for task-level breakdown**
+See **CHECKLIST.md** for the complete implementation checklist with detailed task breakdowns for all 6 phases.
 
 ---
 
 ## Development Guidelines
 
-### Code Style Preferences
+See **CONTRIBUTING.md** for complete guidelines including:
+- Code style and naming conventions
+- Testing procedures (build, lint, manual testing)
+- Git workflow and commit message format
+- Pull request process
 
-See **CONTRIBUTING.md** for complete code style guidelines. Quick reference:
-
-- **Language:** JavaScript (NOT TypeScript)
-- **Components:** PascalCase with 'use client' directive when needed
-- **Styling:** Tailwind CSS only, light mode only, 4px spacing base
-- **File Naming:** Components (PascalCase), utilities (camelCase), hooks (use prefix)
-- **No Emojis:** Use text labels instead of emojis everywhere
-
-### Testing Guidelines
-
-See **CONTRIBUTING.md** for complete testing guidelines. Before pushing code:
-
-1. **Build Check:** `npm run build` must pass without errors
-2. **Lint Check:** `npm run lint` must pass
-3. **Manual Testing:** Test the feature in browser (happy path + edge cases)
-4. **API Testing:** Use curl to test API routes if applicable
-
-**Test file available:** `assets/test/sample.pdf` (572 bytes, minimal valid PDF)
-
-### Git Workflow Best Practices
-
-**IMPORTANT: Always keep commits and PRs small and focused.**
-
-**Small commits:**
-- Easier to review and understand
-- Easier to revert if something breaks
-- Better git history for debugging
-- Clear, focused changes
-
-**Small PRs:**
-- Faster review cycles
-- Less likely to have merge conflicts
-- Easier to test thoroughly
-- Reduces risk of introducing bugs
-
-**Commit Size:**
-- **One logical change per commit** - Don't mix unrelated changes
-- **Self-contained** - Commit should work on its own (build passes)
-- **Clear message** - Describe what and why, not how
-- Examples:
-  - ✅ "Add deduplication logic to prevent duplicate logs"
-  - ✅ "Fix console.log interception for CI compatibility"
-  - ❌ "Fix stuff and add features and update docs"
-
-**PR Size:**
-- **One feature or fix per PR** - Don't combine multiple features
-- **Reviewable in 15-30 minutes** - Keep PR diff under ~300 lines when possible
-- **Address feedback first** - Fix PR review comments before adding new features
-
-**When to Split a PR:**
-- If PR review finds issues → Fix issues first, then open new PR for additional features
-- If implementing multiple features → Create separate PRs for each
-- If PR grows beyond scope → Extract new work into separate branch/PR
+**Quick reminders:**
+- JavaScript only (NOT TypeScript)
+- Tailwind CSS only (no custom CSS)
+- No emojis in code or UI
+- Always run `npm run build` and `npm run lint` before pushing
+- Keep commits and PRs small and focused
 
 ---
 
@@ -483,50 +382,15 @@ When adding a feature, ensure you log:
 
 ---
 
-## Key Design Decisions
+## Key Design Principles
 
-### Why Next.js?
-- Student is learning, needs good docs
-- App Router for modern patterns
-- API routes for proxying external APIs
-- Vercel deployment is seamless
+- **Privacy first:** No data storage, no tracking, client-side processing
+- **User's API keys:** Users provide their own keys (we don't pay for services)
+- **Simple:** Single-purpose tools, no over-engineering
+- **No TypeScript:** JavaScript only (student preference)
+- **No complex state:** Component-level + localStorage only
 
-### Why Client-side Processing?
-- **Privacy:** Files never leave user's browser
-- **Cost:** No server compute costs
-- **Speed:** Instant for HTML/Merge tools
-
-### Why User's API Keys?
-- **Cost:** Free for student, no API bills
-- **Privacy:** Keys stored locally, never on our servers
-- **Simple:** No auth/payment systems needed
-
-### Why localStorage?
-- **Persistence:** Saves preferences between sessions
-- **No backend:** No database needed
-- **Simple:** Built-in browser API
-
----
-
-## Important Constraints
-
-### Technical
-- **File size limit:** 1GB per file (browser memory)
-- **Browser support:** Modern only (Chrome/Firefox/Safari latest)
-- **No TypeScript:** Student preference, keep it simple
-- **No complex state:** Keep it component-level
-
-### Design
-- **Minimal UI:** Functional over flashy
-- **iLovePDF-inspired:** Tile layout, simple flows
-- **Light mode only:** No dark mode (simplified for now)
-- **Mobile:** Desktop first, mobile eventually
-
-### User Experience
-- **No accounts:** Everything anonymous
-- **No tracking:** No analytics, no cookies (except localStorage)
-- **Fast feedback:** Show status for all operations
-- **Clear errors:** User-friendly messages, actionable
+See **ARCHITECTURE.md** for detailed design decisions and constraints.
 
 ---
 
@@ -544,52 +408,9 @@ When adding a feature, ensure you log:
 
 ---
 
-## Common Commands
+## Common Commands & Troubleshooting
 
-```bash
-# Development
-npm run dev              # Start dev server (localhost:3000)
-npm run build           # Build for production
-npm run start           # Run production build
-
-# Git workflow
-git status              # Check current state
-git add .               # Stage changes
-git commit -m "msg"     # Commit
-git push                # Push to branch
-
-# Deployment (after GitHub push)
-# Just connect repo to Vercel dashboard - auto-deploys
-```
-
----
-
-## Quick Troubleshooting
-
-**"Module not found" error:**
-- Check imports use `@/` alias
-- Verify file exists in correct directory
-- Run `npm install` if package missing
-
-**"Hydration error" in Next.js:**
-- Add `'use client'` directive
-- Check for SSR issues with localStorage
-- Ensure no mismatched HTML
-
-**File upload not working:**
-- Check MIME types in accept attribute
-- Verify file size validation
-- Test FormData construction
-
-**API route 404:**
-- Verify route.js naming (not route.ts)
-- Check it's in app/api/ directory
-- Restart dev server
-
-**Tailwind classes not applying:**
-- Check tailwind.config.js content paths
-- Verify globals.css has @tailwind directives
-- Restart dev server
+See **CONTRIBUTING.md** for development commands and **README.md** for troubleshooting guide.
 
 ---
 
@@ -615,56 +436,27 @@ git push                # Push to branch
 
 ---
 
-## CI/CD Pipeline Maintenance
+## CI/CD Pipeline
 
-**IMPORTANT: Keep CI/CD workflows up to date as features are added.**
+The project has automated CI/CD workflows in `.github/workflows/`:
+- **Build verification** on Node 18.x and 20.x
+- **Security audits** for dependencies
+- **Code quality checks** (console.log detection, bundle size)
+- **PR labeling** and automation
 
-### When to Update CI/CD
-
-Update `.github/workflows/` when:
-- **New test commands added** - Add to CI workflow
-- **New build steps required** - Update build job
-- **New dependencies with security implications** - Update security audit
-- **New file types or directories** - Update relevant checks
-- **Performance-critical code added** - Consider bundle size checks
-- **New API endpoints created** - Add endpoint testing if applicable
-
-### CI/CD Update Checklist
-
-When adding features, ask yourself:
-- [ ] Does this need to be tested in CI? (new scripts, builds, etc.)
-- [ ] Should this be part of the security audit? (new dependencies, APIs)
-- [ ] Does this affect bundle size? (large libraries, heavy dependencies)
-- [ ] Are there new patterns to lint for? (code quality checks)
-- [ ] Should this block merges if it fails? (critical vs informational)
-
-### Example Updates
-
-**Adding a new tool:**
-- Update code quality checks to scan new directories
-- Add any new secret patterns to detect
-- Update bundle size baseline if significantly changed
-
-**Adding external API:**
-- Add API key pattern to secret detection
-- Consider adding API accessibility test
-- Document any rate limits or testing concerns
+When adding features with new dependencies, test commands, or API endpoints, consider updating the CI/CD workflows accordingly.
 
 ---
 
 ## What NOT to Do
 
-**Don't use TypeScript** - Project is JavaScript only
-**Don't add complex state management** - Keep it simple
-**Don't store files server-side** - Everything client/proxy only
-**Don't add features not in plan** - Ask user first
-**Don't use our API keys** - Users provide their own
-**Don't add authentication** - No accounts by design
-**Don't add analytics** - Privacy-first approach
-**Don't over-engineer** - This is a learning project, keep it simple
-**Don't use emojis** - No emojis in code, documentation, or UI elements
-**Don't skip testing** - Always run build/lint and test APIs before pushing
-**Don't skip documentation updates** - Update all relevant docs with every change
+- **Don't use TypeScript** - Project is JavaScript only
+- **Don't add complex state management** - Keep it simple
+- **Don't store files server-side** - Everything client/proxy only
+- **Don't add features not in plan** - Ask user first
+- **Don't add authentication or analytics** - Privacy-first, no tracking
+- **Don't use emojis** - Use text labels instead
+- **Don't skip testing or documentation updates** - Always update docs with code changes
 
 ---
 
