@@ -535,7 +535,7 @@ When adding a feature, ensure you log:
 **Test Marker API Key:** `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
 
 **Currently hardcoded in:**
-- `src/app/pdf-to-markdown/page.js` (line 12) - Pre-filled as default localStorage value
+- `src/app/pdf-to-markdown/page.js` (line 12) - Pre-filled as default value in useLocalStorage hook
 
 **TODO before production:**
 - Remove hardcoded API key from pdf-to-markdown/page.js
