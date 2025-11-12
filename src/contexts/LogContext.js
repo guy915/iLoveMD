@@ -6,18 +6,23 @@ const LogContext = createContext()
 const LOGS_STORAGE_KEY = 'diagnosticLogs'
 
 export function LogProvider({ children }) {
-  // Initialize logs from localStorage if available
-  const [logs, setLogs] = useState(() => {
-    if (typeof window === 'undefined') return []
+  // Initialize with empty array on server to avoid hydration errors
+  // Load from localStorage only on client after mount
+  const [logs, setLogs] = useState([])
+
+  // Load logs from localStorage on client mount only
+  useEffect(() => {
+    if (typeof window === 'undefined') return
 
     try {
       const stored = window.localStorage.getItem(LOGS_STORAGE_KEY)
-      return stored ? JSON.parse(stored) : []
+      if (stored) {
+        setLogs(JSON.parse(stored))
+      }
     } catch (error) {
       console.error('Error loading logs from localStorage:', error)
-      return []
     }
-  })
+  }, [])
 
   // Save logs to localStorage whenever they change
   useEffect(() => {
