@@ -48,16 +48,25 @@ export default function GlobalDiagnosticPanel() {
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
             <h3 className="text-lg font-semibold text-white">
-              Diagnostic Logs ({logs.length})
+              Diagnostic Logs ({logs.length} / 500 max)
             </h3>
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                clearLogs()
+                // Copy logs to clipboard
+                const logsText = logs.map(log =>
+                  `[${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
+                    log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''
+                  }`
+                ).join('\n\n')
+                navigator.clipboard.writeText(logsText).then(() => {
+                  // Show brief success feedback (could add a toast here)
+                  console.log('Logs copied to clipboard')
+                })
               }}
               className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
             >
-              Clear
+              Copy
             </button>
           </div>
 
