@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
-import useLocalStorage from '@/hooks/useLocalStorage'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
-  // API key from localStorage - pre-filled with test key for development
-  const [apiKey, setApiKey] = useLocalStorage('markerApiKey', 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
+  // API key - defaults to test key, not persisted across sessions
+  const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
   const [file, setFile] = useState(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
@@ -312,14 +311,14 @@ export default function PdfToMarkdownPage() {
           How it works
         </h2>
         <ul className="space-y-2 text-gray-600">
-          <li>1. Enter your Marker API key (saved locally in your browser)</li>
+          <li>1. Enter your Marker API key (test key provided by default)</li>
           <li>2. Upload a PDF file (up to 200MB)</li>
           <li>3. Click &quot;Convert to Markdown&quot;</li>
           <li>4. Wait for processing (usually 30-60 seconds)</li>
           <li>5. Your markdown file will download automatically</li>
         </ul>
         <p className="mt-4 text-sm text-gray-500">
-          Note: Your API key and files are never stored on our servers. Processing happens through the Marker API.
+          Note: API keys are not saved between sessions. Your files are never stored on our servers - processing happens through the Marker API.
         </p>
       </div>
     </div>
