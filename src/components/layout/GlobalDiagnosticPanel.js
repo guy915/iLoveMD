@@ -66,7 +66,14 @@ export default function GlobalDiagnosticPanel() {
                 const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'
 
                 // Format metadata section
-                const metadata = `=== DIAGNOSTIC LOG SESSION ===
+                const metadata = `=== ABOUT THESE DIAGNOSTIC LOGS ===
+This is a diagnostic logging system that tracks all user interactions, application
+events, and errors that occur while using AI Doc Prep. These logs provide a complete
+timeline of what happened during your session, making it easier to troubleshoot issues
+and understand application behavior. If you encounter problems, share these logs when
+asking for help - they contain valuable context for debugging.
+
+=== SESSION DETAILS ===
 Date: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}
 Session Start: ${sessionStart}
 Current URL: ${currentUrl}
@@ -87,13 +94,6 @@ Log Format: #ID [timestamp] TYPE: message
 - ID: Sequential log number (persists across navigation)
 - Timestamp: When the event occurred
 - Data: Additional context (JSON format)
-
-=== HOW TO USE ===
-When reporting issues to Claude (AI assistant):
-1. Copy these logs (already done!)
-2. Paste in your message to Claude
-3. Describe what you were doing when the issue occurred
-4. Claude can use log IDs to reference specific events (e.g., "check log #5")
 
 === LOGS ===
 `
