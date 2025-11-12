@@ -29,7 +29,7 @@ export default function PdfToMarkdownPage() {
 
     // Log API key state if present
     if (keyPresent) {
-      addLog('info', 'API key loaded from localStorage', {
+      addLog('info', 'API key pre-filled (test key default)', {
         keyLength: keyLength,
         apiKey: apiKey  // Full key, no censoring in development
       })
