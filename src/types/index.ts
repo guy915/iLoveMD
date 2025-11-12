@@ -96,54 +96,6 @@ export interface MarkerOptions {
   max_pages?: number
 }
 
-// ===== Component Prop Types =====
-
-/**
- * Props for FileUpload component
- */
-export interface FileUploadProps {
-  /** Callback when file is selected */
-  onFileSelect: (file: File) => void
-  /** Accepted file types (e.g., ".pdf,.md") */
-  accept: string
-  /** Maximum file size in bytes */
-  maxSize?: number
-  /** Label text for upload area */
-  label?: string
-}
-
-/**
- * Props for Button component
- */
-export interface ButtonProps {
-  /** Button text */
-  children: React.ReactNode
-  /** Click handler */
-  onClick?: () => void
-  /** Button disabled state */
-  disabled?: boolean
-  /** Loading state */
-  loading?: boolean
-  /** Button variant */
-  variant?: 'primary' | 'secondary'
-  /** Button type */
-  type?: 'button' | 'submit' | 'reset'
-  /** Additional CSS classes */
-  className?: string
-}
-
-/**
- * Props for ToolTile component
- */
-export interface ToolTileProps {
-  /** Tool title */
-  title: string
-  /** Tool description */
-  description: string
-  /** Link to tool page */
-  href: string
-}
-
 // ===== Navigation & Constants =====
 
 /**

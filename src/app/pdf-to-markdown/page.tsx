@@ -8,8 +8,8 @@ import { useLogs } from '@/contexts/LogContext'
 import type { MarkerSubmitResponse, MarkerPollResponse } from '@/types'
 
 export default function PdfToMarkdownPage() {
-  // API key - defaults to test key, not persisted across sessions
-  const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
+  // API key - defaults to test key from env var, not persisted across sessions
+  const [apiKey, setApiKey] = useState(process.env.NEXT_PUBLIC_MARKER_TEST_KEY || '')
   const [file, setFile] = useState<File | null>(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
