@@ -113,7 +113,7 @@ git checkout -b feature/your-feature-name
 - **State Management**: Component-level + localStorage (no Redux/Context)
 - **No emojis**: Use text instead of emojis in code and UI
 
-### JavaScript Style
+### JavaScript Style (Extends to TypeScript)
 
 ```javascript
 // Component structure
