@@ -1,6 +1,7 @@
 'use client'
 import { useState, useId, useRef, useMemo, useCallback } from 'react'
 import { FILE_SIZE } from '@/lib/constants'
+import { useLogs } from '@/contexts/LogContext'
 
 /**
  * FileUpload component with drag-and-drop support
@@ -21,6 +22,7 @@ export default function FileUpload({
   const [error, setError] = useState(null)
   const fileInputId = useId()
   const fileInputRef = useRef(null)
+  const { addLog } = useLogs()
 
   // Memoize file size calculations to avoid recalculating on every render
   const maxSizeMB = useMemo(() => Math.round(maxSize / FILE_SIZE.BYTES_PER_MB), [maxSize])
@@ -30,6 +32,9 @@ export default function FileUpload({
     e.stopPropagation()
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true)
+      if (e.type === "dragenter") {
+        addLog('info', 'File drag detected')
+      }
     } else if (e.type === "dragleave") {
       setDragActive(false)
     }
@@ -40,14 +45,27 @@ export default function FileUpload({
 
     if (!file) return
 
+    addLog('info', 'File selected for validation', {
+      name: file.name,
+      size: `${(file.size / FILE_SIZE.BYTES_PER_MB).toFixed(2)}MB`,
+      type: file.type
+    })
+
     if (file.size > maxSize) {
-      setError(`File too large. Maximum size: ${maxSizeMB}MB`)
+      const errorMsg = `File too large. Maximum size: ${maxSizeMB}MB`
+      setError(errorMsg)
+      addLog('error', 'File validation failed: File too large', {
+        fileName: file.name,
+        fileSize: `${(file.size / FILE_SIZE.BYTES_PER_MB).toFixed(2)}MB`,
+        maxSize: `${maxSizeMB}MB`
+      })
       return
     }
 
     setSelectedFile(file)
     onFileSelect(file)
-  }, [maxSize, onFileSelect, setError, setSelectedFile])
+    addLog('success', 'File validated and selected successfully', { fileName: file.name })
+  }, [maxSize, maxSizeMB, onFileSelect, addLog])
 
   const handleDrop = (e) => {
     e.preventDefault()
@@ -55,17 +73,20 @@ export default function FileUpload({
     setDragActive(false)
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      addLog('info', 'File dropped in drop zone')
       validateAndSelect(e.dataTransfer.files[0])
     }
   }
 
   const handleChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      addLog('info', 'File selected via file browser')
       validateAndSelect(e.target.files[0])
     }
   }
 
   const handleClick = () => {
+    addLog('info', 'File upload area clicked - Opening file browser')
     fileInputRef.current?.click()
   }
 

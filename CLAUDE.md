@@ -32,7 +32,7 @@ Converts documents to markdown (optimized for LLMs) with 3 tools:
 Framework:     Next.js 14+ (App Router)
 Styling:       Tailwind CSS
 Language:      JavaScript (NOT TypeScript)
-State:         Component-level + localStorage (no Redux/Context)
+State:         Component-level + localStorage + React Context (LogContext)
 Hosting:       Vercel (free)
 Domain:        ai-doc-prep.vercel.app
 ```
@@ -53,6 +53,20 @@ Next task: **Phase 3 - PDF to Markdown Tool**
 
 ---
 
+## Development API Keys
+
+**Test Marker API Key:** `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
+
+**Currently hardcoded in:**
+- `src/app/pdf-to-markdown/page.js` (line 11) - Pre-filled as default localStorage value
+
+**TODO before production:**
+- Remove hardcoded API key from pdf-to-markdown/page.js
+- Change default value from the key to empty string: `useLocalStorage('markerApiKey', '')`
+- Test that users are properly prompted to enter their own key
+
+---
+
 ## Project Structure
 
 ```
@@ -61,6 +75,8 @@ ai-doc-prep/
 │   ├── app/                    # Pages (Next.js App Router)
 │   │   ├── page.js            # Homepage with 3 tiles
 │   │   ├── layout.js          # Root layout (Header/Footer)
+│   │   ├── not-found.js       # 404 page with logging
+│   │   ├── loading.js         # Global loading state
 │   │   ├── pdf-to-markdown/   # PDF tool page
 │   │   ├── html-to-markdown/  # HTML tool page
 │   │   ├── merge-markdown/    # Merge tool page
@@ -71,10 +87,13 @@ ai-doc-prep/
 │   │       └── fetch-url/     # Fetch HTML (CORS bypass)
 │   │
 │   ├── components/
-│   │   ├── layout/            # Header, Footer
-│   │   ├── common/            # Button, FileUpload, etc.
+│   │   ├── layout/            # Header, Footer, GlobalDiagnosticPanel
+│   │   ├── common/            # Button, FileUpload, ErrorBoundary, etc.
 │   │   ├── home/              # ToolTile
 │   │   └── tools/             # Tool-specific components
+│   │
+│   ├── contexts/
+│   │   └── LogContext.js      # Global diagnostic logging context
 │   │
 │   ├── lib/
 │   │   ├── processors/        # Business logic for each tool
@@ -84,6 +103,11 @@ ai-doc-prep/
 │   │
 │   └── hooks/
 │       └── useLocalStorage.js # Custom hook for persistence
+│
+├── assets/
+│   ├── test/                  # Test files for development
+│   │   └── sample.pdf         # Minimal test PDF (572 bytes)
+│   └── README.md              # Assets documentation
 │
 └── [Documentation files listed below]
 ```
@@ -229,6 +253,176 @@ git push                # Push to branch
 
 ---
 
+## Testing Before Pushing Code
+
+**CRITICAL: Always test changes before committing and pushing to GitHub.**
+
+### Pre-Push Testing Checklist
+
+Run these tests in order before every push:
+
+#### 1. Build & Lint Check (Required)
+```bash
+npm run build    # Must pass without errors
+npm run lint     # Check for code quality issues
+```
+
+#### 2. Development Server Test (Required)
+```bash
+npm run dev      # Start in background
+# Wait 3-5 seconds for server to start
+```
+
+#### 3. API Endpoint Testing with curl (If applicable)
+
+**Test API routes locally:**
+```bash
+# Test POST endpoints
+curl -X POST http://localhost:3000/api/marker \
+  -F "file=@assets/test/sample.pdf" \
+  -F "apiKey=test_key" \
+  -w "\nHTTP: %{http_code}\n"
+
+# Test GET endpoints
+curl http://localhost:3000/api/marker?param=value \
+  -H "x-api-key: test_key"
+```
+
+**Test external APIs directly:**
+```bash
+# Test if external API is reachable and working
+curl -X POST https://www.datalab.to/api/v1/marker \
+  -H "X-Api-Key: YOUR_KEY" \
+  -F "file=@assets/test/sample.pdf" \
+  -F "output_format=markdown" \
+  -w "\nHTTP: %{http_code}\n"
+```
+
+#### 4. Response Structure Validation
+
+**Check response format:**
+- Verify JSON structure matches expected format
+- Confirm success/error flags are present
+- Check all required fields exist
+- Validate error messages are user-friendly
+
+#### 5. Code Cleanup & Refactoring (Required)
+
+**Before committing, clean up the code:**
+
+**Remove clutter:**
+- Delete unused imports, variables, functions
+- Remove commented-out code blocks
+- Clean up debug statements (console.log, etc.)
+- Remove temporary test code
+
+**Refactor for clarity:**
+- Extract repeated code into reusable functions
+- Simplify complex conditionals
+- Improve variable/function names for clarity
+- Break down large functions into smaller ones
+
+**Optimize performance:**
+- Remove unnecessary re-renders (React)
+- Optimize database queries or API calls
+- Reduce bundle size where possible
+- Cache expensive computations
+
+**Code hygiene:**
+- Consistent formatting (let Prettier handle this)
+- Add missing error handling
+- Ensure proper async/await usage
+- Validate all user inputs
+
+**Quick checks:**
+```bash
+# Find debug code left behind
+grep -r "console.log" src/ --exclude-dir=node_modules
+
+# Check for TODO/FIXME comments
+grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules
+```
+
+#### 6. Documentation Updates (Required)
+
+**Before committing, ensure all docs are updated:**
+- [ ] CHECKLIST.md - Mark completed tasks
+- [ ] CHANGELOG.md - Document changes made
+- [ ] CLAUDE.md - Update if workflow/structure changed
+- [ ] Code comments - Add/update as needed
+- [ ] README files - Update if features changed
+
+### What Can Be Tested
+
+**✓ Can Test:**
+- Build/compilation errors
+- Lint errors and warnings
+- Local API routes (localhost)
+- External API accessibility
+- Response formats and structures
+- File operations
+- Code logic and structure
+
+**✗ Cannot Test:**
+- Browser UI interactions (no Selenium)
+- Visual appearance
+- Client-side JavaScript execution
+- Full end-to-end user flows
+- Download behavior in browser
+
+### Testing Workflow Example
+
+```bash
+# 1. Build check
+npm run build
+
+# 2. Start dev server
+npm run dev &
+sleep 5
+
+# 3. Test API endpoint
+curl -X POST http://localhost:3000/api/marker \
+  -F "file=@assets/test/sample.pdf" \
+  -F "apiKey=test"
+
+# 4. Check logs for errors
+# Review terminal output
+
+# 5. Code cleanup check
+grep -r "console.log" src/ --exclude-dir=node_modules
+grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules
+# Review code for refactoring opportunities
+
+# 6. Update documentation
+# Update CHECKLIST.md, CLAUDE.md, CHANGELOG.md, etc.
+
+# 7. If all good, commit
+git add .
+git commit -m "Descriptive message"
+git push
+```
+
+### Error Response Checklist
+
+When testing APIs, verify:
+- [ ] 400 errors return helpful messages
+- [ ] 401/403 errors indicate auth issues
+- [ ] 500 errors are caught and logged
+- [ ] Error details are included for debugging
+- [ ] Success responses have consistent structure
+
+### When to Skip User Testing
+
+Only push without user browser testing if:
+- Documentation-only changes
+- Build configuration changes
+- Code comments/formatting
+- Non-functional changes
+
+**For any functional code changes, user should test in browser after push.**
+
+---
+
 ## What to Do When Starting a Session
 
 1. **Read CHECKLIST.md** - See current progress
@@ -250,6 +444,8 @@ git push                # Push to branch
 **Don't add analytics** - Privacy-first approach
 **Don't over-engineer** - This is a learning project, keep it simple
 **Don't use emojis** - No emojis in code, documentation, or UI elements
+**Don't skip testing** - Always run build/lint and test APIs before pushing
+**Don't skip documentation updates** - Update all relevant docs with every change
 
 ---
 
@@ -302,13 +498,24 @@ export default function ComponentName() {
 4. **Responsive:** Mobile/tablet/desktop
 5. **Cross-browser:** Chrome, Firefox, Safari
 
-### Test Files Needed
+### Test Files Available
+**In Repository (assets/test/):**
+- `sample.pdf` - Minimal test PDF (572 bytes, 1 page) for quick testing
+
+**Additional Test Files Needed:**
 - Small PDF (~1MB)
 - Large PDF (~100MB)
 - Scanned PDF (for OCR testing)
 - Simple HTML file
 - Complex website URL
 - Multiple markdown files
+
+### Quick Testing
+```bash
+# Use the included sample PDF for quick testing
+# Location: /assets/test/sample.pdf
+# This is a minimal valid PDF for development testing
+```
 
 ---
 
@@ -405,6 +612,182 @@ export default function ComponentName() {
    - Push all changes to branch
 
 **Never skip documentation updates!** It ensures continuity between sessions.
+
+---
+
+## CI/CD Pipeline Maintenance
+
+**IMPORTANT: Keep CI/CD workflows up to date as features are added.**
+
+### When to Update CI/CD
+
+Update `.github/workflows/` when:
+- **New test commands added** - Add to CI workflow
+- **New build steps required** - Update build job
+- **New dependencies with security implications** - Update security audit
+- **New file types or directories** - Update relevant checks
+- **Performance-critical code added** - Consider bundle size checks
+- **New API endpoints created** - Add endpoint testing if applicable
+
+### CI/CD Update Checklist
+
+When adding features, ask yourself:
+- [ ] Does this need to be tested in CI? (new scripts, builds, etc.)
+- [ ] Should this be part of the security audit? (new dependencies, APIs)
+- [ ] Does this affect bundle size? (large libraries, heavy dependencies)
+- [ ] Are there new patterns to lint for? (code quality checks)
+- [ ] Should this block merges if it fails? (critical vs informational)
+
+### Example Updates
+
+**Adding a new tool:**
+- Update code quality checks to scan new directories
+- Add any new secret patterns to detect
+- Update bundle size baseline if significantly changed
+
+**Adding external API:**
+- Add API key pattern to secret detection
+- Consider adding API accessibility test
+- Document any rate limits or testing concerns
+
+---
+
+## Diagnostic Logging Maintenance
+
+**IMPORTANT: Maintain comprehensive logging as features are added.**
+
+### Purpose: Logs Are For Claude (AI Assistant)
+
+**The diagnostic logging system is primarily a tool for Claude (the AI assistant) to debug issues effectively.**
+
+While users can view the logs, the primary purpose is to give Claude complete visibility into:
+- What the user did (step by step)
+- What the application did in response
+- Where and why things failed
+- Timing and performance of operations
+
+**For the user:** Logs provide some transparency, but are mainly useful for copying/pasting to Claude when asking for help.
+
+**For Claude:** Logs are the primary debugging tool - they replace the inability to see the browser console, network tab, or application state directly.
+
+**Important:** Claude should feel free to continue developing and enhancing the logging system based on their own preferences and debugging needs. Add whatever logs, timing information, or context would be most helpful for diagnosing issues. The logging system is yours to evolve as features are added.
+
+### Logging Philosophy
+
+**Log EVERYTHING** - Every user interaction, every state change, every error.
+
+The diagnostic logging system exists to:
+- **Trace user actions** - Know exactly what the user did before an error
+- **Debug issues faster** - See the full context of what happened
+- **Monitor application flow** - Understand how features are being used
+- **Catch edge cases** - Identify unexpected behaviors early
+- **Enable remote debugging** - Give Claude eyes into what's happening in the user's browser
+
+### What to Log
+
+**ALWAYS log these events:**
+
+**User Interactions:**
+- Button clicks (with button label/purpose)
+- Link clicks (with destination)
+- Form submissions (with form identifier)
+- File uploads (with file metadata: name, size, type)
+- Drag-and-drop events
+- Modal/dialog opens and closes
+- Tab/section switches
+- Settings changes
+
+**Application State:**
+- Component mounts (page loads)
+- Route changes (navigation)
+- API calls (request + response)
+- Data validation (success and failures)
+- localStorage operations (reads/writes)
+- File operations (downloads, conversions)
+
+**Errors and Warnings:**
+- Validation errors (with context)
+- API errors (with status codes and messages)
+- File processing errors (with file details)
+- Network errors (with endpoint and error)
+- Unexpected states (edge cases)
+- React errors (via ErrorBoundary)
+
+### How to Add Logging
+
+**For client components:**
+```javascript
+'use client'
+import { useLogs } from '@/contexts/LogContext'
+
+export default function MyComponent() {
+  const { addLog } = useLogs()
+
+  const handleClick = () => {
+    addLog('info', 'Button clicked: My Action')
+    // ... rest of handler
+  }
+
+  useEffect(() => {
+    addLog('info', 'MyComponent mounted')
+  }, [addLog])
+
+  return (...)
+}
+```
+
+**For API routes:**
+```javascript
+// Log in the API route handler
+console.log('[API] /api/my-endpoint - Request received', { params })
+// These will show in server logs and can be viewed during development
+```
+
+### Logging Standards
+
+**Log types:**
+- `'info'` - Normal operations, user actions, state changes
+- `'success'` - Successful completions, validations passed
+- `'error'` - Errors, failures, validation failures
+
+**Log messages:**
+- Be descriptive and specific
+- Include action and context
+- Use present tense ("Button clicked", not "Button was clicked")
+- Include identifiers when relevant
+
+**Log data:**
+- Include relevant context as second parameter
+- Sanitize sensitive information (API keys, passwords)
+- Keep objects small (don't log massive responses)
+- Use structured data for better readability
+
+**Examples:**
+```javascript
+// Good
+addLog('info', 'File selected for upload', {
+  name: file.name,
+  size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+  type: file.type
+})
+
+// Bad
+addLog('info', 'File selected')
+```
+
+### Logging Checklist for New Features
+
+When adding a feature, ensure you log:
+- [ ] Component mount (page load)
+- [ ] All user interactions (clicks, inputs, submissions)
+- [ ] All state changes (data updates, mode switches)
+- [ ] All API calls (request + response summary)
+- [ ] All validation events (success and failures)
+- [ ] All errors and edge cases
+- [ ] All file operations (if applicable)
+- [ ] All navigation (if feature changes routes)
+
+**Never assume something is too small to log.** The goal is comprehensive traceability.
 
 ---
 
