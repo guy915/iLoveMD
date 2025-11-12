@@ -24,6 +24,10 @@ Converts documents to markdown (optimized for LLMs) with 3 tools:
 2. Explore the codebase
 3. Ask questions
 
+Your first to-do's should be these steps (a session will begin with a system prompt, followed by an initial user request).
+
+**IMPORTANT: Never skip session initialization steps!**
+
 ### When Finishing a Session
 
 1. **Test Before Committing**
@@ -44,6 +48,8 @@ Converts documents to markdown (optimized for LLMs) with 3 tools:
    - Commit code changes first
    - Then commit documentation updates
    - Push all changes to branch
+  
+**IMPORTANT: Never skip session conclusion steps!**
 
 ---
 
@@ -248,4 +254,5 @@ When adding a feature, ensure you log:
 - **Don't add features not in plan** - Ask user first
 - **Don't add authentication or analytics** - Privacy-first, no tracking
 - **Don't use emojis** - Use text labels instead
+- **Don't skip session inialization framework** - Always include the steps in your initial to-do's
 - **Don't skip testing or documentation updates** - Always update docs with code changes
