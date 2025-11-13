@@ -2,6 +2,13 @@
   "name": "ai-doc-prep",
   "version": "0.1.0",
   "private": true,
+  "description": "A web application for preparing documents for LLMs and RAG. Converts PDFs to markdown, HTML to markdown, and merges markdown files.",
+  "author": "guy915",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/guy915/AI-Doc-Prep.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,6 +21,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "turndown": "^7.2.2"
+  },
+  "comments": {
+    "dependencies": "Note: @mozilla/readability and turndown are currently unused but reserved for the upcoming HTML to Markdown feature (Phase 4)"
   },
   "devDependencies": {
     "@types/mozilla__readability": "^0.4.2",
