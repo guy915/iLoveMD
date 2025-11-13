@@ -484,6 +484,20 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ---
 
+---
+
+## Session Notes (Current Session Only)
+
+### 2025-11-13 - API Key Persistence & Diagnostic Panel Improvements
+- **Changes**:
+  - Removed unused `STORAGE_KEYS.MARKER_API_KEY` constant (vestigial code)
+  - Added autoscroll to diagnostic logging panel (scrolls to latest log automatically)
+- **Testing**: Build ✅ | Lint ✅ | Manual testing pending
+- **Files Modified**: 2 (constants.ts, GlobalDiagnosticPanel.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+---
+
 ## Project Complete!
 
 - [ ] All phases completed

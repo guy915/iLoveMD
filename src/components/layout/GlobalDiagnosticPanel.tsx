@@ -7,6 +7,15 @@ export default function GlobalDiagnosticPanel() {
   const { logs, addLog } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+  const logsContainerRef = useRef<HTMLDivElement>(null)
+
+  // Autoscroll to latest log when logs change and panel is open
+  useEffect(() => {
+    if (isOpen && logsContainerRef.current && logs.length > 0) {
+      // Scroll to bottom with smooth behavior
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight
+    }
+  }, [logs, isOpen])
 
   // Click outside to close
   useEffect(() => {
@@ -154,7 +163,7 @@ Log Format: #ID [timestamp] TYPE: message
           </div>
 
           {/* Logs content - user-select-text makes it easy to select and copy */}
-          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text">
+          <div ref={logsContainerRef} className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text">
             {logs.length === 0 ? (
               <div className="text-gray-400 text-center py-8 select-none">
                 No logs yet. Logs will appear here as you interact with the website.
