@@ -8,6 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Codebase Cleanup and Polish** (2025-11-13):
+  - **CI/CD Console Detection Fix** (`.github/workflows/ci.yml`):
+    - Updated console.log detection to exclude both `console.error` and `console.warn`
+    - Previously only excluded `console.error`, causing false positives for intentional `console.warn` usage
+    - Fixed grep command: `grep -v "console\.error" | grep -v "console\.warn"`
+    - **Impact**: CI checks now correctly distinguish between debug console.log (blocked) and intentional console.error/warn (allowed)
+  - **Package.json Metadata Added**:
+    - Added `description`: "A web application for preparing documents for LLMs and RAG..."
+    - Added `author`: "guy915"
+    - Added `license`: "MIT"
+    - Added `repository`: GitHub URL (guy915/AI-Doc-Prep)
+    - Added `comments` field documenting that @mozilla/readability and turndown are reserved for upcoming HTML to Markdown feature
+    - **Impact**: Better project documentation, clearer npm package information
+  - **Documentation Consistency Improvements**:
+    - **File Size Limit Fixes** (README.md, src/app/help/page.tsx):
+      - Updated from "Maximum file size is 1GB" to "Maximum PDF file size is 200MB (Marker API limit)"
+      - Documentation now matches actual implementation in constants.ts
+      - **Impact**: Accurate user expectations, prevents confusion
+    - **GitHub URL Update** (README.md):
+      - Replaced placeholder `yourusername` with actual `guy915` in clone command
+      - Now correctly shows: `git clone https://github.com/guy915/AI-Doc-Prep.git`
+      - **Impact**: Users can directly copy-paste working clone command
+  - **Code Review**:
+    - Reviewed complete GlobalDiagnosticPanel.tsx file (198 lines)
+    - Confirmed all code is clean, well-typed, and properly structured
+    - No issues found - code is production-ready
+  - **Testing**:
+    - Build: ✅ (`npm run build` - passes without errors)
+    - Lint: ✅ (`npm run lint` - no ESLint warnings or errors)
+    - All optimizations from previous session still working correctly
+  - **Files Modified**: 5 (ci.yml, package.json, README.md, help/page.tsx)
+  - **Overall Assessment**: Codebase in excellent condition with only minor documentation and configuration improvements completed
+
+### Changed
 - **Performance Optimizations** (2025-11-13):
   - **Comprehensive performance audit and optimization across entire application**:
     - Identified 19 performance bottlenecks through systematic codebase analysis
