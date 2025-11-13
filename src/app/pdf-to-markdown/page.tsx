@@ -8,7 +8,7 @@ import type { MarkerOptions } from '@/types'
 import { MARKER_CONFIG, STORAGE_KEYS, FILE_SIZE } from '@/lib/constants'
 import * as storageService from '@/lib/services/storageService'
 import { convertPdfToMarkdown } from '@/lib/services/markerApiService'
-import { filterPdfFiles, getFolderName, type BatchProgress } from '@/lib/services/batchConversionService'
+import { filterPdfFiles, filterImmediateFolderFiles, getFolderName, type BatchProgress } from '@/lib/services/batchConversionService'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
@@ -129,7 +129,12 @@ export default function PdfToMarkdownPage() {
 
   const handleFilesSelect = useCallback((selectedFiles: FileList, fromFolder: boolean = false) => {
     const filesArray = Array.from(selectedFiles)
-    const pdfFiles = filterPdfFiles(filesArray)
+    let pdfFiles = filterPdfFiles(filesArray)
+
+    // If from folder, only include files in immediate folder (not subfolders)
+    if (fromFolder) {
+      pdfFiles = filterImmediateFolderFiles(pdfFiles)
+    }
 
     if (pdfFiles.length === 0) {
       setError('No PDF files found in selection')
@@ -145,7 +150,8 @@ export default function PdfToMarkdownPage() {
       pdfs: pdfFiles.length,
       fromFolder,
       folderName: folderNameDetected,
-      previousCount: files.length
+      previousCount: files.length,
+      excludedSubfolderFiles: fromFolder ? filesArray.length - pdfFiles.length : 0
     })
 
     // Accumulate files - avoid duplicates by name
@@ -492,7 +498,7 @@ export default function PdfToMarkdownPage() {
                 className="hidden"
               />
               <span className="text-base font-medium text-gray-700">
-                📄 Browse Files
+                Browse Files
               </span>
             </label>
 
@@ -516,7 +522,7 @@ export default function PdfToMarkdownPage() {
                 className="hidden"
               />
               <span className="text-base font-medium text-gray-700">
-                📁 Browse Folders
+                Browse Folders
               </span>
             </label>
           </div>

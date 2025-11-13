@@ -16,12 +16,11 @@ export const FILE_SIZE = {
 
   // Default limits
   MAX_FILE_SIZE: GB, // 1GB
-  MAX_PDF_FILE_SIZE: 200 * MB, // 200MB - Marker API limit per file
+  MAX_PDF_FILE_SIZE: 200 * MB, // 200MB - Marker API limit per file (applies to both single and batch)
   MAX_MERGE_FILES: 50,
   MAX_TOTAL_MERGE_SIZE: GB, // 1GB total
 
   // Batch processing limits
-  MAX_BATCH_PDF_SIZE: 10 * GB, // 10GB per individual PDF in batch
   MAX_BATCH_TOTAL_SIZE: 100 * GB, // 100GB total for entire batch
   MAX_BATCH_FILES: 10000, // Maximum 10,000 files in a batch
 } as const
