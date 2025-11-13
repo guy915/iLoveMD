@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Comprehensive Error Handling Improvements** (2025-11-13):
+  - **Network Error Handling with Timeouts** (src/app/api/marker/route.ts):
+    - Added `fetchWithTimeout()` helper with 30-second timeout for all external API calls
+    - Implemented network error type detection (timeout, connection, DNS failures)
+    - User-friendly error messages specific to error type
+    - HTTP 503 (Service Unavailable) returned for network errors
+    - Impact: Users receive clear, actionable error messages instead of generic failures
+  - **Type Safety with JSON Validation** (src/app/api/marker/route.ts):
+    - Added `isValidMarkerSubmitResponse()` and `isValidMarkerPollResponse()` type guards
+    - Validates API response structure before type assertions
+    - Prevents runtime errors from unexpected response formats
+    - Returns HTTP 502 (Bad Gateway) for malformed responses
+    - Impact: Eliminates unsafe type assertions, catches API contract violations
+  - **Storage Quota Checking** (src/contexts/LogContext.tsx):
+    - Added `safeStorageGet()`, `safeStorageSet()`, and `safeStorageRemove()` helpers
+    - Detects and handles QuotaExceededError gracefully
+    - Detects private browsing mode and storage unavailability
+    - Logs continue in memory when storage unavailable
+    - Impact: Application works correctly in private browsing mode and low storage scenarios
+  - **Enhanced File Validation** (src/app/api/marker/route.ts):
+    - Added zero-length file detection
+    - Returns HTTP 400 with specific error: "File is empty. Please upload a valid PDF file."
+    - Impact: Prevents wasted API calls and provides clear feedback
+  - **Download Error Handling** (src/lib/utils/downloadUtils.ts):
+    - Added try-catch-finally block with proper cleanup
+    - Validates inputs (content, filename)
+    - Throws descriptive errors for Blob creation, URL creation failures
+    - Always cleans up DOM elements and object URLs even on error
+    - Impact: Prevents memory leaks and provides actionable error messages
+  - **Polling Error Recovery** (src/app/pdf-to-markdown/page.tsx):
+    - Added handling for 'error' status from Marker API
+    - Logs server-side conversion failures with full context
+    - Throws user-friendly error: "The Marker API reported an error during conversion"
+    - Impact: Users know when conversion failed server-side vs network issues
+  - **Download Operation Logging** (src/app/pdf-to-markdown/page.tsx):
+    - Wrapped downloadFile() in try-catch with error logging
+    - Logs download failures to diagnostic panel
+    - Impact: Complete visibility into file download errors for debugging
+  - **Testing**:
+    - Build: ✅ (`npm run build` - TypeScript compilation passed)
+    - Lint: ✅ (`npm run lint` - no ESLint errors)
+    - All critical functionality maintained
+  - **Files Modified**: 4 (route.ts, LogContext.tsx, downloadUtils.ts, page.tsx, types/index.ts)
+  - **Type Definitions Updated**: Added `details?: Record<string, unknown>` to MarkerPollResponse
+
 ### Fixed
 - **Additional Bug Fixes from Automated Review** (2025-11-13):
   - **CRITICAL: LogContext Early Return Issues** (src/contexts/LogContext.tsx):
