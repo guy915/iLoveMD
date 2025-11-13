@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Diagnostics Panel Scroll Leak** (2025-11-13):
   - Fixed page scrolling while scrolling within diagnostics panel
-  - Added boundary detection to logs container scroll handler
-  - Panel scrolls normally, page only scrolls when at top/bottom edge
-  - Prevents scroll event propagation when scrolling within panel content
-  - Allows natural scroll chaining when reaching panel edges
-  - **Impact**: Page stays still while reviewing logs, natural behavior at edges
+  - Corrected boundary detection logic in scroll handler
+  - Page scroll only allowed when at edge AND scrolling past it
+  - Fixed bug where scrolling down from top would scroll both panel and page
+  - Panel always scrolls first, page only scrolls when trying to go beyond edges
+  - **Impact**: Panel scrolling is now isolated from page scrolling
   - **Files Modified**: GlobalDiagnosticPanel.tsx
   - Build: ✅ | Lint: ✅
 
