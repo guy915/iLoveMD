@@ -632,20 +632,30 @@ export default function PdfToMarkdownPage() {
         </div>
       )}
 
+      {/* Single File Progress - show during single file conversion */}
+      {!isBatch && processing && (
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600 animate-spin text-xl">⟳</span>
+            <h2 className="text-base font-semibold text-gray-900">
+              Converting PDF to Markdown...
+            </h2>
+          </div>
+        </div>
+      )}
+
       {/* Batch Progress - show during batch conversion */}
       {isBatch && batchProgress && processing && (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-blue-600 animate-spin text-2xl">⟳</span>
-            <h2 className="text-lg font-semibold text-gray-900">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600 animate-spin text-xl">⟳</span>
+            <h2 className="text-base font-semibold text-gray-900">
               Converting {batchProgress.completed}/{batchProgress.total} files
             </h2>
           </div>
-          <div className="text-sm text-gray-600">
-            {batchProgress.failed > 0 && (
-              <p className="text-red-600">Failed: {batchProgress.failed}</p>
-            )}
-          </div>
+          {batchProgress.failed > 0 && (
+            <p className="text-sm text-red-600 ml-7 mt-2">Failed: {batchProgress.failed}</p>
+          )}
         </div>
       )}
 
@@ -657,16 +667,10 @@ export default function PdfToMarkdownPage() {
             onClick={handleConvert}
             disabled={processing || files.length === 0 || !apiKey.trim()}
             loading={processing}
+            loadingText="Converting..."
             variant="primary"
           >
-            {processing ? (
-              <>
-                <span className="animate-spin mr-2">⟳</span>
-                Converting...
-              </>
-            ) : (
-              'Convert to Markdown'
-            )}
+            Convert to Markdown
           </Button>
         )}
 
