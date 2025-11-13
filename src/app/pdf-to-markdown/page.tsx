@@ -12,8 +12,8 @@ import { convertPdfToMarkdown } from '@/lib/services/markerApiService'
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
-  // API key - defaults to test key from env var, not persisted across sessions
-  const [apiKey, setApiKey] = useState(process.env.NEXT_PUBLIC_MARKER_TEST_KEY || '')
+  // API key - defaults to test key, not persisted across sessions
+  const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
   const [file, setFile] = useState<File | null>(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
