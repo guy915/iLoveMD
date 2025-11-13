@@ -79,7 +79,7 @@ export default function Help() {
               &quot;File too large&quot; error
             </h3>
             <ul className="list-disc list-inside space-y-1 text-gray-600">
-              <li>Maximum file size is 1GB</li>
+              <li>Maximum PDF file size is 200MB (Marker API limit)</li>
               <li>Try splitting large PDFs before conversion</li>
               <li>Compress your PDF if possible</li>
             </ul>
