@@ -43,6 +43,7 @@ export function formatFileSize(bytes: number, decimals: number = 2): string {
  * formatBytesToMB(52428800) // "50.00MB"
  */
 export function formatBytesToMB(bytes: number, decimals: number = 2): string {
+  if (bytes < 0) return 'Invalid size'
   return `${(bytes / FILE_SIZE.BYTES_PER_MB).toFixed(decimals)}MB`
 }
 
@@ -56,6 +57,7 @@ export function formatBytesToMB(bytes: number, decimals: number = 2): string {
  * formatBytesToKB(52428800) // "51200.00KB"
  */
 export function formatBytesToKB(bytes: number, decimals: number = 2): string {
+  if (bytes < 0) return 'Invalid size'
   return `${(bytes / FILE_SIZE.BYTES_PER_KB).toFixed(decimals)}KB`
 }
 
@@ -68,5 +70,6 @@ export function formatBytesToKB(bytes: number, decimals: number = 2): string {
  * formatDuration(125300) // "125.3s"
  */
 export function formatDuration(milliseconds: number): string {
+  if (milliseconds < 0) return 'Invalid duration'
   return `${(milliseconds / 1000).toFixed(1)}s`
 }
