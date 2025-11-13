@@ -55,8 +55,10 @@ These steps should be your first to-do (a session will begin with a system promp
 
 **Test Marker API Key:** `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
 
-**Currently hardcoded in:**
-- `src/app/pdf-to-markdown/page.js` (line 11) - Pre-filled as default value in useState hook (not persisted between sessions)
+**Currently in environment variables:**
+- `.env.local` - NEXT_PUBLIC_MARKER_TEST_KEY (not in version control)
+- `.env.example` - Template showing required environment variables
+- Used in `src/app/pdf-to-markdown/page.tsx` as default value
 
 ---
 

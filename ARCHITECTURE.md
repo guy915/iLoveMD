@@ -22,11 +22,11 @@ AI Doc Prep is a client-heavy web application built with Next.js that processes 
 ai-doc-prep/
 ├── src/
 │   ├── app/                    # Next.js App Router
-│   │   ├── layout.js           # Root layout with diagnostic logging
-│   │   ├── page.js             # Homepage with tool tiles
+│   │   ├── layout.tsx          # Root layout with diagnostic logging
+│   │   ├── page.tsx            # Homepage with tool tiles
 │   │   ├── pdf-to-markdown/    # PDF tool (complete)
-│   │   ├── loading.js          # Global loading state
-│   │   ├── not-found.js        # Custom 404 page
+│   │   ├── loading.tsx         # Global loading state
+│   │   ├── not-found.tsx       # Custom 404 page
 │   │   └── api/
 │   │       └── marker/         # Proxy to Marker API
 │   ├── components/             # React components
@@ -34,12 +34,13 @@ ai-doc-prep/
 │   │   ├── common/             # Button, FileUpload, ErrorBoundary
 │   │   └── home/               # ToolTile
 │   ├── contexts/               # React Context providers
-│   │   └── LogContext.js       # Diagnostic logging context
+│   │   └── LogContext.tsx      # Diagnostic logging context
 │   ├── lib/                    # Business logic
-│   │   ├── constants.js        # Centralized constants
-│   │   └── utils/              # downloadUtils, classNames
-│   └── hooks/                  # Custom React hooks
-│       └── useLocalStorage.js  # localStorage wrapper
+│   │   ├── constants.ts        # Centralized constants
+│   │   ├── services/           # storageService, markerApiService
+│   │   └── utils/              # downloadUtils, classNames, formatUtils
+│   └── types/                  # TypeScript type definitions
+│       └── index.ts            # Shared types
 ├── assets/                     # Test files and resources
 ├── public/                     # Static assets
 └── README.md
