@@ -625,37 +625,36 @@ export default function PdfToMarkdownPage() {
         </div>
       )}
 
-      {/* Single File Progress - show during single file conversion */}
-      {!isBatch && processing && (
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-600 animate-spin text-xl">⟳</span>
-            <h2 className="text-base font-semibold text-gray-900">
-              {status || 'Converting PDF to Markdown...'}
-            </h2>
-          </div>
-        </div>
-      )}
-
-      {/* Batch Progress - show during batch conversion */}
-      {isBatch && batchProgress && processing && (
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-600 animate-spin text-xl">⟳</span>
-            <h2 className="text-base font-semibold text-gray-900">
-              Converting {batchProgress.completed}/{batchProgress.total} files
-            </h2>
-          </div>
-          {batchProgress.failed > 0 && (
-            <p className="text-sm text-red-600 ml-7 mt-2">Failed: {batchProgress.failed}</p>
-          )}
-        </div>
-      )}
-
-      {/* Completion Status - show after processing is done */}
-      {!processing && status && (
+      {/* Single File Status - unified for processing and completion */}
+      {!isBatch && (processing || status) && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-blue-800">{status}</p>
+          <div className="flex items-center gap-3">
+            {processing && (
+              <span className="text-blue-600 animate-spin text-2xl">⟳</span>
+            )}
+            <p className="text-base font-semibold text-blue-800">
+              {status || 'Converting PDF to Markdown...'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Progress - unified for processing and completion */}
+      {isBatch && (processing || status) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-3">
+            {processing && (
+              <span className="text-blue-600 animate-spin text-2xl">⟳</span>
+            )}
+            <p className="text-base font-semibold text-blue-800">
+              {batchProgress && processing
+                ? `Converting ${batchProgress.completed}/${batchProgress.total} files`
+                : status}
+            </p>
+          </div>
+          {batchProgress && batchProgress.failed > 0 && (
+            <p className="text-sm text-red-600 ml-11 mt-2">Failed: {batchProgress.failed}</p>
+          )}
         </div>
       )}
 
