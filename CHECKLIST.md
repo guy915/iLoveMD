@@ -492,8 +492,11 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Changes**:
   - Removed unused `STORAGE_KEYS.MARKER_API_KEY` constant (vestigial code)
   - Added autoscroll to diagnostic logging panel (scrolls to latest log automatically)
+  - Fixed API key not loading (created .env.local with test key)
+  - Removed log counter badge from diagnostic panel button (cleaner UI)
 - **Testing**: Build ✅ | Lint ✅ | Manual testing pending
 - **Files Modified**: 2 (constants.ts, GlobalDiagnosticPanel.tsx)
+- **Files Created**: 1 (.env.local)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
 ---

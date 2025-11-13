@@ -19,7 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Implemented useEffect hook to scroll on logs change
     - Only scrolls when panel is open and logs exist
     - **Impact**: Users no longer need to manually scroll to see latest logs
+  - **Fixed API key not loading**:
+    - Created `.env.local` file with test API key
+    - Environment variable `NEXT_PUBLIC_MARKER_TEST_KEY` now properly loaded
+    - API key input box now pre-filled with test key on page load
+    - **Impact**: Users can immediately test PDF conversion without entering key
+  - **Removed log counter from diagnostic panel button**:
+    - Removed badge showing log count from "Logs" button
+    - Simplified button UI to just "Logs" with dropdown arrow
+    - **Impact**: Cleaner, less cluttered interface
   - **Files Modified**: 2 (constants.ts, GlobalDiagnosticPanel.tsx)
+  - **Files Created**: 1 (.env.local)
   - Build: ✅ | Lint: ✅
 
 ### Changed
