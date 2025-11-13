@@ -31,6 +31,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
+    // Validate file type (must be PDF)
+    if (!file.type || !file.type.includes('pdf')) {
+      return NextResponse.json(
+        { success: false, error: 'Only PDF files are accepted' },
+        { status: 400 }
+      )
+    }
+
+    // Validate file size (200MB limit)
+    const maxSize = 200 * 1024 * 1024 // 200MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `File too large (max 200MB). Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`
+        },
+        { status: 413 }
+      )
+    }
+
+    // Validate API key format (basic check)
+    const trimmedKey = apiKey.trim()
+    if (trimmedKey.length < 10) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid API key format' },
+        { status: 400 }
+      )
+    }
+
     // Parse options or use defaults
     let options: MarkerOptions = DEFAULT_OPTIONS
 
@@ -68,7 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     const response = await fetch('https://www.datalab.to/api/v1/marker', {
       method: 'POST',
       headers: {
-        'X-Api-Key': apiKey,
+        'X-Api-Key': trimmedKey,
       },
       body: markerFormData,
     })
@@ -95,6 +124,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
           details: data
         },
         { status: response.status }
+      )
+    }
+
+    // Validate required fields in successful response
+    if (!data.request_id || !data.request_check_url) {
+      console.error('Marker API returned success but missing required fields:', data)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid API response format (missing required fields)',
+          details: data
+        },
+        { status: 502 }
       )
     }
 

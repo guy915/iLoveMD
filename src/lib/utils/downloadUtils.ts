@@ -21,16 +21,20 @@ export function downloadFile(content: string, filename: string, mimeType: string
  * @param filename - The original filename
  * @param newExtension - The new extension (without dot)
  * @returns The filename with new extension
+ * @example
+ * replaceExtension('document.pdf', 'md') // 'document.md'
+ * replaceExtension('.config', 'md') // '.config.md'
+ * replaceExtension('..config', 'md') // '..config.md'
+ * replaceExtension('file.tar.gz', 'md') // 'file.tar.md'
  */
 export function replaceExtension(filename: string, newExtension: string): string {
-  const parts = filename.split('.')
+  const lastDotIndex = filename.lastIndexOf('.')
 
-  // Handle dotfiles (files starting with .) - they should get extension appended
-  if (parts.length > 1 && parts[0] !== '') {
-    parts[parts.length - 1] = newExtension
-    return parts.join('.')
+  // No extension or dotfile (starts with .) - append extension
+  if (lastDotIndex <= 0) {
+    return `${filename}.${newExtension}`
   }
 
-  // No extension or dotfile - append new extension
-  return `${filename}.${newExtension}`
+  // Replace existing extension
+  return filename.substring(0, lastDotIndex) + '.' + newExtension
 }

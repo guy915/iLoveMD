@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, ChangeEvent } from 'react'
+import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react'
 import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
@@ -30,6 +30,22 @@ export default function PdfToMarkdownPage() {
 
   // Use global logging context (do not destructure clearLogs - we never clear logs)
   const { addLog } = useLogs()
+
+  // Refs for cleanup and memory leak prevention
+  const isMountedRef = useRef(true)
+  const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current)
+        pollTimeoutRef.current = null
+      }
+    }
+  }, [])
 
   // Load options from localStorage on mount
   useEffect(() => {
@@ -65,7 +81,7 @@ export default function PdfToMarkdownPage() {
     })
   }
 
-  // Log component mount and API key state
+  // Log component mount (once)
   useEffect(() => {
     const keyPresent = apiKey.length > 0
     const keyLength = apiKey.length
@@ -75,12 +91,13 @@ export default function PdfToMarkdownPage() {
       apiKeyLength: keyLength
     })
     // Note: We don't log the actual API key value for security
-  }, [addLog, apiKey])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addLog]) // Only run once on mount
 
-  const handleFileSelect = (selectedFile: File) => {
+  const handleFileSelect = useCallback((selectedFile: File) => {
     setFile(selectedFile)
     setError('')
-  }
+  }, [])
 
   const handleConvert = async () => {
     if (!apiKey.trim()) {
@@ -150,6 +167,13 @@ export default function PdfToMarkdownPage() {
       // Start polling for results
       setStatus('Processing PDF... This may take a minute.')
       const checkUrl = submitData.request_check_url
+
+      // Validate checkUrl exists
+      if (!checkUrl) {
+        addLog('error', 'No status check URL returned from API')
+        throw new Error('No status check URL returned from API')
+      }
+
       const pollingStartTime = Date.now()
 
       addLog('info', 'Starting polling for conversion status', {
@@ -164,6 +188,12 @@ export default function PdfToMarkdownPage() {
       let pollCount = 0
 
       const poll = async (): Promise<void> => {
+        // Check if component is still mounted
+        if (!isMountedRef.current) {
+          addLog('info', 'Component unmounted, stopping polling')
+          return
+        }
+
         if (pollCount >= maxPolls) {
           const timeoutDuration = Date.now() - pollingStartTime
           addLog('error', `Polling timeout after ${pollCount} attempts (${(timeoutDuration / 1000).toFixed(1)}s)`)
@@ -179,7 +209,7 @@ export default function PdfToMarkdownPage() {
         })
 
         const pollResponse = await fetch(
-          `/api/marker?checkUrl=${encodeURIComponent(checkUrl || '')}`,
+          `/api/marker?checkUrl=${encodeURIComponent(checkUrl)}`,
           {
             headers: {
               'x-api-key': apiKey
@@ -187,6 +217,12 @@ export default function PdfToMarkdownPage() {
           }
         )
         const pollDuration = Date.now() - pollStartTime
+
+        // Check again after async operation
+        if (!isMountedRef.current) {
+          addLog('info', 'Component unmounted during polling, aborting')
+          return
+        }
 
         const pollData = await pollResponse.json() as MarkerPollResponse
 
@@ -251,16 +287,23 @@ export default function PdfToMarkdownPage() {
             totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
           })
 
-          setStatus('Conversion complete! File downloaded.')
-          setProcessing(false)
-          setFile(null)
+          // Only update state if component is still mounted
+          if (isMountedRef.current) {
+            setStatus('Conversion complete! File downloaded.')
+            setProcessing(false)
+            setFile(null)
 
-          // Clear status after 3 seconds
-          setTimeout(() => setStatus(''), 3000)
+            // Clear status after 3 seconds
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                setStatus('')
+              }
+            }, 3000)
+          }
         } else {
           // Still processing, poll again
           addLog('info', `Status: ${pollData.status} - Waiting ${pollInterval}ms before next poll`)
-          setTimeout(poll, pollInterval)
+          pollTimeoutRef.current = setTimeout(poll, pollInterval)
         }
       }
 
@@ -277,9 +320,12 @@ export default function PdfToMarkdownPage() {
         stack: error.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
       })
 
-      setError(error.message || 'An error occurred during conversion')
-      setProcessing(false)
-      setStatus('')
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setError(error.message || 'An error occurred during conversion')
+        setProcessing(false)
+        setStatus('')
+      }
     }
   }
 
@@ -325,6 +371,7 @@ export default function PdfToMarkdownPage() {
       {/* File Upload Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <FileUpload
+          key={file?.name || 'empty'} // Force remount when file changes to clear state
           accept=".pdf,application/pdf"
           onFileSelect={handleFileSelect}
           maxSize={200 * 1024 * 1024} // 200MB
@@ -371,8 +418,9 @@ export default function PdfToMarkdownPage() {
               onChange={(e) => {
                 const newValue = e.target.checked
                 handleOptionChange('use_llm', newValue)
-                // If disabling LLM, also disable image extraction
-                if (!newValue && options.disable_image_extraction) {
+                // If disabling LLM, must also reset disable_image_extraction
+                // because image extraction requires LLM to be enabled
+                if (!newValue) {
                   handleOptionChange('disable_image_extraction', false)
                 }
               }}
