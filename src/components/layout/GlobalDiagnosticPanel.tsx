@@ -46,9 +46,6 @@ export default function GlobalDiagnosticPanel() {
         aria-label="Toggle diagnostic logs"
       >
         <span className="text-sm font-medium">Logs</span>
-        <span className="bg-blue-500 px-2 py-0.5 rounded-full text-xs" suppressHydrationWarning>
-          {logs.length}
-        </span>
         <span className="text-xs" aria-hidden="true">
           {isOpen ? '▼' : '▶'}
         </span>
