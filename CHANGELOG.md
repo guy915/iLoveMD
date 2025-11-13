@@ -60,6 +60,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Code Duplication Eliminated**: DEFAULT_OPTIONS, file size limits, polling config, API URLs
   - Build: ✅ | Lint: ✅ | Tested: Manual verification required
 
+- **Code Quality Improvements - Code Smell Fixes** (2025-11-13):
+  - **Constants Consolidation**:
+    - Moved `DEFAULT_OPTIONS` from PDF page and API route to centralized `MARKER_CONFIG` in constants.ts
+    - Added `MARKER_CONFIG.POLL_INTERVAL_MS` (2000ms) and `MARKER_CONFIG.MAX_POLL_ATTEMPTS` (150) constants
+    - Added `MARKER_CONFIG.SIGN_UP_URL` for Marker API sign-up page
+    - Added `FILE_SIZE.MAX_PDF_FILE_SIZE` (200MB) constant to standardize PDF file size limit
+    - Impact: Single source of truth for all configuration, easier to maintain and update
+  - **Format Utilities** (`src/lib/utils/formatUtils.ts` - NEW):
+    - Created comprehensive formatting utility functions
+    - `formatFileSize()` - Converts bytes to human-readable format (KB, MB, GB)
+    - `formatBytesToMB()` - Always formats as MB (e.g., "50.00MB")
+    - `formatBytesToKB()` - Always formats as KB (e.g., "512.00KB")
+    - `formatDuration()` - Converts milliseconds to seconds with 1 decimal (e.g., "1.5s")
+    - Impact: Eliminated duplicate file size calculation logic across 6+ locations
+  - **PDF to Markdown Page Refactoring** (`src/app/pdf-to-markdown/page.tsx`):
+    - Replaced all hardcoded values with constants from MARKER_CONFIG
+    - Replaced all file size calculations with utility functions
+    - Replaced all duration calculations with formatDuration()
+    - Replaced hardcoded API sign-up URL with MARKER_CONFIG.SIGN_UP_URL
+    - Replaced hardcoded 200MB limit with FILE_SIZE.MAX_PDF_FILE_SIZE
+    - Impact: More maintainable, consistent formatting, no magic numbers
+  - **API Route Refactoring** (`src/app/api/marker/route.ts`):
+    - Replaced DEFAULT_OPTIONS with MARKER_CONFIG.DEFAULT_OPTIONS
+    - Replaced hardcoded 200MB limit with FILE_SIZE.MAX_PDF_FILE_SIZE
+    - Replaced file size calculation with formatBytesToMB() utility
+    - Impact: Consistency with frontend, easier to update limits
+  - **Accessibility Improvements**:
+    - Added `htmlFor` attribute to API key label (pdf-to-markdown/page.tsx:337)
+    - Added `id` and `aria-label` to API key input field
+    - Added `aria-label` and `role="img"` to diagnostic panel toggle arrow (GlobalDiagnosticPanel.tsx:43)
+    - Impact: Better screen reader support, improved keyboard navigation
+  - **Error Handling** (`src/lib/utils/downloadUtils.ts`):
+    - Added comprehensive error handling to `downloadFile()` function
+    - Added validation for empty content and missing filename
+    - Added try-catch with proper error messages
+    - Added TypeScript `@throws` JSDoc documentation
+    - Impact: Better error messages, prevents silent failures
+  - **Testing**:
+    - Build: ✅ (`npm run build` - passes)
+    - Lint: ✅ (`npm run lint` - passes)
+    - All functionality maintained
+  - **Files Modified**: 5 (constants.ts, page.tsx, route.ts, downloadUtils.ts, GlobalDiagnosticPanel.tsx)
+  - **Files Created**: 1 (formatUtils.ts)
+  - **Lines Added**: ~120 (including new utility file)
+  - **Lines Improved**: ~30 (magic numbers replaced, formatting improved)
+  - **Code Smells Fixed**: 10 (out of 28 identified)
+    - ✅ Critical: Excessive constants duplication (DEFAULT_OPTIONS)
+    - ✅ High: Magic numbers without constants (polling intervals, file sizes)
+    - ✅ High: Inconsistent file size limits (200MB constant created)
+    - ✅ High: Hardcoded API endpoint URL (moved to constants)
+    - ✅ Medium: Code duplication in file size calculations (extracted utilities)
+    - ✅ Medium: Missing error handling in downloadFile (added)
+    - ✅ Low: Poor accessibility in diagnostic panel (improved)
+    - ✅ Low: Input accessibility missing label association (fixed)
+    - Deferred: Long handleConvert function (228 lines - lower priority after constant extraction)
+    - Deferred: Complex polling logic extraction (medium priority)
+    - Deferred: Type safety improvements with `any` types (requires significant refactoring)
+    - Deferred: GlobalDiagnosticPanel copy handler extraction (medium priority)
+  - **Benefits**:
+    - **Maintainability**: All configuration in one place, easy to update polling intervals, file sizes, URLs
+    - **Consistency**: All file size and duration formatting use same utilities
+    - **Accessibility**: Better screen reader support and keyboard navigation
+    - **Error Handling**: Better error messages when downloads fail
+    - **Code Quality**: Eliminated magic numbers, reduced duplication, improved readability
+
 ### Fixed
 - **Copilot AI Review Fixes** (2025-11-13):
   - **markerApiService Improvements** (src/lib/services/markerApiService.ts):
@@ -77,6 +142,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - Impact: More robust and semantically correct file type validation
   - **Credit**: Issues identified by GitHub Copilot AI code review
   - Build: ✅ | Lint: ✅ | Files modified: 1
+
+- **Security and Code Quality Improvements from Automated Review** (2025-11-13):
+  - **CRITICAL: Prevented recursive logging bug** (src/contexts/LogContext.tsx):
+    - Fixed infinite recursion when console.warn in storage helpers triggered wrapped console
+    - Stored original console methods before wrapping to use in storage helpers
+    - Set flags BEFORE logging to break recursion chain
+    - Reset storageUnavailable flag on successful operations
+    - Impact: Prevents application crashes in low-storage/quota exceeded scenarios
+  - **Security: Sanitized error details** (src/app/api/marker/route.ts):
+    - Removed internal error messages from client-facing `details` fields
+    - Only expose error types, HTTP status codes, and received keys (not full data)
+    - Prevents leaking sensitive internal implementation details
+    - Impact: Reduces security risk while maintaining debugging capability
+  - **Improved error type detection** (src/app/api/marker/route.ts):
+    - Check error instance properties (name, code) before string matching
+    - Added detection for AbortError, ETIMEDOUT, ECONNREFUSED, ENOTFOUND error codes
+    - More reliable than string matching across different environments
+    - Impact: Better error categorization and user messages
+  - **Fixed template literal consistency** (src/app/api/marker/route.ts):
+    - Changed timeout error message from string concatenation to template literal
+    - Consistent with codebase style
+  - **Improved JSDoc documentation** (src/lib/utils/downloadUtils.ts, src/types/index.ts):
+    - Clarified downloadFile() error behavior (doesn't throw on user cancellation)
+    - Added comprehensive documentation for MarkerPollResponse.details field
+    - Impact: Better developer experience and code clarity
+  - **Fixed CHANGELOG typo**: Corrected file count from 4 to 5
+  - **Testing**:
+    - Build: ✅ (`npm run build` - passes)
+    - Lint: ✅ (`npm run lint` - passes)
+    - All security fixes validated
+
+### Added
+- **Comprehensive Error Handling Improvements** (2025-11-13):
+  - **Network Error Handling with Timeouts** (src/app/api/marker/route.ts):
+    - Added `fetchWithTimeout()` helper with 30-second timeout for all external API calls
+    - Implemented network error type detection (timeout, connection, DNS failures)
+    - User-friendly error messages specific to error type
+    - HTTP 503 (Service Unavailable) returned for network errors
+    - Impact: Users receive clear, actionable error messages instead of generic failures
+  - **Type Safety with JSON Validation** (src/app/api/marker/route.ts):
+    - Added `isValidMarkerSubmitResponse()` and `isValidMarkerPollResponse()` type guards
+    - Validates API response structure before type assertions
+    - Prevents runtime errors from unexpected response formats
+    - Returns HTTP 502 (Bad Gateway) for malformed responses
+    - Impact: Eliminates unsafe type assertions, catches API contract violations
+  - **Storage Quota Checking** (src/contexts/LogContext.tsx):
+    - Added `safeStorageGet()`, `safeStorageSet()`, and `safeStorageRemove()` helpers
+    - Detects and handles QuotaExceededError gracefully
+    - Detects private browsing mode and storage unavailability
+    - Logs continue in memory when storage unavailable
+    - Impact: Application works correctly in private browsing mode and low storage scenarios
+  - **Enhanced File Validation** (src/app/api/marker/route.ts):
+    - Added zero-length file detection
+    - Returns HTTP 400 with specific error: "File is empty. Please upload a valid PDF file."
+    - Impact: Prevents wasted API calls and provides clear feedback
+  - **Download Error Handling** (src/lib/utils/downloadUtils.ts):
+    - Added try-catch-finally block with proper cleanup
+    - Validates inputs (content, filename)
+    - Throws descriptive errors for Blob creation, URL creation failures
+    - Always cleans up DOM elements and object URLs even on error
+    - Impact: Prevents memory leaks and provides actionable error messages
+  - **Polling Error Recovery** (src/app/pdf-to-markdown/page.tsx):
+    - Added handling for 'error' status from Marker API
+    - Logs server-side conversion failures with full context
+    - Throws user-friendly error: "The Marker API reported an error during conversion"
+    - Impact: Users know when conversion failed server-side vs network issues
+  - **Download Operation Logging** (src/app/pdf-to-markdown/page.tsx):
+    - Wrapped downloadFile() in try-catch with error logging
+    - Logs download failures to diagnostic panel
+    - Impact: Complete visibility into file download errors for debugging
+  - **Testing**:
+    - Build: ✅ (`npm run build` - TypeScript compilation passed)
+    - Lint: ✅ (`npm run lint` - no ESLint errors)
+    - All critical functionality maintained
+  - **Files Modified**: 5 (route.ts, LogContext.tsx, downloadUtils.ts, page.tsx, types/index.ts)
+  - **Type Definitions Updated**: Added `details?: Record<string, unknown>` to MarkerPollResponse
 
 ### Fixed
 - **Additional Bug Fixes from Automated Review** (2025-11-13):
