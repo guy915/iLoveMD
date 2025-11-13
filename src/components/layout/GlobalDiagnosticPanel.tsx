@@ -6,6 +6,7 @@ import { useLogs } from '@/contexts/LogContext'
 export default function GlobalDiagnosticPanel() {
   const { logs, addLog } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const logsContainerRef = useRef<HTMLDivElement>(null)
 
@@ -16,6 +17,22 @@ export default function GlobalDiagnosticPanel() {
       logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight
     }
   }, [logs, isOpen])
+
+  // Prevent page scroll when mouse is over the panel
+  useEffect(() => {
+    const preventScroll = (e: WheelEvent) => {
+      if (isHovering) {
+        e.preventDefault()
+      }
+    }
+
+    // Add listener with passive: false to allow preventDefault
+    document.addEventListener('wheel', preventScroll, { passive: false })
+
+    return () => {
+      document.removeEventListener('wheel', preventScroll)
+    }
+  }, [isHovering])
 
   // Click outside to close
   useEffect(() => {
@@ -56,7 +73,11 @@ export default function GlobalDiagnosticPanel() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 bg-gray-900 rounded-lg shadow-2xl overflow-hidden z-50 w-[95vw] max-w-xl md:w-[500px]">
+        <div
+          className="absolute top-full left-0 mt-2 bg-gray-900 rounded-lg shadow-2xl overflow-hidden z-50 w-[95vw] max-w-xl md:w-[500px]"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
             <h3 className="text-lg font-semibold text-white">
@@ -163,11 +184,6 @@ Log Format: #ID [timestamp] TYPE: message
           <div
             ref={logsContainerRef}
             className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text"
-            onWheel={(e) => {
-              // Prevent scroll from propagating to the document/body
-              // This stops the website from scrolling when scrolling the logs panel
-              e.stopPropagation()
-            }}
           >
             {logs.length === 0 ? (
               <div className="text-gray-400 text-center py-8 select-none">
