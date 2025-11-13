@@ -140,21 +140,46 @@ export default function PdfToMarkdownPage() {
     // Check if this is from a folder by looking at webkitRelativePath
     const folderNameDetected = fromFolder ? getFolderName(pdfFiles[0]) : null
 
-    addLog('info', `Selected ${pdfFiles.length} PDF file(s)`, {
+    addLog('info', `Adding ${pdfFiles.length} PDF file(s)`, {
       total: filesArray.length,
       pdfs: pdfFiles.length,
       fromFolder,
-      folderName: folderNameDetected
+      folderName: folderNameDetected,
+      previousCount: files.length
     })
 
-    setFiles(pdfFiles)
-    setFolderName(folderNameDetected)
+    // Accumulate files - avoid duplicates by name
+    setFiles(prevFiles => {
+      const existingNames = new Set(prevFiles.map(f => f.name))
+      const newFiles = pdfFiles.filter(f => !existingNames.has(f.name))
+      return [...prevFiles, ...newFiles]
+    })
+
+    // Update folder name if this is first selection or if single folder
+    if (files.length === 0 && folderNameDetected) {
+      setFolderName(folderNameDetected)
+    } else if (files.length > 0) {
+      setFolderName(null) // Multiple sources, no single folder name
+    }
+
     setError('')
     setConvertedMarkdown(null)
     setOutputFilename(null)
     setBatchProgress(null)
     setBatchZipBlob(null)
     setBatchZipFilename(null)
+  }, [addLog, files.length])
+
+  const handleClearFiles = useCallback(() => {
+    setFiles([])
+    setFolderName(null)
+    setError('')
+    setConvertedMarkdown(null)
+    setOutputFilename(null)
+    setBatchProgress(null)
+    setBatchZipBlob(null)
+    setBatchZipFilename(null)
+    addLog('info', 'Cleared all selected files')
   }, [addLog])
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -443,17 +468,17 @@ export default function PdfToMarkdownPage() {
       {/* File Upload Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div
-          className="border-2 border-dashed border-gray-300 rounded-lg p-8 relative"
+          className="border-2 border-dashed border-gray-300 rounded-lg relative"
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
         >
-          <p className="text-lg mb-4 font-medium text-gray-700 text-center">
+          <p className="text-lg py-4 font-medium text-gray-700 text-center">
             Drop PDF files or folders here
           </p>
 
-          <div className="flex items-stretch gap-0">
+          <div className="flex items-stretch gap-0 min-h-[180px]">
             {/* Files Button (Left Half) */}
-            <label className="flex-1 cursor-pointer flex items-center justify-center py-8 hover:bg-gray-50 transition-colors rounded-l-lg border-r border-gray-200">
+            <label className="flex-1 cursor-pointer flex items-center justify-center hover:bg-gray-50 transition-colors rounded-bl-lg border-r border-gray-200">
               <input
                 type="file"
                 accept=".pdf,application/pdf"
@@ -475,7 +500,7 @@ export default function PdfToMarkdownPage() {
             <div className="w-px bg-gray-200"></div>
 
             {/* Folder Button (Right Half) */}
-            <label className="flex-1 cursor-pointer flex items-center justify-center py-8 hover:bg-gray-50 transition-colors rounded-r-lg border-l border-gray-200">
+            <label className="flex-1 cursor-pointer flex items-center justify-center hover:bg-gray-50 transition-colors rounded-br-lg border-l border-gray-200">
               <input
                 type="file"
                 accept=".pdf,application/pdf"
@@ -497,15 +522,19 @@ export default function PdfToMarkdownPage() {
           </div>
 
           {files.length > 0 && (
-            <p className="text-sm text-blue-600 font-medium text-center mt-4">
-              Selected: {files.length} PDF file{files.length > 1 ? 's' : ''}
-              {folderName && ` from folder "${folderName}"`}
-            </p>
+            <div className="border-t border-gray-200 py-3 px-4 bg-gray-50 rounded-b-lg flex items-center justify-between">
+              <p className="text-sm text-blue-600 font-medium">
+                Selected: {files.length} PDF file{files.length > 1 ? 's' : ''}
+                {folderName && ` from "${folderName}"`}
+              </p>
+              <button
+                onClick={handleClearFiles}
+                className="text-sm text-red-600 hover:text-red-700 font-medium"
+              >
+                Clear All
+              </button>
+            </div>
           )}
-
-          <p className="text-sm text-gray-500 text-center mt-4">
-            Supported: PDF files, up to 200MB per file
-          </p>
         </div>
       </div>
 
