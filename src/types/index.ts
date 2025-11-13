@@ -78,22 +78,18 @@ export interface MarkerPollResponse {
  * Marker API request options
  */
 export interface MarkerOptions {
-  /** Output format */
-  output_format?: 'markdown' | 'json' | 'html' | 'chunks'
-  /** Languages to detect (comma-separated) */
-  langs?: string
+  /** Output format (always markdown for now) */
+  output_format: 'markdown'
+  /** Languages to detect (always English for now) */
+  langs: 'English'
   /** Add pagination markers */
-  paginate?: boolean
+  paginate: boolean
+  /** Apply line formatting */
+  format_lines: boolean
   /** Use LLM for better extraction */
-  use_llm?: boolean
-  /** Force OCR even for digital PDFs */
-  force_ocr?: boolean
-  /** Processing mode */
-  mode?: 'fast' | 'accurate'
-  /** Page range to process (e.g., "1-5") */
-  page_range?: string
-  /** Maximum pages to process */
-  max_pages?: number
+  use_llm: boolean
+  /** Disable image extraction (requires use_llm) */
+  disable_image_extraction: boolean
 }
 
 // ===== Navigation & Constants =====

@@ -173,11 +173,13 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 3.3 PDF Tool Page
 
 - [x] Create PDF tool page
-  - [x] File: src/app/pdf-to-markdown/page.js
+  - [x] File: src/app/pdf-to-markdown/page.tsx
   - [x] 'use client' directive
   - [x] State management (file, processing, status, error)
   - [x] API key input (pre-filled with test key for development)
-  - [ ] Options panel
+  - [x] Options panel (paginate, format_lines, use_llm, disable_image_extraction)
+  - [x] Options persistence with localStorage
+  - [x] Conditional enable/disable for image extraction (requires LLM)
   - [x] File upload integration with FileUpload component
   - [x] Convert button with loading states
   - [x] Status messages with comprehensive logging
@@ -206,13 +208,18 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [x] Verify file downloads correctly
 - [x] Check error messages display
 - [x] Comprehensive diagnostic logging implemented
-- [ ] Upload large PDF (> 100MB)
-- [ ] Test all output formats
-- [ ] Test with paginate enabled
-- [ ] Test with LLM enhancement
-- [ ] Test fast vs accurate mode
+- [x] Options panel implemented (paginate, format_lines, use_llm, disable_image_extraction)
+- [x] Options persist across sessions (localStorage)
+- [x] Conditional checkbox logic (image extraction requires LLM)
+- [x] Build passes without errors
+- [x] Lint passes without errors
+- [ ] Upload large PDF (> 100MB) - Manual testing required
+- [ ] Test with paginate enabled - Manual testing required
+- [ ] Test with format_lines enabled - Manual testing required
+- [ ] Test with LLM enhancement - Manual testing required
+- [ ] Test disable image extraction with LLM - Manual testing required
 
-**Phase 3 Complete:** [ ]
+**Phase 3 Complete:** [x] (Core functionality complete, manual testing pending)
 
 ---
 
