@@ -488,6 +488,16 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-13 - React setState Warning Fix
+- **Fixed**:
+  - React warning: "Cannot update a component while rendering a different component"
+  - Root cause: `addLog()` called inside `setOptions()` state updater function
+  - Solution: Moved `addLog()` call outside updater using `setTimeout(..., 0)`
+  - Warning no longer appears when toggling conversion options
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 1 (pdf-to-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-13 - API Key Persistence & Diagnostic Panel Improvements
 - **Added**:
   - Autoscroll to diagnostic logging panel (instant scroll, no animation)
