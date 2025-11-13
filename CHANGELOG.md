@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Documentation Cleanup** (2025-11-13):
+  - **CHECKLIST.md Updates** (~30 file references corrected):
+    - Updated all completed file references from `.js` to `.tsx`/`.ts` extensions
+    - Updated future task file references to use TypeScript extensions for consistency
+    - Annotated non-existent directories (hooks, processors, api, storage, tools)
+    - Removed reference to deleted useLocalStorage hook
+    - Marked Help and About pages as completed (files exist at `src/app/help/page.tsx` and `src/app/about/page.tsx`)
+  - **README.md Status Update**:
+    - Changed "PDF to Markdown (In Progress)" to "PDF to Markdown"
+    - Updated description to reflect tool is complete with configurable options
+  - **Benefits**:
+    - Documentation now accurately reflects current codebase structure
+    - No confusion about file extensions after TypeScript migration
+    - Clear indication of which directories were planned but not needed
+    - Accurate project status representation
+  - Build: ✅ | Lint: ✅ | Files changed: 2
+
 ### Added
 - **PDF to Markdown Configuration Options** (2025-11-12):
   - **Simple, focused options UI** for PDF conversion with localStorage persistence:
