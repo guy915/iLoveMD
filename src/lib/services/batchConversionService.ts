@@ -2,11 +2,16 @@
  * Batch Conversion Service - Handles parallel PDF to Markdown conversion
  *
  * Features:
- * - Parallel processing with configurable concurrency (up to 200)
- * - Exponential backoff retry for failed conversions
+ * - Parallel processing with configurable concurrency (up to 200 per Marker API limits)
+ * - Exponential backoff retry for failed conversions (3 retries: 1s, 2s, 4s, 8s, 16s, max 32s)
  * - Progress tracking with real-time updates
  * - Defensive programming for memory management
  * - Graceful degradation on errors
+ * - ZIP file generation for batch results
+ *
+ * Marker API Limits:
+ * - 200MB maximum per individual PDF file
+ * - 200 concurrent API requests maximum
  */
 
 import JSZip from 'jszip'
