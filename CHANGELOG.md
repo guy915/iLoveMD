@@ -61,6 +61,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅ | Tested: Manual verification required
 
 ### Fixed
+- **Copilot AI Review Fixes** (2025-11-13):
+  - **markerApiService Improvements** (src/lib/services/markerApiService.ts):
+    - **AbortSignal responsiveness**: Added abort check immediately after setTimeout delay in polling loop
+      - Previously: Cancellation during 2-second wait would not be detected until next iteration
+      - Now: Conversion cancels immediately after wait completes, reducing lag
+      - Impact: Better user experience when cancelling conversions
+    - **Hardcoded file size constant**: Replaced `200 * 1024 * 1024` with `FILE_SIZE.MAX_PDF_FILE_SIZE`
+      - Consistent with refactoring goal of eliminating hardcoded values
+      - Impact: Configuration changes propagate automatically
+    - **MIME type validation logic**: Fixed incorrect validation in `validatePdfFile()`
+      - Previously: Used `file.type.includes(type.split('/')[1])` (semantically incorrect)
+      - Now: Uses `validTypes.includes(file.type)` (correct comparison)
+      - Added type assertion for TypeScript compatibility
+      - Impact: More robust and semantically correct file type validation
+  - **Credit**: Issues identified by GitHub Copilot AI code review
+  - Build: ✅ | Lint: ✅ | Files modified: 1
+
+### Fixed
 - **Additional Bug Fixes from Automated Review** (2025-11-13):
   - **CRITICAL: LogContext Early Return Issues** (src/contexts/LogContext.tsx):
     - Fixed early returns in wrapped checks that prevented subsequent setup
