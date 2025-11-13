@@ -1,5 +1,6 @@
 'use client'
 
+import { memo, useCallback } from 'react'
 import Link from 'next/link'
 import { useLogs } from '@/contexts/LogContext'
 
@@ -17,13 +18,14 @@ interface ToolTileProps {
 
 /**
  * ToolTile component for displaying tool cards on the homepage
+ * Memoized to prevent unnecessary re-renders
  */
-export default function ToolTile({ title, description, href }: ToolTileProps) {
+const ToolTile = memo(function ToolTile({ title, description, href }: ToolTileProps) {
   const { addLog } = useLogs()
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     addLog('info', `Tool tile clicked: ${title}`, { href, title })
-  }
+  }, [addLog, title, href])
 
   return (
     <Link
@@ -35,4 +37,6 @@ export default function ToolTile({ title, description, href }: ToolTileProps) {
       <p className="text-gray-600">{description}</p>
     </Link>
   )
-}
+})
+
+export default ToolTile

@@ -133,21 +133,26 @@ export function LogProvider({ children }: LogProviderProps) {
     }
   })
 
-  // Save logs to sessionStorage whenever they change
+  // Save logs to sessionStorage with debouncing to avoid blocking I/O on every log
+  // Debounce writes to batch multiple rapid logs together
   useEffect(() => {
-    try {
-      safeStorageSet(LOGS_STORAGE_KEY, JSON.stringify(logs))
-    } catch (error) {
-      // JSON.stringify might fail for circular references or large objects
-      console.error('Error stringifying logs for sessionStorage:', error)
-    }
+    const timeoutId = setTimeout(() => {
+      try {
+        safeStorageSet(LOGS_STORAGE_KEY, JSON.stringify(logs))
+      } catch (error) {
+        // JSON.stringify might fail for circular references or large objects
+        console.error('Error stringifying logs for sessionStorage:', error)
+      }
+    }, 1000) // Wait 1 second after last log before saving
+
+    return () => clearTimeout(timeoutId)
   }, [logs])
 
   const addLog = useCallback((type: LogType, message: string, data: Record<string, unknown> | null = null) => {
-    // Create a simple hash for deduplication (exclude timestamp from data for better deduplication)
-    // Use destructuring to safely exclude timestamp without mutating the object
-    const { timestamp: _, ...dataForHash } = data || {}
-    const hash = `${type}:${message}:${JSON.stringify(Object.keys(dataForHash).length > 0 ? dataForHash : null)}`
+    // Create a simple hash for deduplication - use lightweight hash instead of expensive JSON.stringify
+    // For large objects, just use the keys instead of full stringification
+    const dataKeys = data ? Object.keys(data).filter(k => k !== 'timestamp').sort().join(',') : ''
+    const hash = `${type}:${message}:${dataKeys}`
     const now = Date.now()
 
     // Check if we've seen this exact log recently (within deduplication window)
@@ -174,8 +179,11 @@ export function LogProvider({ children }: LogProviderProps) {
     safeStorageSet(LOG_COUNTER_KEY, persistentLogCounter.toString())
 
     const newLog: LogEntry = { timestamp, type, message, data, id }
-    // Keep only last 500 logs (sliding window)
-    setLogs(prev => [...prev, newLog].slice(-MAX_LOGS))
+    // Keep only last 500 logs (sliding window) - only slice when necessary
+    setLogs(prev => {
+      const newLogs = [...prev, newLog]
+      return newLogs.length > MAX_LOGS ? newLogs.slice(-MAX_LOGS) : newLogs
+    })
   }, [])
 
   const clearLogs = useCallback(() => {
@@ -269,7 +277,7 @@ export function LogProvider({ children }: LogProviderProps) {
       const wrappedError = (...args: unknown[]) => {
         addLog('error', 'Console Error', {
           message: args.map(arg =>
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : String(arg)
           ).join(' '),
           url: window.location.href,
           occurredAt: new Date().toISOString()
@@ -284,7 +292,7 @@ export function LogProvider({ children }: LogProviderProps) {
       const wrappedWarn = (...args: unknown[]) => {
         addLog('error', 'Console Warning', {
           message: args.map(arg =>
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : String(arg)
           ).join(' '),
           url: window.location.href,
           occurredAt: new Date().toISOString()
@@ -298,7 +306,7 @@ export function LogProvider({ children }: LogProviderProps) {
     if (!(console['log'] as any).__wrapped__) {
       const wrappedLog = (...args: unknown[]) => {
         const message = args.map(arg =>
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : String(arg)
         ).join(' ')
 
         // Filter out Next.js dev server noise
