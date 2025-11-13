@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
-
-const DEFAULT_OPTIONS: MarkerOptions = {
-  paginate: false,
-  format_lines: false,
-  use_llm: false,
-  disable_image_extraction: false,
-  output_format: 'markdown',
-  langs: 'English'
-}
+import { MARKER_CONFIG, FILE_SIZE, API_ENDPOINTS } from '@/lib/constants'
 
 export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
   try {
@@ -40,8 +32,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     }
 
     // Validate file size (200MB limit)
-    const maxSize = 200 * 1024 * 1024 // 200MB
-    if (file.size > maxSize) {
+    if (file.size > FILE_SIZE.MAX_PDF_FILE_SIZE) {
       return NextResponse.json(
         {
           success: false,
@@ -53,7 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
 
     // Validate API key format (basic check)
     const trimmedKey = apiKey.trim()
-    if (trimmedKey.length < 10) {
+    if (trimmedKey.length < MARKER_CONFIG.VALIDATION.MIN_API_KEY_LENGTH) {
       return NextResponse.json(
         { success: false, error: 'Invalid API key format' },
         { status: 400 }
@@ -61,13 +52,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     }
 
     // Parse options or use defaults
-    let options: MarkerOptions = DEFAULT_OPTIONS
+    let options: MarkerOptions = MARKER_CONFIG.DEFAULT_OPTIONS
 
     if (optionsJson) {
       try {
         const parsed = JSON.parse(optionsJson) as Partial<MarkerOptions>
         // Merge with defaults to handle missing fields
-        options = { ...DEFAULT_OPTIONS, ...parsed }
+        options = { ...MARKER_CONFIG.DEFAULT_OPTIONS, ...parsed }
       } catch (err) {
         console.error('[Marker API] Failed to parse options:', err, 'Raw JSON:', optionsJson)
         return NextResponse.json(
@@ -94,7 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     markerFormData.append('disable_image_extraction', String(options.disable_image_extraction))
 
     // Submit to Marker API
-    const response = await fetch('https://www.datalab.to/api/v1/marker', {
+    const response = await fetch(API_ENDPOINTS.MARKER_EXTERNAL, {
       method: 'POST',
       headers: {
         'X-Api-Key': trimmedKey,
