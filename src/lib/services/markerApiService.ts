@@ -15,7 +15,7 @@
  * - Consistent API interface
  */
 
-import { API_ENDPOINTS, MARKER_CONFIG } from '@/lib/constants'
+import { API_ENDPOINTS, MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
 
 /**
@@ -166,6 +166,11 @@ export async function convertPdfToMarkdown(
       // Wait before next poll (unless this is the last attempt)
       if (attempt < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, pollInterval))
+
+        // Check if cancelled during the wait
+        if (signal?.aborted) {
+          return { success: false, error: 'Conversion cancelled' }
+        }
       }
     }
 
@@ -197,15 +202,14 @@ export function validateApiKey(apiKey: string): boolean {
  */
 export function validatePdfFile(file: File): { valid: boolean; error?: string } {
   // Check file type
-  const validTypes = MARKER_CONFIG.VALIDATION.ACCEPTED_MIME_TYPES
-  if (!file.type || !validTypes.some(type => file.type.includes(type.split('/')[1]))) {
+  const validTypes = MARKER_CONFIG.VALIDATION.ACCEPTED_MIME_TYPES as readonly string[]
+  if (!file.type || !validTypes.includes(file.type)) {
     return { valid: false, error: 'Only PDF files are accepted' }
   }
 
   // Check file size
-  const maxSize = 200 * 1024 * 1024 // 200MB
-  if (file.size > maxSize) {
-    const sizeMB = (file.size / 1024 / 1024).toFixed(2)
+  if (file.size > FILE_SIZE.MAX_PDF_FILE_SIZE) {
+    const sizeMB = (file.size / FILE_SIZE.BYTES_PER_MB).toFixed(2)
     return { valid: false, error: `File too large (max 200MB). Your file is ${sizeMB}MB` }
   }
 
