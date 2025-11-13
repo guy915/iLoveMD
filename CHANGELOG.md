@@ -8,6 +8,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Architecture Refactoring: Improved Modularity and Reduced Coupling** (2025-11-13):
+  - **Centralized Configuration** (src/lib/constants.ts):
+    - Moved `DEFAULT_OPTIONS` from duplicated definitions to `MARKER_CONFIG.DEFAULT_OPTIONS`
+    - Added `FILE_SIZE.MAX_PDF_FILE_SIZE` constant (200MB)
+    - Added `API_ENDPOINTS.MARKER_EXTERNAL` for Marker API URL
+    - Added `STORAGE_KEYS.MARKER_OPTIONS` for localStorage key
+    - Added comprehensive `MARKER_CONFIG` object with:
+      - `DEFAULT_OPTIONS` - Single source of truth for PDF conversion defaults
+      - `POLLING` configuration (interval, max attempts, timeout)
+      - `VALIDATION` rules (API key length, accepted MIME types)
+    - **Impact**: Eliminated code duplication, made configuration easily modifiable
+  - **Storage Service Layer** (src/lib/services/storageService.ts - NEW):
+    - Created abstraction layer for browser localStorage operations
+    - Functions: `getItem()`, `setItem()`, `removeItem()`, `getJSON()`, `setJSON()`, `clear()`, `hasItem()`
+    - SSR-safe with window existence checks
+    - Centralized error handling with fallback returns
+    - **Impact**: Components no longer directly access localStorage, easier to test and migrate
+  - **Marker API Service Layer** (src/lib/services/markerApiService.ts - NEW):
+    - Extracted all PDF conversion business logic from UI component
+    - High-level `convertPdfToMarkdown()` function with progress callback and cancellation support
+    - Lower-level `submitPdfConversion()` and `pollConversionStatus()` functions
+    - Validation functions: `validateApiKey()`, `validatePdfFile()`
+    - **Impact**: Business logic is now reusable, testable, and independent of React
+  - **PDF Page Refactoring** (src/app/pdf-to-markdown/page.tsx):
+    - Reduced from 500 lines to ~335 lines (33% reduction)
+    - Removed 200+ lines of duplicated fetch/polling logic
+    - Now uses `convertPdfToMarkdown()` service with progress callback
+    - Replaced direct localStorage calls with `storageService`
+    - Replaced `pollTimeoutRef` with `AbortController` for better cancellation
+    - Uses centralized constants from `MARKER_CONFIG`, `FILE_SIZE`, `STORAGE_KEYS`
+    - **Impact**: Component focused on UI concerns, much easier to maintain
+  - **API Route Refactoring** (src/app/api/marker/route.ts):
+    - Replaced hardcoded values with centralized constants:
+      - `DEFAULT_OPTIONS` → `MARKER_CONFIG.DEFAULT_OPTIONS`
+      - `200 * 1024 * 1024` → `FILE_SIZE.MAX_PDF_FILE_SIZE`
+      - `10` → `MARKER_CONFIG.VALIDATION.MIN_API_KEY_LENGTH`
+      - `'https://www.datalab.to/api/v1/marker'` → `API_ENDPOINTS.MARKER_EXTERNAL`
+    - **Impact**: Configuration changes propagate automatically, no duplication
+  - **Benefits**:
+    - **Modularity**: Services can be used independently or replaced
+    - **Testability**: Business logic can be tested without React/DOM
+    - **Reusability**: Conversion logic can be used in other tools/components
+    - **Maintainability**: Changes in one place instead of multiple locations
+    - **Scalability**: Adding new tools won't require code duplication
+    - **Type Safety**: Service layer fully typed with TypeScript
+    - **Separation of Concerns**: UI components handle UI, services handle logic
+  - **Files Created**: 2 (storageService.ts, markerApiService.ts)
+  - **Files Modified**: 3 (constants.ts, page.tsx, route.ts)
+  - **Lines Reduced**: ~165 lines removed from PDF page component
+  - **Code Duplication Eliminated**: DEFAULT_OPTIONS, file size limits, polling config, API URLs
+  - Build: ✅ | Lint: ✅ | Tested: Manual verification required
+
 - **Code Quality Improvements - Code Smell Fixes** (2025-11-13):
   - **Constants Consolidation**:
     - Moved `DEFAULT_OPTIONS` from PDF page and API route to centralized `MARKER_CONFIG` in constants.ts
@@ -74,6 +126,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **Code Quality**: Eliminated magic numbers, reduced duplication, improved readability
 
 ### Fixed
+- **Copilot AI Review Fixes** (2025-11-13):
+  - **markerApiService Improvements** (src/lib/services/markerApiService.ts):
+    - **AbortSignal responsiveness**: Added abort check immediately after setTimeout delay in polling loop
+      - Previously: Cancellation during 2-second wait would not be detected until next iteration
+      - Now: Conversion cancels immediately after wait completes, reducing lag
+      - Impact: Better user experience when cancelling conversions
+    - **Hardcoded file size constant**: Replaced `200 * 1024 * 1024` with `FILE_SIZE.MAX_PDF_FILE_SIZE`
+      - Consistent with refactoring goal of eliminating hardcoded values
+      - Impact: Configuration changes propagate automatically
+    - **MIME type validation logic**: Fixed incorrect validation in `validatePdfFile()`
+      - Previously: Used `file.type.includes(type.split('/')[1])` (semantically incorrect)
+      - Now: Uses `validTypes.includes(file.type)` (correct comparison)
+      - Added type assertion for TypeScript compatibility
+      - Impact: More robust and semantically correct file type validation
+  - **Credit**: Issues identified by GitHub Copilot AI code review
+  - Build: ✅ | Lint: ✅ | Files modified: 1
+
 - **Security and Code Quality Improvements from Automated Review** (2025-11-13):
   - **CRITICAL: Prevented recursive logging bug** (src/contexts/LogContext.tsx):
     - Fixed infinite recursion when console.warn in storage helpers triggered wrapped console
