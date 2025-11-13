@@ -619,13 +619,6 @@ export default function PdfToMarkdownPage() {
         </div>
       </div>
 
-      {/* Status Messages */}
-      {status && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-blue-800">{status}</p>
-        </div>
-      )}
-
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <p className="text-red-800">{error}</p>
@@ -638,7 +631,7 @@ export default function PdfToMarkdownPage() {
           <div className="flex items-center gap-2">
             <span className="text-blue-600 animate-spin text-xl">⟳</span>
             <h2 className="text-base font-semibold text-gray-900">
-              Converting PDF to Markdown...
+              {status || 'Converting PDF to Markdown...'}
             </h2>
           </div>
         </div>
@@ -656,6 +649,13 @@ export default function PdfToMarkdownPage() {
           {batchProgress.failed > 0 && (
             <p className="text-sm text-red-600 ml-7 mt-2">Failed: {batchProgress.failed}</p>
           )}
+        </div>
+      )}
+
+      {/* Completion Status - show after processing is done */}
+      {!processing && status && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-blue-800">{status}</p>
         </div>
       )}
 
