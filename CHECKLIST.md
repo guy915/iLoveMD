@@ -490,16 +490,18 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ### 2025-11-13 - API Key Persistence & Diagnostic Panel Improvements
 - **Added**:
-  - Autoscroll to diagnostic logging panel (smooth scrolling to latest log)
+  - Autoscroll to diagnostic logging panel (instant scroll, no animation)
+  - Development API key documentation in CLAUDE.md (prevents future removal)
 - **Changed**:
   - Log counter now shows latest log ID instead of array length (more consistent)
+  - Removed smooth scroll animation (was annoying with hundreds of logs)
 - **Fixed**:
   - API key now pre-filled with hardcoded test key (no env file needed)
 - **Removed**:
   - Unused `STORAGE_KEYS.MARKER_API_KEY` constant (cleanup)
 - **Testing**: Build ✅ | Lint ✅ | Manual testing pending
-- **Files Modified**: 3 (constants.ts, GlobalDiagnosticPanel.tsx, pdf-to-markdown/page.tsx)
-- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+- **Files Modified**: 4 (constants.ts, GlobalDiagnosticPanel.tsx, pdf-to-markdown/page.tsx, CLAUDE.md)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md, CLAUDE.md
 
 ---
 

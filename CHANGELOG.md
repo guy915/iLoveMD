@@ -10,12 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Autoscroll to Diagnostic Logging Panel** (2025-11-13):
   - Logs now automatically scroll to bottom when new entries are added
-  - Implemented smooth scrolling behavior for better UX
+  - Uses instant scrolling (no animation) for better performance with many logs
   - Added `logsContainerRef` to track scrollable container
   - Implemented useEffect hook to scroll on logs change
   - Only scrolls when panel is open and logs exist
   - **Impact**: Users no longer need to manually scroll to see latest logs
+  - **Note**: Smooth scrolling was tested but removed - caused annoying delays with hundreds of logs
   - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+- **Development API Key Documentation** (2025-11-13):
+  - Added comprehensive documentation in CLAUDE.md about hardcoded test API key
+  - Explicitly states the key should NOT be removed by future Claude sessions
+  - Explains why it's hardcoded and that it's intentional for development
+  - Prevents future confusion about "security risks"
+  - **Files Modified**: CLAUDE.md
   - Build: ✅ | Lint: ✅
 
 ### Changed
