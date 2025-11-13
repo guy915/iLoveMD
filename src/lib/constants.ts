@@ -16,9 +16,13 @@ export const FILE_SIZE = {
 
   // Default limits
   MAX_FILE_SIZE: GB, // 1GB
-  MAX_PDF_FILE_SIZE: 200 * MB, // 200MB - Marker API limit
+  MAX_PDF_FILE_SIZE: 200 * MB, // 200MB - Marker API limit per file (applies to both single and batch)
   MAX_MERGE_FILES: 50,
   MAX_TOTAL_MERGE_SIZE: GB, // 1GB total
+
+  // Batch processing limits
+  MAX_BATCH_TOTAL_SIZE: 100 * GB, // 100GB total for entire batch
+  MAX_BATCH_FILES: 10000, // Maximum 10,000 files in a batch
 } as const
 
 // Navigation links for header
@@ -77,6 +81,14 @@ export const MARKER_CONFIG = {
     INTERVAL_MS: 2000, // Poll every 2 seconds
     MAX_ATTEMPTS: 150, // 5 minutes max (150 * 2 seconds)
     TIMEOUT_DURATION_MS: 300000, // 5 minutes in milliseconds
+  },
+
+  // Batch processing configuration
+  BATCH: {
+    MAX_CONCURRENT: 200, // Maximum concurrent conversions (Marker API limit)
+    MAX_RETRIES: 3, // Number of retry attempts for failed conversions
+    RETRY_DELAY_BASE_MS: 1000, // Base delay for exponential backoff (1 second)
+    RETRY_DELAY_MAX_MS: 32000, // Maximum retry delay (32 seconds)
   },
 
   // Validation rules
