@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Batch PDF Processing with Parallel Conversion** (2025-11-13):
+  - **Major Feature**: Added batch mode for converting multiple PDFs simultaneously
+  - **Mode Selector**: Radio buttons to switch between Single File and Batch/Folder modes
+  - **Multiple File Upload**: Select up to 10,000 PDF files (100GB total) at once
+  - **Folder Upload**: Select entire folders - all PDFs in the folder converted (subfolders ignored)
+  - **Parallel Processing**: 200 concurrent conversions (Marker API limit) for maximum speed
+  - **Exponential Backoff Retry**: Failed files automatically retried 3 times with exponential delays (1s, 2s, 4s, 8s, 16s, 32s max)
+  - **Real-time Progress Tracking**:
+    - Overall progress bar showing completion percentage
+    - File-by-file status list with icons (✓ complete, ⟳ processing, ✗ failed, ○ pending)
+    - Live counters: "15/50 complete • 3 in progress • 2 failed"
+    - Individual file durations displayed on completion
+  - **Defensive Programming**:
+    - Memory leak prevention with proper cleanup on unmount
+    - AbortController for cancellation support
+    - Graceful degradation on errors (continue converting remaining files)
+    - Queue management to prevent browser crashes
+  - **ZIP Download**: All converted markdowns packaged in a ZIP file
+    - Filename: `converted_markdown_YYYY-MM-DDTHH-MM-SS.zip`
+    - File System Access API support for save dialog (Chrome/Edge)
+    - Traditional download fallback for other browsers
+  - **Validation**:
+    - Individual file size: 200MB max (Marker API limit)
+    - Total batch size: 100GB max
+    - File count: 10,000 max
+    - Filters non-PDF files automatically
+  - **User Experience**:
+    - Clear error messages if any files fail
+    - Summary at end: "45 succeeded, 5 failed (file1.pdf, file2.pdf, file3.pdf and 2 more)"
+    - Options apply to all files in batch
+    - Comprehensive diagnostic logging throughout
+  - **Technical Implementation**:
+    - New service: `batchConversionService.ts` (350+ lines)
+    - Batch constants in `constants.ts` (MAX_CONCURRENT, MAX_RETRIES, delays)
+    - Updated `downloadUtils.ts` to support Blob downloads
+    - JSZip library for ZIP creation (402 packages)
+  - **Testing**:
+    - Build: ✅ | Lint: ✅
+    - TypeScript compilation: ✅
+  - **Files Created**: 1 (batchConversionService.ts)
+  - **Files Modified**: 4 (page.tsx, constants.ts, downloadUtils.ts, package.json)
+  - **Dependencies Added**: 1 (jszip)
+
 ### Fixed
 - **Diagnostics Panel Scroll Leak** (2025-11-13):
   - Fixed page scrolling while scrolling within diagnostics panel

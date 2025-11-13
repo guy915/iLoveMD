@@ -9,11 +9,25 @@ import type { MarkerOptions } from '@/types'
 import { MARKER_CONFIG, STORAGE_KEYS, FILE_SIZE } from '@/lib/constants'
 import * as storageService from '@/lib/services/storageService'
 import { convertPdfToMarkdown } from '@/lib/services/markerApiService'
+import {
+  convertBatchPdfToMarkdown,
+  validateBatchFiles,
+  filterPdfFiles,
+  type BatchProgress,
+  type FileConversionResult
+} from '@/lib/services/batchConversionService'
 import { useLogs } from '@/contexts/LogContext'
 
+type ConversionMode = 'single' | 'batch'
+
 export default function PdfToMarkdownPage() {
+  // Mode selection
+  const [mode, setMode] = useState<ConversionMode>('single')
+
   // API key - defaults to test key, not persisted across sessions
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
+
+  // Single file mode state
   const [file, setFile] = useState<File | null>(null)
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
@@ -21,11 +35,18 @@ export default function PdfToMarkdownPage() {
   const [convertedMarkdown, setConvertedMarkdown] = useState<string | null>(null)
   const [outputFilename, setOutputFilename] = useState<string | null>(null)
 
+  // Batch mode state
+  const [batchFiles, setBatchFiles] = useState<File[]>([])
+  const [batchProcessing, setBatchProcessing] = useState(false)
+  const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null)
+  const [batchZipBlob, setBatchZipBlob] = useState<Blob | null>(null)
+  const [batchZipFilename, setBatchZipFilename] = useState<string | null>(null)
+
   // Options with localStorage persistence
   const [options, setOptions] = useState<MarkerOptions>(MARKER_CONFIG.DEFAULT_OPTIONS)
   const [hasLoadedOptions, setHasLoadedOptions] = useState(false)
 
-  // Use global logging context (do not destructure clearLogs - we never clear logs)
+  // Use global logging context
   const { addLog } = useLogs()
 
   // Refs for cleanup and memory leak prevention
@@ -56,7 +77,6 @@ export default function PdfToMarkdownPage() {
   useEffect(() => {
     const savedOptions = storageService.getJSON<Partial<MarkerOptions>>(STORAGE_KEYS.MARKER_OPTIONS)
     if (savedOptions) {
-      // Merge with defaults to handle missing fields from old versions
       const mergedOptions = { ...MARKER_CONFIG.DEFAULT_OPTIONS, ...savedOptions }
       setOptions(mergedOptions)
       addLog('info', 'Loaded saved options from localStorage', { options: mergedOptions })
@@ -64,20 +84,17 @@ export default function PdfToMarkdownPage() {
     setHasLoadedOptions(true)
   }, [addLog])
 
-  // Save options to localStorage whenever they change (after initial load)
+  // Save options to localStorage whenever they change
   useEffect(() => {
     if (hasLoadedOptions) {
       storageService.setJSON(STORAGE_KEYS.MARKER_OPTIONS, options)
     }
   }, [options, hasLoadedOptions])
 
-  // Log option changes using useEffect to avoid setState-during-render warning
-  // This observes the committed state changes rather than calling addLog during render
+  // Log option changes
   useEffect(() => {
-    // Skip logging on initial load
     if (!hasLoadedOptions) return
 
-    // Find which option changed by comparing with previous state
     const prev = prevOptionsRef.current
     const current = options
 
@@ -88,11 +105,10 @@ export default function PdfToMarkdownPage() {
           newValue: current[typedKey],
           allOptions: current
         })
-        break // Only log first change to avoid duplicate logs when multiple options change
+        break
       }
     }
 
-    // Update ref for next comparison
     prevOptionsRef.current = options
   }, [options, hasLoadedOptions, addLog])
 
@@ -100,23 +116,33 @@ export default function PdfToMarkdownPage() {
     setOptions(prev => ({ ...prev, [key]: value }))
   }, [])
 
-  // Log component mount (once)
+  // Log component mount
   useEffect(() => {
-    const keyPresent = apiKey.length > 0
-    const keyLength = apiKey.length
-
     addLog('info', 'PDF to Markdown page loaded', {
-      apiKeyPresent: keyPresent,
-      apiKeyLength: keyLength
+      apiKeyPresent: apiKey.length > 0,
+      apiKeyLength: apiKey.length
     })
-    // Note: We don't log the actual API key value for security
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addLog]) // Only run once on mount
+  }, [addLog])
 
+  // Handle mode change
+  const handleModeChange = useCallback((newMode: ConversionMode) => {
+    setMode(newMode)
+    setError('')
+    setStatus('')
+    // Clear previous results
+    setConvertedMarkdown(null)
+    setOutputFilename(null)
+    setBatchZipBlob(null)
+    setBatchZipFilename(null)
+    setBatchProgress(null)
+    addLog('info', `Switched to ${newMode} mode`)
+  }, [addLog])
+
+  // Single file handlers
   const handleFileSelect = useCallback((selectedFile: File) => {
     setFile(selectedFile)
     setError('')
-    // Clear previous conversion result when new file is selected
     setConvertedMarkdown(null)
     setOutputFilename(null)
   }, [])
@@ -150,10 +176,8 @@ export default function PdfToMarkdownPage() {
     })
 
     try {
-      // Create abort controller for cancellation support
       abortControllerRef.current = new AbortController()
 
-      // Progress callback for status updates
       const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
         if (!isMountedRef.current) return
 
@@ -167,7 +191,6 @@ export default function PdfToMarkdownPage() {
         })
       }
 
-      // Use service to handle conversion
       const result = await convertPdfToMarkdown(
         file,
         apiKey,
@@ -186,7 +209,6 @@ export default function PdfToMarkdownPage() {
         throw new Error(result.error || 'Conversion failed')
       }
 
-      // Success - store the result for download
       const filename = replaceExtension(file.name, 'md')
 
       addLog('success', `Conversion complete! (${formatDuration(totalConversionTime)} total)`, {
@@ -196,7 +218,6 @@ export default function PdfToMarkdownPage() {
         outputFile: filename
       })
 
-      // Only update state if component is still mounted
       if (isMountedRef.current) {
         setConvertedMarkdown(result.markdown)
         setOutputFilename(filename)
@@ -212,17 +233,15 @@ export default function PdfToMarkdownPage() {
         error: error.message,
         errorType: error.name,
         duration: formatDuration(totalDuration),
-        stack: error.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
+        stack: error.stack?.split('\n').slice(0, 3).join('\n')
       })
 
-      // Only update state if component is still mounted
       if (isMountedRef.current) {
         setError(error.message || 'An error occurred during conversion')
         setProcessing(false)
         setStatus('')
       }
     } finally {
-      // Cleanup abort controller
       abortControllerRef.current = null
     }
   }, [apiKey, file, options, addLog])
@@ -236,7 +255,6 @@ export default function PdfToMarkdownPage() {
         contentSize: formatBytesToKB(convertedMarkdown.length)
       })
 
-      // Check if File System Access API is available (Chrome/Edge)
       if ('showSaveFilePicker' in window) {
         try {
           addLog('info', 'Using File System Access API for save dialog')
@@ -260,7 +278,6 @@ export default function PdfToMarkdownPage() {
           setStatus('File saved successfully! You can download again or upload a new file.')
 
         } catch (apiError: any) {
-          // User cancelled or API error
           if (apiError.name === 'AbortError') {
             addLog('info', 'User cancelled save dialog')
             return
@@ -268,15 +285,14 @@ export default function PdfToMarkdownPage() {
           throw apiError
         }
       } else {
-        // Fallback to traditional download for browsers without File System Access API
-        addLog('info', 'Using traditional download method (File System Access API not available)')
+        addLog('info', 'Using traditional download method')
         downloadFile(convertedMarkdown, outputFilename, 'text/markdown')
 
         addLog('success', 'File download triggered', {
           filename: outputFilename
         })
 
-        setStatus('File download started! Check your downloads folder. You can download again or upload a new file.')
+        setStatus('File download started! Check your downloads folder.')
       }
 
     } catch (err) {
@@ -289,6 +305,194 @@ export default function PdfToMarkdownPage() {
     }
   }, [convertedMarkdown, outputFilename, addLog])
 
+  // Batch mode handlers
+  const handleBatchFilesSelect = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    const fileArray = Array.from(files)
+    const pdfFiles = filterPdfFiles(fileArray)
+
+    if (pdfFiles.length === 0) {
+      setError('No PDF files found in selection')
+      addLog('error', 'No PDF files in selection')
+      return
+    }
+
+    addLog('info', `Selected ${pdfFiles.length} PDF files for batch conversion`, {
+      totalFiles: fileArray.length,
+      pdfFiles: pdfFiles.length,
+      otherFiles: fileArray.length - pdfFiles.length
+    })
+
+    setBatchFiles(pdfFiles)
+    setError('')
+    setBatchProgress(null)
+    setBatchZipBlob(null)
+    setBatchZipFilename(null)
+  }, [addLog])
+
+  const handleFolderSelect = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    handleBatchFilesSelect(event)
+  }, [handleBatchFilesSelect])
+
+  const handleBatchConvert = useCallback(async () => {
+    if (!apiKey.trim()) {
+      setError('Please enter your API key')
+      addLog('error', 'Batch conversion blocked: No API key provided')
+      return
+    }
+
+    if (batchFiles.length === 0) {
+      setError('Please select PDF files to convert')
+      addLog('error', 'Batch conversion blocked: No files selected')
+      return
+    }
+
+    // Validate batch
+    const validation = validateBatchFiles(batchFiles)
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid file selection')
+      addLog('error', 'Batch validation failed', { error: validation.error })
+      return
+    }
+
+    const startTime = Date.now()
+    setBatchProcessing(true)
+    setError('')
+    setStatus('Starting batch conversion...')
+    setBatchZipBlob(null)
+    setBatchZipFilename(null)
+
+    addLog('info', `Starting batch conversion`, {
+      fileCount: batchFiles.length,
+      totalSize: formatBytesToMB(batchFiles.reduce((sum, f) => sum + f.size, 0)),
+      options: options
+    })
+
+    try {
+      abortControllerRef.current = new AbortController()
+
+      const result = await convertBatchPdfToMarkdown(batchFiles, {
+        apiKey,
+        markerOptions: options,
+        onProgress: (progress) => {
+          if (isMountedRef.current) {
+            setBatchProgress(progress)
+            setStatus(`Converting PDFs... ${progress.completed}/${progress.total} complete${progress.inProgress > 0 ? ` • ${progress.inProgress} in progress` : ''}${progress.failed > 0 ? ` • ${progress.failed} failed` : ''}`)
+          }
+        },
+        signal: abortControllerRef.current.signal
+      })
+
+      const totalDuration = Date.now() - startTime
+
+      if (!result.success) {
+        addLog('error', 'Batch conversion failed', {
+          error: result.error,
+          duration: formatDuration(totalDuration),
+          completed: result.completed.length,
+          failed: result.failed.length
+        })
+        throw new Error(result.error || 'Batch conversion failed')
+      }
+
+      // Generate ZIP filename
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+      const zipFilename = `converted_markdown_${timestamp}.zip`
+
+      addLog('success', `Batch conversion complete!`, {
+        duration: formatDuration(totalDuration),
+        completed: result.completed.length,
+        failed: result.failed.length,
+        zipFilename
+      })
+
+      if (isMountedRef.current) {
+        setBatchZipBlob(result.zipBlob || null)
+        setBatchZipFilename(zipFilename)
+        setBatchProcessing(false)
+
+        if (result.failed.length > 0) {
+          const failedNames = result.failed.slice(0, 3).map(f => f.filename).join(', ')
+          const more = result.failed.length > 3 ? ` and ${result.failed.length - 3} more` : ''
+          setStatus(`Conversion complete! ${result.completed.length} succeeded, ${result.failed.length} failed (${failedNames}${more})`)
+        } else {
+          setStatus(`All ${result.completed.length} files converted successfully! Click Download to save the ZIP.`)
+        }
+      }
+
+    } catch (err) {
+      const error = err as Error
+      const totalDuration = Date.now() - startTime
+
+      addLog('error', `Batch conversion failed: ${error.message}`, {
+        error: error.message,
+        duration: formatDuration(totalDuration)
+      })
+
+      if (isMountedRef.current) {
+        setError(error.message || 'An error occurred during batch conversion')
+        setBatchProcessing(false)
+        setStatus('')
+      }
+    } finally {
+      abortControllerRef.current = null
+    }
+  }, [apiKey, batchFiles, options, addLog])
+
+  const handleBatchDownload = useCallback(async () => {
+    if (!batchZipBlob || !batchZipFilename) return
+
+    try {
+      addLog('info', 'Batch download button clicked', {
+        filename: batchZipFilename,
+        size: formatBytesToMB(batchZipBlob.size)
+      })
+
+      if ('showSaveFilePicker' in window) {
+        try {
+          addLog('info', 'Using File System Access API for ZIP save dialog')
+
+          const handle = await (window as any).showSaveFilePicker({
+            suggestedName: batchZipFilename,
+            types: [{
+              description: 'ZIP files',
+              accept: { 'application/zip': ['.zip'] }
+            }]
+          })
+
+          const writable = await handle.createWritable()
+          await writable.write(batchZipBlob)
+          await writable.close()
+
+          addLog('success', 'ZIP saved successfully', { filename: batchZipFilename })
+          setStatus('ZIP saved successfully!')
+
+        } catch (apiError: any) {
+          if (apiError.name === 'AbortError') {
+            addLog('info', 'User cancelled save dialog')
+            return
+          }
+          throw apiError
+        }
+      } else {
+        addLog('info', 'Using traditional download for ZIP')
+        downloadFile(batchZipBlob, batchZipFilename, 'application/zip')
+        addLog('success', 'ZIP download triggered', { filename: batchZipFilename })
+        setStatus('ZIP download started! Check your downloads folder.')
+      }
+
+    } catch (err) {
+      const error = err as Error
+      addLog('error', `ZIP download failed: ${error.message}`, {
+        error: error.message,
+        filename: batchZipFilename
+      })
+      setError(`Failed to download ZIP: ${error.message}`)
+    }
+  }, [batchZipBlob, batchZipFilename, addLog])
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
       {/* Header */}
@@ -299,6 +503,37 @@ export default function PdfToMarkdownPage() {
         <p className="text-lg text-gray-600">
           Convert PDF files to Markdown format using the Marker API
         </p>
+      </div>
+
+      {/* Mode Selector */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
+        <div className="flex gap-4">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="mode"
+              value="single"
+              checked={mode === 'single'}
+              onChange={() => handleModeChange('single')}
+              className="mr-2 h-4 w-4 text-blue-600"
+              disabled={processing || batchProcessing}
+            />
+            <span className="text-sm font-medium text-gray-900">Single File</span>
+          </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="mode"
+              value="batch"
+              checked={mode === 'batch'}
+              onChange={() => handleModeChange('batch')}
+              className="mr-2 h-4 w-4 text-blue-600"
+              disabled={processing || batchProcessing}
+            />
+            <span className="text-sm font-medium text-gray-900">Batch / Folder</span>
+          </label>
+        </div>
       </div>
 
       {/* API Key Section */}
@@ -313,7 +548,7 @@ export default function PdfToMarkdownPage() {
           onChange={(e: ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
           placeholder="Enter your API key"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          disabled={processing}
+          disabled={processing || batchProcessing}
           aria-label="Marker API Key"
         />
         <p className="mt-2 text-sm text-gray-500">
@@ -330,14 +565,158 @@ export default function PdfToMarkdownPage() {
         </p>
       </div>
 
-      {/* File Upload Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <FileUpload
-          accept=".pdf,application/pdf"
-          onFileSelect={handleFileSelect}
-          maxSize={FILE_SIZE.MAX_PDF_FILE_SIZE}
-        />
-      </div>
+      {/* Single File Mode */}
+      {mode === 'single' && (
+        <>
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <FileUpload
+              accept=".pdf,application/pdf"
+              onFileSelect={handleFileSelect}
+              maxSize={FILE_SIZE.MAX_PDF_FILE_SIZE}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Batch Mode */}
+      {mode === 'batch' && (
+        <>
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Upload Files</h2>
+            <div className="space-y-4">
+              {/* Multiple Files */}
+              <div>
+                <label
+                  htmlFor="multiple-files"
+                  className="block w-full cursor-pointer"
+                >
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
+                    <div className="text-gray-600 mb-2">
+                      <span className="font-medium text-blue-600">Click to select multiple PDFs</span>
+                      <br />
+                      <span className="text-sm">Up to 10,000 files • 100GB total</span>
+                    </div>
+                  </div>
+                </label>
+                <input
+                  id="multiple-files"
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  multiple
+                  onChange={handleBatchFilesSelect}
+                  className="hidden"
+                  disabled={batchProcessing}
+                />
+              </div>
+
+              {/* Folder Upload */}
+              <div className="text-center text-gray-500">— OR —</div>
+              <div>
+                <label
+                  htmlFor="folder-upload"
+                  className="block w-full cursor-pointer"
+                >
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
+                    <div className="text-gray-600 mb-2">
+                      <span className="font-medium text-blue-600">Click to select a folder</span>
+                      <br />
+                      <span className="text-sm">All PDFs in the folder will be converted (subfolders ignored)</span>
+                    </div>
+                  </div>
+                </label>
+                <input
+                  id="folder-upload"
+                  type="file"
+                  // @ts-ignore - webkitdirectory is not in TypeScript definitions
+                  webkitdirectory="true"
+                  multiple
+                  onChange={handleFolderSelect}
+                  className="hidden"
+                  disabled={batchProcessing}
+                />
+              </div>
+
+              {/* Selected Files Count */}
+              {batchFiles.length > 0 && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900">
+                    {batchFiles.length} PDF file{batchFiles.length !== 1 ? 's' : ''} selected
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Total size: {formatBytesToMB(batchFiles.reduce((sum, f) => sum + f.size, 0))}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Batch Progress */}
+          {batchProgress && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Conversion Progress
+              </h2>
+
+              {/* Overall Progress */}
+              <div className="mb-4">
+                <div className="flex justify-between text-sm text-gray-600 mb-2">
+                  <span>{batchProgress.completed}/{batchProgress.total} complete</span>
+                  <span>
+                    {batchProgress.inProgress > 0 && `${batchProgress.inProgress} in progress`}
+                    {batchProgress.inProgress > 0 && batchProgress.failed > 0 && ' • '}
+                    {batchProgress.failed > 0 && `${batchProgress.failed} failed`}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${(batchProgress.completed / batchProgress.total) * 100}%`
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* File List */}
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {batchProgress.results.map((result, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between text-sm p-2 rounded bg-gray-50"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {result.status === 'complete' && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                      {result.status === 'processing' && (
+                        <span className="text-blue-600 animate-spin">⟳</span>
+                      )}
+                      {result.status === 'failed' && (
+                        <span className="text-red-600">✗</span>
+                      )}
+                      {result.status === 'pending' && (
+                        <span className="text-gray-400">○</span>
+                      )}
+                      <span className="truncate text-gray-700">{result.filename}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                      {result.status === 'complete' && result.duration && (
+                        <span>{formatDuration(result.duration)}</span>
+                      )}
+                      {result.status === 'failed' && result.error && (
+                        <span className="text-red-600">{result.error}</span>
+                      )}
+                      {result.status === 'processing' && (
+                        <span>processing...</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Options Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -350,7 +729,7 @@ export default function PdfToMarkdownPage() {
               checked={options.paginate}
               onChange={(e) => handleOptionChange('paginate', e.target.checked)}
               className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              disabled={processing}
+              disabled={processing || batchProcessing}
             />
             <span className="ml-3">
               <span className="block text-sm font-medium text-gray-900">Add page separators</span>
@@ -364,7 +743,7 @@ export default function PdfToMarkdownPage() {
               checked={options.format_lines}
               onChange={(e) => handleOptionChange('format_lines', e.target.checked)}
               className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              disabled={processing}
+              disabled={processing || batchProcessing}
             />
             <span className="ml-3">
               <span className="block text-sm font-medium text-gray-900">Format lines</span>
@@ -379,14 +758,12 @@ export default function PdfToMarkdownPage() {
               onChange={(e) => {
                 const newValue = e.target.checked
                 handleOptionChange('use_llm', newValue)
-                // If disabling LLM, must also reset disable_image_extraction
-                // because image extraction requires LLM to be enabled
                 if (!newValue) {
                   handleOptionChange('disable_image_extraction', false)
                 }
               }}
               className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              disabled={processing}
+              disabled={processing || batchProcessing}
             />
             <span className="ml-3">
               <span className="block text-sm font-medium text-gray-900">Use LLM enhancement</span>
@@ -400,7 +777,7 @@ export default function PdfToMarkdownPage() {
               checked={options.disable_image_extraction}
               onChange={(e) => handleOptionChange('disable_image_extraction', e.target.checked)}
               className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              disabled={processing || !options.use_llm}
+              disabled={processing || batchProcessing || !options.use_llm}
             />
             <span className="ml-3">
               <span className="block text-sm font-medium text-gray-900">Disable image extraction</span>
@@ -429,26 +806,54 @@ export default function PdfToMarkdownPage() {
 
       {/* Action Buttons */}
       <div className="flex justify-center gap-4">
-        {/* Convert Button - show when no conversion result or after download complete */}
-        {!convertedMarkdown && (
-          <Button
-            onClick={handleConvert}
-            disabled={processing || !file || !apiKey.trim()}
-            loading={processing}
-            variant="primary"
-          >
-            {processing ? 'Converting...' : 'Convert to Markdown'}
-          </Button>
+        {/* Single Mode Buttons */}
+        {mode === 'single' && (
+          <>
+            {!convertedMarkdown && (
+              <Button
+                onClick={handleConvert}
+                disabled={processing || !file || !apiKey.trim()}
+                loading={processing}
+                variant="primary"
+              >
+                {processing ? 'Converting...' : 'Convert to Markdown'}
+              </Button>
+            )}
+
+            {convertedMarkdown && (
+              <Button
+                onClick={handleDownload}
+                variant="primary"
+              >
+                Download
+              </Button>
+            )}
+          </>
         )}
 
-        {/* Download Button - show when conversion is complete */}
-        {convertedMarkdown && (
-          <Button
-            onClick={handleDownload}
-            variant="primary"
-          >
-            Download
-          </Button>
+        {/* Batch Mode Buttons */}
+        {mode === 'batch' && (
+          <>
+            {!batchZipBlob && (
+              <Button
+                onClick={handleBatchConvert}
+                disabled={batchProcessing || batchFiles.length === 0 || !apiKey.trim()}
+                loading={batchProcessing}
+                variant="primary"
+              >
+                {batchProcessing ? 'Converting...' : `Convert ${batchFiles.length} File${batchFiles.length !== 1 ? 's' : ''}`}
+              </Button>
+            )}
+
+            {batchZipBlob && (
+              <Button
+                onClick={handleBatchDownload}
+                variant="primary"
+              >
+                Download ZIP
+              </Button>
+            )}
+          </>
         )}
       </div>
 
@@ -457,16 +862,27 @@ export default function PdfToMarkdownPage() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
           How it works
         </h2>
-        <ul className="space-y-2 text-gray-600">
-          <li>1. Enter your Marker API key (test key provided by default)</li>
-          <li>2. Upload a PDF file (up to 200MB)</li>
-          <li>3. Configure conversion options (optional)</li>
-          <li>4. Click &quot;Convert to Markdown&quot;</li>
-          <li>5. Wait for processing (usually 30-60 seconds)</li>
-          <li>6. Click &quot;Download&quot; to save the file</li>
-        </ul>
+        {mode === 'single' ? (
+          <ul className="space-y-2 text-gray-600">
+            <li>1. Enter your Marker API key (test key provided by default)</li>
+            <li>2. Upload a PDF file (up to 200MB)</li>
+            <li>3. Configure conversion options (optional)</li>
+            <li>4. Click &quot;Convert to Markdown&quot;</li>
+            <li>5. Wait for processing (usually 30-60 seconds)</li>
+            <li>6. Click &quot;Download&quot; to save the file</li>
+          </ul>
+        ) : (
+          <ul className="space-y-2 text-gray-600">
+            <li>1. Enter your Marker API key</li>
+            <li>2. Upload multiple PDFs or select a folder (up to 10,000 files / 100GB)</li>
+            <li>3. Configure conversion options (applies to all files)</li>
+            <li>4. Click &quot;Convert&quot; to start batch processing</li>
+            <li>5. Watch real-time progress (200 files processed in parallel)</li>
+            <li>6. Download ZIP file with all converted markdowns</li>
+          </ul>
+        )}
         <p className="mt-4 text-sm text-gray-500">
-          Note: API keys are not saved between sessions. Your files are never stored on our servers - processing happens through the Marker API. On modern browsers (Chrome/Edge), you&apos;ll get a save dialog to choose where to save the file.
+          Note: API keys are not saved between sessions. Your files are never stored on our servers - processing happens through the Marker API. Files are converted in parallel for maximum speed.
         </p>
       </div>
     </div>

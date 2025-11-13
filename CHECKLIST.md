@@ -488,6 +488,28 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-13 - Batch PDF Processing Implementation
+- **Added**:
+  - Complete batch processing system for converting multiple PDFs in parallel
+  - Mode selector: Single File vs Batch/Folder
+  - Multiple file upload (up to 10,000 files / 100GB total)
+  - Folder upload with automatic PDF filtering
+  - 200 concurrent conversions (Marker API maximum)
+  - Exponential backoff retry (3 attempts per file)
+  - Real-time progress tracking with file-by-file status
+  - Progress UI: overall progress bar + individual file list with icons
+  - ZIP download with File System Access API + fallback
+  - Comprehensive error handling and validation
+  - Defensive programming (memory management, cleanup, cancellation)
+  - New service layer: batchConversionService.ts (350+ lines)
+  - Updated downloadUtils to accept Blob
+  - Added JSZip library for ZIP creation
+- **Testing**: Build ✅ | Lint ✅ | TypeScript ✅
+- **Files Created**: 1 (batchConversionService.ts)
+- **Files Modified**: 4 (page.tsx, constants.ts, downloadUtils.ts, package.json)
+- **Dependencies Added**: 1 (jszip - 402 packages)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-13 - Diagnostics Panel Scroll Leak Fix
 - **Fixed**:
   - Page no longer scrolls while scrolling within diagnostics panel
