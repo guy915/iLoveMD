@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Additional Bug Fixes from Automated Review** (2025-11-13):
+  - **CRITICAL: LogContext Early Return Issues** (src/contexts/LogContext.tsx):
+    - Fixed early returns in wrapped checks that prevented subsequent setup
+    - Console, fetch, and XHR wrapping now skip only their specific operation, not entire setup
+    - Event listeners and cleanup handlers now always registered
+    - Impact: Network and error logging work correctly even after hot reload
+  - **CRITICAL: replaceExtension Logic Error** (src/lib/utils/downloadUtils.ts:31-48):
+    - Fixed handling of multiple leading dots (e.g., `..config`)
+    - Previous fix incorrectly produced `..md` instead of `..config.md`
+    - Now checks if all chars before last dot are dots using regex `/^\.+$/`
+    - Added comprehensive test case for `...config` → `...config.md`
+    - Impact: Correct filename generation for all edge cases including hidden files
+  - **Testing**:
+    - Build: ✅ (`npm run build` - passes)
+    - Lint: ✅ (`npm run lint` - passes)
+    - Addressed all issues flagged by Codex and Copilot AI automated reviews
+  - **Files Modified**: 2 (downloadUtils.ts, LogContext.tsx)
+
+- **Critical Bug Fixes and Code Quality Improvements** (2025-11-13):
+  - **CRITICAL: Memory Leak in PDF Polling** (src/app/pdf-to-markdown/page.tsx):
+    - Fixed memory leak where polling continued after component unmount
+    - Added `isMountedRef` and `pollTimeoutRef` to track component state and cleanup polling
+    - Prevented state updates on unmounted components (React warnings eliminated)
+    - Added cleanup function in useEffect to clear timeouts on unmount
+    - Impact: Eliminates memory leaks, React errors, and wasted API quota
+  - **CRITICAL: Incorrect Image Extraction Logic** (src/app/pdf-to-markdown/page.tsx:420-424):
+    - Fixed backwards dependency logic for `disable_image_extraction` option
+    - Now correctly resets disable_image_extraction when LLM is disabled
+    - Impact: Options sent to API now work correctly
+  - **HIGH: Missing Null Check for checkUrl** (src/app/pdf-to-markdown/page.tsx:172-175):
+    - Added validation to ensure `request_check_url` exists before polling
+    - Throws descriptive error if API doesn't return check URL
+    - Impact: Prevents silent failures and malformed API calls
+  - **HIGH: Missing Type Definitions**:
+    - Installed `@types/turndown` for proper TypeScript support
+    - Installed `@types/mozilla__readability` for proper TypeScript support
+    - Impact: Eliminates TypeScript compilation warnings, improves type safety
+  - **HIGH: API Input Validation** (src/app/api/marker/route.ts:34-61):
+    - Added file type validation (must be PDF)
+    - Added file size validation (200MB limit with descriptive error)
+    - Added API key format validation (minimum length check)
+    - Added response validation (ensures required fields exist)
+    - Impact: Better security, clearer error messages, prevents invalid requests
+  - **MEDIUM: File Upload State Inconsistency** (src/app/pdf-to-markdown/page.tsx:374):
+    - Added `key` prop to FileUpload component to force remount when file changes
+    - Fixes issue where UI showed stale file selection after conversion
+    - Impact: UI now accurately reflects file state
+  - **MEDIUM: Excessive Logging** (src/app/pdf-to-markdown/page.tsx:85-95):
+    - Fixed useEffect dependency to log only on mount, not on every API key keystroke
+    - Removed `apiKey` from dependency array
+    - Impact: Reduces log pollution and performance overhead
+  - **MEDIUM: replaceExtension Edge Case** (src/lib/utils/downloadUtils.ts:30-40):
+    - Fixed handling of filenames with multiple leading dots (e.g., "..config")
+    - Now uses `lastIndexOf()` instead of `split()` for proper extension replacement
+    - Added comprehensive JSDoc examples
+    - Impact: Correct filename generation for all edge cases
+  - **MEDIUM: LogContext Cleanup Issues** (src/contexts/LogContext.tsx):
+    - Added `__wrapped__` markers to prevent double-wrapping during hot reload
+    - Wrapped console methods, fetch, and XHR with safeguards
+    - Impact: Console methods restore properly, no double-interception stacking
+  - **MEDIUM: Timestamp Field Collision** (src/contexts/LogContext.tsx):
+    - Renamed all `timestamp` fields in log data to `occurredAt`
+    - Prevents collision with LogEntry's `timestamp` field (HH:MM:SS format)
+    - Updated 9 log calls across error handlers, fetch, and XHR interception
+    - Impact: Clear distinction between log timestamp and event occurrence time
+  - **Code Quality: Memoized Callback** (src/app/pdf-to-markdown/page.tsx:97-100):
+    - Wrapped `handleFileSelect` in `useCallback` to prevent unnecessary re-renders
+    - Impact: Better performance, reduces FileUpload component re-renders
+  - **Type Safety: Added `this` Type Annotations**:
+    - Added explicit `this: XMLHttpRequest` type to XHR wrapper functions
+    - Fixes TypeScript compilation error about implicit `any` type
+    - Impact: Type safety in XHR interception code
+  - **Bug Summary**:
+    - **Critical Issues Fixed**: 2 (memory leak, logic error)
+    - **High Severity Issues Fixed**: 3 (null check, types, validation)
+    - **Medium Severity Issues Fixed**: 5 (state, logging, edge cases, cleanup, collision)
+    - **Low Severity Issues**: 6 identified but deferred (UX improvements, minor type issues)
+  - **Testing**:
+    - Build: ✅ (`npm run build` - TypeScript compilation passed)
+    - Lint: ✅ (`npm run lint` - no ESLint errors)
+    - All critical functionality maintained
+  - **Files Modified**: 4 (page.tsx, route.ts, downloadUtils.ts, LogContext.tsx)
+  - **Dependencies Added**: 2 (@types/turndown, @types/mozilla__readability)
+
 ### Changed
 - **Documentation Cleanup** (2025-11-13):
   - **CHECKLIST.md Updates** (~30 file references corrected):

@@ -151,7 +151,7 @@ export function LogProvider({ children }: LogProviderProps) {
               resourceType: tagName,
               resourceUrl,
               pageUrl: window.location.href,
-              timestamp: new Date().toISOString()
+              occurredAt: new Date().toISOString()
             })
           }
         } else {
@@ -165,7 +165,7 @@ export function LogProvider({ children }: LogProviderProps) {
             errorType: event.error?.name,
             stack: event.error?.stack ? event.error.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
             url: window.location.href,
-            timestamp: new Date().toISOString(),
+            occurredAt: new Date().toISOString(),
             userAgent: navigator.userAgent
           })
         }
@@ -189,7 +189,7 @@ export function LogProvider({ children }: LogProviderProps) {
           reasonType: reason?.name,
           stack: reason?.stack ? reason.stack.split('\n').slice(0, 8).join('\n') : 'No stack trace available',
           url: window.location.href,
-          timestamp: new Date().toISOString()
+          occurredAt: new Date().toISOString()
         })
       } catch (logError) {
         // Fallback to console if logging fails
@@ -205,50 +205,66 @@ export function LogProvider({ children }: LogProviderProps) {
     const originalWarn = console.warn
     const originalLog = console['log']
 
-    console.error = (...args: unknown[]) => {
-      addLog('error', 'Console Error', {
-        message: args.map(arg =>
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' '),
-        url: window.location.href,
-        timestamp: new Date().toISOString()
-      })
-      originalError.apply(console, args)
-    }
-
-    console.warn = (...args: unknown[]) => {
-      addLog('error', 'Console Warning', {
-        message: args.map(arg =>
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' '),
-        url: window.location.href,
-        timestamp: new Date().toISOString()
-      })
-      originalWarn.apply(console, args)
-    }
-
-    console['log'] = (...args: unknown[]) => {
-      const message = args.map(arg =>
-        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-      ).join(' ')
-
-      // Filter out Next.js dev server noise
-      const shouldLogConsole = !message.startsWith('[Fast Refresh]')
-
-      if (shouldLogConsole) {
-        addLog('info', 'Console Log', {
-          message,
+    // Wrap console methods only if not already wrapped
+    if (!(console.error as any).__wrapped__) {
+      const wrappedError = (...args: unknown[]) => {
+        addLog('error', 'Console Error', {
+          message: args.map(arg =>
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          ).join(' '),
           url: window.location.href,
-          timestamp: new Date().toISOString()
+          occurredAt: new Date().toISOString()
         })
-      }
+        originalError.apply(console, args)
+      };
+      (wrappedError as any).__wrapped__ = true
+      console.error = wrappedError
+    }
 
-      originalLog.apply(console, args)
+    if (!(console.warn as any).__wrapped__) {
+      const wrappedWarn = (...args: unknown[]) => {
+        addLog('error', 'Console Warning', {
+          message: args.map(arg =>
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          ).join(' '),
+          url: window.location.href,
+          occurredAt: new Date().toISOString()
+        })
+        originalWarn.apply(console, args)
+      };
+      (wrappedWarn as any).__wrapped__ = true
+      console.warn = wrappedWarn
+    }
+
+    if (!(console['log'] as any).__wrapped__) {
+      const wrappedLog = (...args: unknown[]) => {
+        const message = args.map(arg =>
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' ')
+
+        // Filter out Next.js dev server noise
+        const shouldLogConsole = !message.startsWith('[Fast Refresh]')
+
+        if (shouldLogConsole) {
+          addLog('info', 'Console Log', {
+            message,
+            url: window.location.href,
+            occurredAt: new Date().toISOString()
+          })
+        }
+
+        originalLog.apply(console, args)
+      };
+      (wrappedLog as any).__wrapped__ = true
+      console['log'] = wrappedLog
     }
 
     // Intercept fetch() for network request visibility
     const originalFetch = window.fetch
-    window.fetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
+
+    // Wrap fetch only if not already wrapped
+    if (!(window.fetch as any).__wrapped__) {
+      const wrappedFetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
       const startTime = Date.now()
       const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || 'Unknown URL'
       const options = args[1] || {}
@@ -271,7 +287,7 @@ export function LogProvider({ children }: LogProviderProps) {
             method,
             url,
             headers: JSON.stringify(sanitizedHeaders),
-            timestamp: new Date().toISOString()
+            occurredAt: new Date().toISOString()
           })
         } catch (logError) {
           // Don't break fetch if logging fails
@@ -293,7 +309,7 @@ export function LogProvider({ children }: LogProviderProps) {
               duration: `${duration}ms`,
               responseSize: response.headers.get('content-length') || 'Unknown',
               contentType: response.headers.get('content-type'),
-              timestamp: new Date().toISOString()
+              occurredAt: new Date().toISOString()
             })
           } catch (logError) {
             console.error('Failed to log fetch response:', logError)
@@ -312,7 +328,7 @@ export function LogProvider({ children }: LogProviderProps) {
               url,
               error: err?.message || err?.toString(),
               duration: `${duration}ms`,
-              timestamp: new Date().toISOString()
+              occurredAt: new Date().toISOString()
             })
           } catch (logError) {
             console.error('Failed to log fetch error:', logError)
@@ -321,6 +337,9 @@ export function LogProvider({ children }: LogProviderProps) {
 
         throw error
       }
+      };
+      (wrappedFetch as any).__wrapped__ = true
+      window.fetch = wrappedFetch
     }
 
     // Intercept XMLHttpRequest for network request visibility
@@ -335,7 +354,10 @@ export function LogProvider({ children }: LogProviderProps) {
     const originalXHROpen = XMLHttpRequest.prototype.open
     const originalXHRSend = XMLHttpRequest.prototype.send
 
-    XMLHttpRequest.prototype.open = function(
+    // Wrap XMLHttpRequest only if not already wrapped
+    if (!(XMLHttpRequest.prototype.open as any).__wrapped__) {
+      const wrappedXHROpen = function(
+      this: XMLHttpRequest,
       method: string,
       url: string | URL,
       async?: boolean,
@@ -357,7 +379,7 @@ export function LogProvider({ children }: LogProviderProps) {
           addLog('info', 'Network Request (XHR)', {
             method,
             url: urlString,
-            timestamp: new Date().toISOString()
+            occurredAt: new Date().toISOString()
           })
         } catch (logError) {
           console.error('Failed to log XHR request:', logError)
@@ -365,9 +387,11 @@ export function LogProvider({ children }: LogProviderProps) {
       }
 
       return originalXHROpen.call(this, method, url, async ?? true, username, password)
-    }
+    };
+    (wrappedXHROpen as any).__wrapped__ = true
+    XMLHttpRequest.prototype.open = wrappedXHROpen
 
-    XMLHttpRequest.prototype.send = function(body?: XMLHttpRequestBodyInit | Document | null) {
+    const wrappedXHRSend = function(this: XMLHttpRequest, body?: XMLHttpRequestBodyInit | Document | null) {
       const meta = xhrMetaMap.get(this)
 
       this.addEventListener('load', () => {
@@ -382,7 +406,7 @@ export function LogProvider({ children }: LogProviderProps) {
               statusText: this.statusText,
               duration: `${duration}ms`,
               responseSize: this.response?.length || 'Unknown',
-              timestamp: new Date().toISOString()
+              occurredAt: new Date().toISOString()
             })
           } catch (logError) {
             console.error('Failed to log XHR response:', logError)
@@ -399,7 +423,7 @@ export function LogProvider({ children }: LogProviderProps) {
               method: meta?.method,
               url: meta?.url,
               duration: `${duration}ms`,
-              timestamp: new Date().toISOString()
+              occurredAt: new Date().toISOString()
             })
           } catch (logError) {
             console.error('Failed to log XHR error:', logError)
@@ -408,6 +432,9 @@ export function LogProvider({ children }: LogProviderProps) {
       })
 
       return originalXHRSend.call(this, body)
+      };
+      (wrappedXHRSend as any).__wrapped__ = true
+      XMLHttpRequest.prototype.send = wrappedXHRSend
     }
 
     // Use capture phase for error events to catch resource loading failures
