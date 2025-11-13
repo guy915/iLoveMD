@@ -15,6 +15,31 @@ type NetworkErrorType = 'timeout' | 'connection' | 'dns' | 'unknown'
 
 // Helper to identify network error type
 function getNetworkErrorType(error: unknown): NetworkErrorType {
+  // First check error instance and properties (more reliable than string matching)
+  if (error && typeof error === 'object') {
+    const err = error as any
+
+    // Check for AbortError (fetch timeout)
+    if (err.name === 'AbortError') {
+      return 'timeout'
+    }
+
+    // Check for error codes (Node.js-style errors)
+    if (typeof err.code === 'string') {
+      const code = err.code.toUpperCase()
+      if (code === 'ETIMEDOUT' || code === 'ESOCKETTIMEDOUT') {
+        return 'timeout'
+      }
+      if (code === 'ECONNREFUSED') {
+        return 'connection'
+      }
+      if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
+        return 'dns'
+      }
+    }
+  }
+
+  // Fallback to string matching (less reliable but still useful)
   const errorMessage = String(error).toLowerCase()
   if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
     return 'timeout'
@@ -101,7 +126,7 @@ async function fetchWithTimeout(
   } catch (error) {
     clearTimeout(timeoutId)
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Request timed out after ' + (timeoutMs / 1000) + ' seconds')
+      throw new Error(`Request timed out after ${timeoutMs / 1000} seconds`)
     }
     throw error
   }
@@ -220,7 +245,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         {
           success: false,
           error: errorMessage,
-          details: { errorType, originalError: String(fetchError) }
+          details: { errorType } // Only expose error type, not internal error details
         },
         { status: 503 } // Service Unavailable
       )
@@ -240,7 +265,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         {
           success: false,
           error: 'Received invalid response from Marker API. The service may be experiencing issues.',
-          details: { parseError: String(parseError) }
+          details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
         },
         { status: 502 }
       )
@@ -253,7 +278,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         {
           success: false,
           error: 'Received malformed response from Marker API',
-          details: data as Record<string, unknown>
+          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
         },
         { status: 502 }
       )
@@ -309,8 +334,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     return NextResponse.json(
       {
         success: false,
-        error: 'An unexpected error occurred while processing your request. Please try again.',
-        details: { message: errorMessage }
+        error: 'An unexpected error occurred while processing your request. Please try again.'
+        // details omitted to avoid exposing internal error messages
       },
       { status: 500 }
     )
@@ -353,7 +378,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
         {
           success: false,
           error: errorMessage,
-          details: { errorType, originalError: String(fetchError) }
+          details: { errorType } // Only expose error type, not internal error details
         },
         { status: 503 } // Service Unavailable
       )
@@ -373,7 +398,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
         {
           success: false,
           error: 'Received invalid response from Marker API during status check.',
-          details: { parseError: String(parseError) }
+          details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
         },
         { status: 502 }
       )
@@ -386,7 +411,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
         {
           success: false,
           error: 'Received malformed response from Marker API during status check',
-          details: data as Record<string, unknown>
+          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
         },
         { status: 502 }
       )
@@ -427,8 +452,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
     return NextResponse.json(
       {
         success: false,
-        error: 'An unexpected error occurred while checking conversion status. Please try again.',
-        details: { message: errorMessage }
+        error: 'An unexpected error occurred while checking conversion status. Please try again.'
+        // details omitted to avoid exposing internal error messages
       },
       { status: 500 }
     )

@@ -12,16 +12,29 @@ const MAX_LOGS = 500
 let storageQuotaExceeded = false // Flag to avoid repeated quota errors
 let storageUnavailable = false // Flag if storage is completely unavailable
 
+// Store original console methods to avoid recursion when wrapped console calls addLog → storage helpers
+const originalConsoleWarn = typeof window !== 'undefined' ? console.warn : null
+const originalConsoleError = typeof window !== 'undefined' ? console.error : null
+
 function safeStorageGet(key: string): string | null {
   if (typeof window === 'undefined' || storageUnavailable) return null
 
   try {
-    return window.sessionStorage.getItem(key)
+    const value = window.sessionStorage.getItem(key)
+    // Reset flag on successful read (storage might have become available)
+    if (storageUnavailable && value !== null) {
+      storageUnavailable = false
+    }
+    return value
   } catch (error) {
     // Storage unavailable (private browsing, disabled, etc.)
     if (!storageUnavailable) {
-      console.warn('sessionStorage unavailable:', error)
+      // Set flag BEFORE logging to prevent recursive calls
       storageUnavailable = true
+      // Use original console.warn to avoid triggering wrapped console → addLog → safeStorageSet recursion
+      if (originalConsoleWarn) {
+        originalConsoleWarn.call(console, 'sessionStorage unavailable:', error)
+      }
     }
     return null
   }
@@ -33,17 +46,25 @@ function safeStorageSet(key: string, value: string): boolean {
   try {
     window.sessionStorage.setItem(key, value)
     storageQuotaExceeded = false // Reset flag on successful write
+    storageUnavailable = false // Reset flag on successful write
     return true
   } catch (error) {
     if (error instanceof Error && error.name === 'QuotaExceededError') {
       if (!storageQuotaExceeded) {
-        console.warn('sessionStorage quota exceeded. Logs will continue in memory but won\'t persist across page refreshes.')
+        // Set flag BEFORE logging to prevent recursive calls via wrapped console.warn
         storageQuotaExceeded = true
+        // Use original console.warn to avoid triggering wrapped console → addLog → safeStorageSet recursion
+        if (originalConsoleWarn) {
+          originalConsoleWarn.call(console, 'sessionStorage quota exceeded. Logs will continue in memory but won\'t persist across page refreshes.')
+        }
       }
     } else {
       if (!storageUnavailable) {
-        console.warn('sessionStorage write failed:', error)
+        // Set flag BEFORE logging to prevent recursive calls
         storageUnavailable = true
+        if (originalConsoleWarn) {
+          originalConsoleWarn.call(console, 'sessionStorage write failed:', error)
+        }
       }
     }
     return false
@@ -57,7 +78,12 @@ function safeStorageRemove(key: string): boolean {
     window.sessionStorage.removeItem(key)
     return true
   } catch (error) {
-    console.warn('sessionStorage remove failed:', error)
+    if (!storageUnavailable) {
+      storageUnavailable = true
+      if (originalConsoleWarn) {
+        originalConsoleWarn.call(console, 'sessionStorage remove failed:', error)
+      }
+    }
     return false
   }
 }
