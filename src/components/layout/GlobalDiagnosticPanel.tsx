@@ -12,11 +12,8 @@ export default function GlobalDiagnosticPanel() {
   // Autoscroll to latest log when logs change and panel is open
   useEffect(() => {
     if (isOpen && logsContainerRef.current && logs.length > 0) {
-      // Scroll to bottom with smooth behavior
-      logsContainerRef.current.scrollTo({
-        top: logsContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      })
+      // Scroll to bottom instantly (no animation - faster with many logs)
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight
     }
   }, [logs, isOpen])
 
