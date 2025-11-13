@@ -60,35 +60,6 @@ Create a `.env.local` file (optional, for development):
 5. Wait for processing (may take a few minutes for large files)
 6. Download automatically starts when complete
 
-
-## Troubleshooting
-
-### Diagnostic Logging
-
-The app includes a comprehensive diagnostic logging system visible in the header:
-- Click "Diagnostic Logs" to view all application events
-- See file uploads, API calls, errors, and performance metrics
-- Copy logs to share when troubleshooting issues
-
-### "Invalid API key" error
-- Verify your Marker API key at [datalab.to](https://www.datalab.to/)
-- Make sure you copied the entire key
-- Check that your key has remaining credits
-
-### "File too large" error
-- Maximum PDF file size is 200MB (Marker API limit)
-- Try splitting large PDFs before conversion
-
-### Processing takes too long
-- Large files can take several minutes
-- Check your internet connection
-- Ensure the Marker API service is online
-
-### Download not working
-- Check browser download settings
-- Ensure pop-ups aren't blocked
-- Try a different browser
-
 ---
 
 **Note:** This tool requires external API keys that you must obtain yourself. We don't provide API access or pay for API usage.
