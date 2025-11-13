@@ -1,13 +1,13 @@
 /**
  * Triggers a file download in the browser
- * @param content - The file content
+ * @param content - The file content (string or Blob)
  * @param filename - The filename to save as
  * @param mimeType - The MIME type of the file (default: 'text/markdown')
  * @throws Error if Blob creation, URL creation, or DOM operations fail.
  *         Does NOT throw if the download is cancelled by the user or blocked by browser restrictions (e.g., popup blockers).
  *         All errors include the filename in the error message for better debugging.
  */
-export function downloadFile(content: string, filename: string, mimeType: string = 'text/markdown'): void {
+export function downloadFile(content: string | Blob, filename: string, mimeType: string = 'text/markdown'): void {
   let url: string | null = null
   let link: HTMLAnchorElement | null = null
 
@@ -21,7 +21,7 @@ export function downloadFile(content: string, filename: string, mimeType: string
     }
 
     // Create Blob (might fail if out of memory)
-    const blob = new Blob([content], { type: mimeType })
+    const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType })
 
     // Create object URL (might fail if too many URLs created)
     url = URL.createObjectURL(blob)
