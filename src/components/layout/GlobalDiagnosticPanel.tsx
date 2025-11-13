@@ -160,7 +160,15 @@ Log Format: #ID [timestamp] TYPE: message
           </div>
 
           {/* Logs content - user-select-text makes it easy to select and copy */}
-          <div ref={logsContainerRef} className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text">
+          <div
+            ref={logsContainerRef}
+            className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text"
+            onWheel={(e) => {
+              // Prevent scroll from propagating to the document/body
+              // This stops the website from scrolling when scrolling the logs panel
+              e.stopPropagation()
+            }}
+          >
             {logs.length === 0 ? (
               <div className="text-gray-400 text-center py-8 select-none">
                 No logs yet. Logs will appear here as you interact with the website.
