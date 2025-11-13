@@ -31,13 +31,13 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [x] Create directory structure
   - [x] src/components/layout/
   - [x] src/components/common/
-  - [x] src/components/tools/
+  - [x] ~~src/components/tools/~~ (Not needed - tool pages in app directory)
   - [x] src/components/home/
-  - [x] src/lib/processors/
-  - [x] src/lib/api/
+  - [x] ~~src/lib/processors/~~ (Not needed - processing in API routes)
+  - [x] ~~src/lib/api/~~ (Not needed - API logic in app/api)
   - [x] src/lib/utils/
-  - [x] src/lib/storage/
-  - [x] src/hooks/
+  - [x] ~~src/lib/storage/~~ (Not needed - localStorage handled in components)
+  - [x] ~~src/hooks/~~ (Not needed - hooks inlined in components)
 
 - [x] Configure Tailwind
   - [x] Update tailwind.config.js with custom colors
@@ -63,8 +63,8 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ### 2.1 Custom Hooks
 
-- [x] Create useLocalStorage hook
-  - [x] File: src/hooks/useLocalStorage.js
+- [x] ~~Create useLocalStorage hook~~ (Not needed - localStorage handled directly in components)
+  - [x] ~~File: src/hooks/useLocalStorage.js~~ (Directory removed during TypeScript migration)
   - [x] Handle SSR safely (check typeof window)
   - [x] Parse/stringify JSON
   - [x] Error handling
@@ -73,7 +73,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 2.2 Layout Components
 
 - [x] Create Header component
-  - [x] File: src/components/layout/Header.js
+  - [x] File: src/components/layout/Header.tsx
   - [x] Logo + site name (links to home)
   - [x] Desktop navigation (PDF, HTML, Merge, Help, About)
   - [x] Mobile hamburger menu
@@ -81,13 +81,13 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] Test navigation links
 
 - [x] Create Footer component
-  - [x] File: src/components/layout/Footer.js
+  - [x] File: src/components/layout/Footer.tsx
   - [x] Copyright text
   - [x] Links (if needed)
   - [x] Simple and minimal
 
 - [x] Create root layout
-  - [x] File: src/app/layout.js
+  - [x] File: src/app/layout.tsx
   - [x] Import globals.css
   - [x] Add Header and Footer
   - [x] Flex column layout (header, main, footer)
@@ -96,14 +96,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 2.3 Homepage
 
 - [x] Create ToolTile component
-  - [x] File: src/components/home/ToolTile.js
+  - [x] File: src/components/home/ToolTile.tsx
   - [x] Icon, title, description props
   - [x] Hover effects
   - [x] Link to tool page
   - [x] Styling matches design system
 
 - [x] Create homepage
-  - [x] File: src/app/page.js
+  - [x] File: src/app/page.tsx
   - [x] Hero section (title + tagline)
   - [x] Tool grid (3 tiles)
   - [x] Responsive grid layout
@@ -112,14 +112,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 2.4 Reusable Components
 
 - [x] Create Button component
-  - [x] File: src/components/common/Button.js
+  - [x] File: src/components/common/Button.tsx
   - [x] Primary and secondary variants
   - [x] Disabled state
   - [x] Loading state
   - [x] onClick handler
 
 - [x] Create FileUpload component
-  - [x] File: src/components/common/FileUpload.js
+  - [x] File: src/components/common/FileUpload.tsx
   - [x] Drag and drop zone
   - [x] File input (click to browse)
   - [x] File validation (type, size)
@@ -152,7 +152,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 3.1 API Route
 
 - [x] Create Marker API route
-  - [x] File: src/app/api/marker/route.js
+  - [x] File: src/app/api/marker/route.ts
   - [x] Handle POST requests (submit) and GET requests (poll)
   - [x] Extract file, apiKey, options from FormData
   - [x] Build Marker API request
@@ -164,7 +164,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 3.2 Utility Functions
 
 - [x] Create download utilities
-  - [x] File: src/lib/utils/downloadUtils.js
+  - [x] File: src/lib/utils/downloadUtils.ts
   - [x] downloadFile() function
   - [x] replaceExtension() function
   - [x] formatFileSize() function
@@ -230,7 +230,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 4.1 API Route for URL Fetching
 
 - [ ] Create fetch-url API route
-  - [ ] File: src/app/api/fetch-url/route.js
+  - [ ] File: src/app/api/fetch-url/route.ts
   - [ ] Handle POST requests
   - [ ] Extract URL from body
   - [ ] Validate URL
@@ -241,8 +241,8 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ### 4.2 HTML Processing Utilities
 
-- [ ] Create HTML processor
-  - [ ] File: src/lib/processors/htmlProcessor.js
+- [ ] Create HTML processor (client-side)
+  - [ ] File: src/lib/utils/htmlProcessor.ts
   - [ ] cleanHTML() function (remove scripts, styles, etc.)
   - [ ] convertToMarkdown() function (using Turndown)
   - [ ] Configure Turndown options
@@ -251,7 +251,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 4.3 HTML Tool Page
 
 - [ ] Create HTML tool page
-  - [ ] File: src/app/html-to-markdown/page.js
+  - [ ] File: src/app/html-to-markdown/page.tsx
   - [ ] 'use client' directive
   - [ ] State management
   - [ ] Tab interface (File upload / URL)
@@ -263,7 +263,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [ ] Download trigger
 
 - [ ] Implement tab selector
-  - [ ] Component: src/components/tools/TabSelector.js (optional)
+  - [ ] Inline in page component or create: src/components/common/TabSelector.tsx (optional)
   - [ ] Switch between file upload and URL input
   - [ ] Clear state when switching tabs
 
@@ -303,8 +303,8 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ### 5.1 Merge Processing Utilities
 
-- [ ] Create merge processor
-  - [ ] File: src/lib/processors/mergeProcessor.js
+- [ ] Create merge processor (client-side)
+  - [ ] File: src/lib/utils/mergeProcessor.ts
   - [ ] readFiles() function
   - [ ] orderFiles() function
   - [ ] mergeFiles() function
@@ -315,7 +315,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 5.2 Merge Tool Components
 
 - [ ] Create FileList component
-  - [ ] File: src/components/tools/FileList.js
+  - [ ] File: src/components/common/FileList.tsx
   - [ ] Display uploaded files
   - [ ] Drag handles for reordering
   - [ ] Remove file buttons
@@ -325,7 +325,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 5.3 Merge Tool Page
 
 - [ ] Create merge tool page
-  - [ ] File: src/app/merge-markdown/page.js
+  - [ ] File: src/app/merge-markdown/page.tsx
   - [ ] 'use client' directive
   - [ ] State management (files, options)
   - [ ] Multi-file upload
@@ -371,21 +371,21 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ### 6.1 Content Pages
 
-- [ ] Create Help page
-  - [ ] File: src/app/help/page.js
-  - [ ] FAQ section
-  - [ ] "How to get API key" instructions
-  - [ ] "How to use each tool" guides
-  - [ ] Troubleshooting section
-  - [ ] File size/format information
+- [x] Create Help page
+  - [x] File: src/app/help/page.tsx
+  - [x] FAQ section
+  - [x] "How to get API key" instructions
+  - [x] "How to use each tool" guides
+  - [x] Troubleshooting section
+  - [x] File size/format information
 
-- [ ] Create About page
-  - [ ] File: src/app/about/page.js
-  - [ ] Project description
-  - [ ] Why it was built
-  - [ ] Tech stack used
-  - [ ] Developer info
-  - [ ] GitHub link (if public)
+- [x] Create About page
+  - [x] File: src/app/about/page.tsx
+  - [x] Project description
+  - [x] Why it was built
+  - [x] Tech stack used
+  - [x] Developer info
+  - [x] GitHub link (if public)
 
 ### 6.2 Error Handling & Polish
 
