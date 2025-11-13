@@ -9,13 +9,26 @@ import type { MarkerOptions } from '@/types'
 import { MARKER_CONFIG, STORAGE_KEYS, FILE_SIZE } from '@/lib/constants'
 import * as storageService from '@/lib/services/storageService'
 import { convertPdfToMarkdown } from '@/lib/services/markerApiService'
-import {
-  convertBatchPdfToMarkdown,
-  validateBatchFiles,
-  filterPdfFiles,
-  type BatchProgress
-} from '@/lib/services/batchConversionService'
 import { useLogs } from '@/contexts/LogContext'
+
+// Lazy-load batch conversion types
+type BatchProgress = {
+  total: number
+  completed: number
+  failed: number
+  inProgress: number
+  results: Array<{
+    file: File
+    filename: string
+    status: 'pending' | 'processing' | 'complete' | 'failed'
+    markdown?: string
+    error?: string
+    attempts: number
+    startTime?: number
+    endTime?: number
+    duration?: number
+  }>
+}
 
 export default function PdfToMarkdownPage() {
   // API key - defaults to test key, not persisted across sessions
@@ -132,7 +145,10 @@ export default function PdfToMarkdownPage() {
   }, [])
 
   const handleFilesSelect = useCallback((selectedFiles: File[]) => {
-    const pdfFiles = filterPdfFiles(selectedFiles)
+    // Filter PDF files only
+    const pdfFiles = selectedFiles.filter(f =>
+      f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+    )
 
     if (pdfFiles.length === 0) {
       setError('No PDF files found in selection')
@@ -270,11 +286,19 @@ export default function PdfToMarkdownPage() {
       return
     }
 
-    // Validate batch
-    const validation = validateBatchFiles(files)
-    if (!validation.valid) {
-      setError(validation.error || 'Invalid file selection')
-      addLog('error', 'Batch validation failed', { error: validation.error })
+    // Validate batch - inline to avoid importing batch service
+    if (files.length > FILE_SIZE.MAX_BATCH_FILES) {
+      setError(`Too many files. Maximum is ${FILE_SIZE.MAX_BATCH_FILES} files per batch.`)
+      addLog('error', 'Batch validation failed: Too many files')
+      return
+    }
+
+    const oversizedFiles = files.filter(f => f.size > FILE_SIZE.MAX_PDF_FILE_SIZE)
+    if (oversizedFiles.length > 0) {
+      const names = oversizedFiles.slice(0, 3).map(f => f.name).join(', ')
+      const more = oversizedFiles.length > 3 ? ` and ${oversizedFiles.length - 3} more` : ''
+      setError(`Some files exceed 200MB limit: ${names}${more}`)
+      addLog('error', 'Batch validation failed: Files too large')
       return
     }
 
@@ -293,6 +317,9 @@ export default function PdfToMarkdownPage() {
 
     try {
       abortControllerRef.current = new AbortController()
+
+      // Dynamically import batch service (includes jszip)
+      const { convertBatchPdfToMarkdown } = await import('@/lib/services/batchConversionService')
 
       const result = await convertBatchPdfToMarkdown(files, {
         apiKey,
