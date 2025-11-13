@@ -263,6 +263,9 @@ export default function PdfToMarkdownPage() {
           window.focus()
 
         } catch (apiError: any) {
+          // Restore focus even if cancelled
+          window.focus()
+
           // User cancelled or API error
           if (apiError.name === 'AbortError') {
             addLog('info', 'User cancelled save dialog')
