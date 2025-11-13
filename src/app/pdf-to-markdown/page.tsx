@@ -237,6 +237,18 @@ export default function PdfToMarkdownPage() {
           throw new Error(pollData.error || 'Failed to check status')
         }
 
+        // Check for error status from API
+        if (pollData.status === 'error') {
+          const totalConversionTime = Date.now() - conversionStartTime
+          addLog('error', 'Conversion failed on server', {
+            status: pollData.status,
+            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`,
+            pollAttempts: pollCount,
+            response: pollData
+          })
+          throw new Error('The Marker API reported an error during conversion. Please try again.')
+        }
+
         if (pollData.status === 'complete') {
           const totalConversionTime = Date.now() - conversionStartTime
           const pollingTime = Date.now() - pollingStartTime
@@ -280,12 +292,20 @@ export default function PdfToMarkdownPage() {
             mimeType: 'text/markdown'
           })
 
-          downloadFile(content, filename, 'text/markdown')
-
-          addLog('success', 'File download triggered successfully', {
-            filename: filename,
-            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
-          })
+          try {
+            downloadFile(content, filename, 'text/markdown')
+            addLog('success', 'File download triggered successfully', {
+              filename: filename,
+              totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
+            })
+          } catch (downloadError) {
+            const errorMsg = downloadError instanceof Error ? downloadError.message : String(downloadError)
+            addLog('error', 'File download failed', {
+              error: errorMsg,
+              filename: filename
+            })
+            throw new Error(`Download failed: ${errorMsg}`)
+          }
 
           // Only update state if component is still mounted
           if (isMountedRef.current) {

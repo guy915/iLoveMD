@@ -72,6 +72,8 @@ export interface MarkerPollResponse {
   error?: string
   /** Processing progress percentage (0-100) */
   progress?: number
+  /** Additional error details */
+  details?: Record<string, unknown>
 }
 
 /**
