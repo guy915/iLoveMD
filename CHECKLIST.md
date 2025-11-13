@@ -497,6 +497,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Removed smooth scroll animation (was annoying with hundreds of logs)
 - **Fixed**:
   - API key now pre-filled with hardcoded test key (no env file needed)
+  - Removed confusing logCount/timestamp from "Logs copied" log data (log ID is sufficient)
 - **Removed**:
   - Unused `STORAGE_KEYS.MARKER_API_KEY` constant (cleanup)
 - **Testing**: Build ✅ | Lint ✅ | Manual testing pending
