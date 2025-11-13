@@ -1,6 +1,129 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
 import { MARKER_CONFIG, FILE_SIZE, API_ENDPOINTS } from '@/lib/constants'
+import { formatBytesToMB } from '@/lib/utils/formatUtils'
+import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
+
+// Network error types for better error messaging
+type NetworkErrorType = 'timeout' | 'connection' | 'dns' | 'unknown'
+
+// Helper to identify network error type
+function getNetworkErrorType(error: unknown): NetworkErrorType {
+  // First check error instance and properties (more reliable than string matching)
+  if (error && typeof error === 'object') {
+    const err = error as any
+
+    // Check for AbortError (fetch timeout)
+    if (err.name === 'AbortError') {
+      return 'timeout'
+    }
+
+    // Check for error codes (Node.js-style errors)
+    if (typeof err.code === 'string') {
+      const code = err.code.toUpperCase()
+      if (code === 'ETIMEDOUT' || code === 'ESOCKETTIMEDOUT') {
+        return 'timeout'
+      }
+      if (code === 'ECONNREFUSED') {
+        return 'connection'
+      }
+      if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
+        return 'dns'
+      }
+    }
+  }
+
+  // Fallback to string matching (less reliable but still useful)
+  const errorMessage = String(error).toLowerCase()
+  if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+    return 'timeout'
+  }
+  if (errorMessage.includes('econnrefused') || errorMessage.includes('connection refused')) {
+    return 'connection'
+  }
+  if (errorMessage.includes('enotfound') || errorMessage.includes('dns')) {
+    return 'dns'
+  }
+  return 'unknown'
+}
+
+// Helper to get user-friendly error message
+function getNetworkErrorMessage(errorType: NetworkErrorType): string {
+  switch (errorType) {
+    case 'timeout':
+      return 'Request timed out. The Marker API is taking too long to respond. Please try again.'
+    case 'connection':
+      return 'Unable to connect to Marker API. The service may be temporarily unavailable.'
+    case 'dns':
+      return 'Unable to resolve Marker API hostname. Please check your internet connection.'
+    default:
+      return 'Network error occurred. Please check your internet connection and try again.'
+  }
+}
+
+// Helper to validate JSON response structure
+function isValidMarkerSubmitResponse(data: unknown): data is {
+  error?: string
+  message?: string
+  request_id?: string
+  request_check_url?: string
+} {
+  if (!data || typeof data !== 'object') return false
+  const obj = data as Record<string, unknown>
+
+  // At least one field should be present
+  const hasExpectedFields =
+    typeof obj.error === 'string' ||
+    typeof obj.message === 'string' ||
+    typeof obj.request_id === 'string' ||
+    typeof obj.request_check_url === 'string'
+
+  return hasExpectedFields
+}
+
+// Helper to validate poll response structure
+function isValidMarkerPollResponse(data: unknown): data is {
+  error?: string
+  status?: string
+  markdown?: string
+  progress?: number
+} {
+  if (!data || typeof data !== 'object') return false
+  const obj = data as Record<string, unknown>
+
+  // At least one field should be present
+  const hasExpectedFields =
+    typeof obj.error === 'string' ||
+    typeof obj.status === 'string' ||
+    typeof obj.markdown === 'string' ||
+    typeof obj.progress === 'number'
+
+  return hasExpectedFields
+}
+
+// Fetch with timeout support
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = 30000
+): Promise<Response> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs / 1000} seconds`)
+    }
+    throw error
+  }
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
   try {
@@ -31,12 +154,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
-    // Validate file size (200MB limit)
+    // Validate file is not empty
+    if (file.size === 0) {
+      return NextResponse.json(
+        { success: false, error: 'File is empty. Please upload a valid PDF file.' },
+        { status: 400 }
+      )
+    }
+
+    // Validate file size (200MB limit per Marker API)
     if (file.size > FILE_SIZE.MAX_PDF_FILE_SIZE) {
       return NextResponse.json(
         {
           success: false,
-          error: `File too large (max 200MB). Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`
+          error: `File too large (max 200MB). Your file is ${formatBytesToMB(file.size)}`
         },
         { status: 413 }
       )
@@ -84,20 +215,65 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     markerFormData.append('use_llm', String(options.use_llm))
     markerFormData.append('disable_image_extraction', String(options.disable_image_extraction))
 
-    // Submit to Marker API
-    const response = await fetch(API_ENDPOINTS.MARKER_EXTERNAL, {
-      method: 'POST',
-      headers: {
-        'X-Api-Key': trimmedKey,
-      },
-      body: markerFormData,
-    })
+    // Submit to Marker API with timeout
+    let response: Response
+    try {
+      response = await fetchWithTimeout(API_ENDPOINTS.MARKER_EXTERNAL, {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': trimmedKey,
+        },
+        body: markerFormData,
+      }, 30000) // 30 second timeout
+    } catch (fetchError) {
+      const errorType = getNetworkErrorType(fetchError)
+      const errorMessage = getNetworkErrorMessage(errorType)
+      console.error('Network error submitting to Marker API:', {
+        errorType,
+        error: fetchError,
+        message: String(fetchError)
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: errorMessage,
+          details: { errorType } // Only expose error type, not internal error details
+        },
+        { status: 503 } // Service Unavailable
+      )
+    }
 
-    const data = await response.json() as {
-      error?: string
-      message?: string
-      request_id?: string
-      request_check_url?: string
+    // Parse JSON response
+    let data: unknown
+    try {
+      data = await response.json()
+    } catch (parseError) {
+      console.error('Failed to parse Marker API response as JSON:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: parseError
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Received invalid response from Marker API. The service may be experiencing issues.',
+          details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
+        },
+        { status: 502 }
+      )
+    }
+
+    // Validate response structure
+    if (!isValidMarkerSubmitResponse(data)) {
+      console.error('Marker API returned unexpected response structure:', data)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Received malformed response from Marker API',
+          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
+        },
+        { status: 502 }
+      )
     }
 
     if (!response.ok) {
@@ -139,9 +315,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     })
 
   } catch (error) {
-    console.error('Marker API error:', error)
+    // Catch-all for unexpected errors
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error('Unexpected error in POST /api/marker:', {
+      message: errorMessage,
+      stack: errorStack,
+      error
+    })
     return NextResponse.json(
-      { success: false, error: 'Failed to process request' },
+      {
+        success: false,
+        error: 'An unexpected error occurred while processing your request. Please try again.'
+        // details omitted to avoid exposing internal error messages
+      },
       { status: 500 }
     )
   }
@@ -161,22 +348,73 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       )
     }
 
-    // Poll the Marker API
-    const response = await fetch(checkUrl, {
-      method: 'GET',
-      headers: {
-        'X-Api-Key': apiKey,
-      },
-    })
+    // Poll the Marker API with timeout
+    let response: Response
+    try {
+      response = await fetchWithTimeout(checkUrl, {
+        method: 'GET',
+        headers: {
+          'X-Api-Key': apiKey,
+        },
+      }, 30000) // 30 second timeout
+    } catch (fetchError) {
+      const errorType = getNetworkErrorType(fetchError)
+      const errorMessage = getNetworkErrorMessage(errorType)
+      console.error('Network error polling Marker API:', {
+        errorType,
+        error: fetchError,
+        message: String(fetchError),
+        checkUrl
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: errorMessage,
+          details: { errorType } // Only expose error type, not internal error details
+        },
+        { status: 503 } // Service Unavailable
+      )
+    }
 
-    const data = await response.json() as {
-      error?: string
-      status?: string
-      markdown?: string
-      progress?: number
+    // Parse JSON response
+    let data: unknown
+    try {
+      data = await response.json()
+    } catch (parseError) {
+      console.error('Failed to parse Marker API poll response as JSON:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: parseError
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Received invalid response from Marker API during status check.',
+          details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
+        },
+        { status: 502 }
+      )
+    }
+
+    // Validate response structure
+    if (!isValidMarkerPollResponse(data)) {
+      console.error('Marker API poll returned unexpected response structure:', data)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Received malformed response from Marker API during status check',
+          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
+        },
+        { status: 502 }
+      )
     }
 
     if (!response.ok) {
+      console.error('Marker API poll error:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      })
       return NextResponse.json(
         {
           success: false,
@@ -195,9 +433,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
     })
 
   } catch (error) {
-    console.error('Poll error:', error)
+    // Catch-all for unexpected errors
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error('Unexpected error in GET /api/marker:', {
+      message: errorMessage,
+      stack: errorStack,
+      error
+    })
     return NextResponse.json(
-      { success: false, error: 'Failed to check status' },
+      {
+        success: false,
+        error: 'An unexpected error occurred while checking conversion status. Please try again.'
+        // details omitted to avoid exposing internal error messages
+      },
       { status: 500 }
     )
   }

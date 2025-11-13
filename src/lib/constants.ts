@@ -16,7 +16,7 @@ export const FILE_SIZE = {
 
   // Default limits
   MAX_FILE_SIZE: GB, // 1GB
-  MAX_PDF_FILE_SIZE: 200 * MB, // 200MB for PDF uploads
+  MAX_PDF_FILE_SIZE: 200 * MB, // 200MB - Marker API limit
   MAX_MERGE_FILES: 50,
   MAX_TOTAL_MERGE_SIZE: GB, // 1GB total
 } as const
@@ -86,4 +86,7 @@ export const MARKER_CONFIG = {
     ACCEPTED_MIME_TYPES: ['application/pdf'] as const,
     ACCEPTED_EXTENSIONS: ['.pdf'] as const,
   },
+
+  // API URLs
+  SIGN_UP_URL: 'https://www.datalab.to/app/keys',
 } as const

@@ -4,11 +4,12 @@ import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react'
 import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
-import { useLogs } from '@/contexts/LogContext'
+import { formatBytesToMB, formatBytesToKB, formatDuration } from '@/lib/utils/formatUtils'
 import type { MarkerOptions } from '@/types'
 import { MARKER_CONFIG, STORAGE_KEYS, FILE_SIZE } from '@/lib/constants'
 import * as storageService from '@/lib/services/storageService'
 import { convertPdfToMarkdown } from '@/lib/services/markerApiService'
+import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // API key - defaults to test key from env var, not persisted across sessions
@@ -109,7 +110,7 @@ export default function PdfToMarkdownPage() {
 
     addLog('info', `Starting PDF conversion`, {
       fileName: file.name,
-      fileSize: `${(file.size / FILE_SIZE.BYTES_PER_MB).toFixed(2)}MB`,
+      fileSize: formatBytesToMB(file.size),
       fileType: file.type,
       timestamp: new Date().toISOString(),
       options: options
@@ -147,7 +148,7 @@ export default function PdfToMarkdownPage() {
       if (!result.success || !result.markdown) {
         addLog('error', 'Conversion failed', {
           error: result.error,
-          duration: `${(totalConversionTime / 1000).toFixed(1)}s`
+          duration: formatDuration(totalConversionTime)
         })
         throw new Error(result.error || 'Conversion failed')
       }
@@ -155,10 +156,10 @@ export default function PdfToMarkdownPage() {
       // Success - download the result
       setStatus('Download starting...')
 
-      addLog('success', `Conversion complete! (${(totalConversionTime / 1000).toFixed(1)}s total)`, {
-        totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`,
+      addLog('success', `Conversion complete! (${formatDuration(totalConversionTime)} total)`, {
+        totalDuration: formatDuration(totalConversionTime),
         contentLength: `${result.markdown.length} characters`,
-        contentSizeKB: `${(result.markdown.length / 1024).toFixed(2)}KB`
+        contentSizeKB: formatBytesToKB(result.markdown.length)
       })
 
       const filename = replaceExtension(file.name, 'md')
@@ -172,7 +173,7 @@ export default function PdfToMarkdownPage() {
 
       addLog('success', 'File download triggered successfully', {
         filename: filename,
-        totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
+        totalDuration: formatDuration(totalConversionTime)
       })
 
       // Only update state if component is still mounted
@@ -196,7 +197,7 @@ export default function PdfToMarkdownPage() {
       addLog('error', `Conversion failed: ${error.message}`, {
         error: error.message,
         errorType: error.name,
-        duration: `${(totalDuration / 1000).toFixed(1)}s`,
+        duration: formatDuration(totalDuration),
         stack: error.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
       })
 
@@ -226,21 +227,23 @@ export default function PdfToMarkdownPage() {
 
       {/* API Key Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
           Marker API Key
         </label>
         <input
+          id="api-key-input"
           type="password"
           value={apiKey}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
           placeholder="Enter your API key"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           disabled={processing}
+          aria-label="Marker API Key"
         />
         <p className="mt-2 text-sm text-gray-500">
           Don&apos;t have an API key?{' '}
           <a
-            href="https://www.datalab.to/app/keys"
+            href={MARKER_CONFIG.SIGN_UP_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-700 underline"
