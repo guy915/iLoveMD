@@ -144,7 +144,7 @@ export default function PdfToMarkdownPage() {
     setBatchZipFilename(null)
   }, [])
 
-  const handleFilesSelect = useCallback((selectedFiles: File[]) => {
+  const handleFilesSelect = useCallback((selectedFiles: File[], append: boolean = false) => {
     // Filter PDF files only
     const pdfFiles = selectedFiles.filter(f =>
       f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
@@ -159,16 +159,40 @@ export default function PdfToMarkdownPage() {
     addLog('info', `Selected ${pdfFiles.length} PDF files`, {
       totalFiles: selectedFiles.length,
       pdfFiles: pdfFiles.length,
-      otherFiles: selectedFiles.length - pdfFiles.length
+      otherFiles: selectedFiles.length - pdfFiles.length,
+      append
     })
 
-    setFiles(pdfFiles)
+    if (append) {
+      // Append to existing files, avoiding duplicates by name
+      setFiles(prevFiles => {
+        const existingNames = new Set(prevFiles.map(f => f.name))
+        const newFiles = pdfFiles.filter(f => !existingNames.has(f.name))
+        const combined = [...prevFiles, ...newFiles]
+        addLog('info', `Added ${newFiles.length} new files, total now ${combined.length}`)
+        return combined
+      })
+    } else {
+      // Replace existing files
+      setFiles(pdfFiles)
+      setError('')
+      setConvertedMarkdown(null)
+      setOutputFilename(null)
+      setBatchProgress(null)
+      setBatchZipBlob(null)
+      setBatchZipFilename(null)
+    }
+  }, [addLog])
+
+  const handleClearFiles = useCallback(() => {
+    setFiles([])
     setError('')
     setConvertedMarkdown(null)
     setOutputFilename(null)
     setBatchProgress(null)
     setBatchZipBlob(null)
     setBatchZipFilename(null)
+    addLog('info', 'File selection cleared')
   }, [addLog])
 
   // Single file conversion
@@ -554,15 +578,81 @@ export default function PdfToMarkdownPage() {
 
       {/* File Upload Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <FileUpload
-          accept=".pdf,application/pdf"
-          onFileSelect={handleFileSelect}
-          onFilesSelect={handleFilesSelect}
-          maxSize={FILE_SIZE.MAX_PDF_FILE_SIZE}
-          multiple={true}
-          allowFolder={true}
-          label="Drop PDF file(s) or folder here, or click to browse"
-        />
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <p className="text-lg mb-4 font-medium text-gray-700">Select PDF files or folder</p>
+
+          <div className="flex gap-3 justify-center flex-wrap">
+            {/* Select Files Button */}
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".pdf,application/pdf"
+                multiple
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    addLog('info', `${e.target.files.length} file(s) selected via file browser`)
+                    const selectedFiles = Array.from(e.target.files)
+                    const append = files.length > 0
+                    if (selectedFiles.length === 1 && !append) {
+                      handleFileSelect(selectedFiles[0])
+                    } else {
+                      handleFilesSelect(selectedFiles, append)
+                    }
+                    e.target.value = ''
+                  }
+                }}
+                className="hidden"
+              />
+              <span className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                {files.length > 0 ? 'Add More Files' : 'Select PDF File(s)'}
+              </span>
+            </label>
+
+            {/* Select Folder Button */}
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".pdf,application/pdf"
+                multiple
+                // @ts-ignore - webkitdirectory is not in TypeScript definitions
+                webkitdirectory="true"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    addLog('info', `Folder selected with ${e.target.files.length} file(s)`)
+                    const append = files.length > 0
+                    handleFilesSelect(Array.from(e.target.files), append)
+                    e.target.value = ''
+                  }
+                }}
+                className="hidden"
+              />
+              <span className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                {files.length > 0 ? 'Add Folder' : 'Select Folder'}
+              </span>
+            </label>
+
+            {/* Clear Button */}
+            {files.length > 0 && (
+              <button
+                onClick={handleClearFiles}
+                className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+
+          {files.length > 0 && (
+            <p className="text-sm text-blue-600 font-medium mt-4">
+              {files.length === 1 ? `Selected: ${files[0].name}` : `Selected: ${files.length} PDF files`}
+            </p>
+          )}
+
+          <p className="text-sm text-gray-500 mt-4">
+            Supported: PDF files, up to 200MB per file
+            {files.length > 0 && <span className="block mt-1">Click buttons again to add more files or folders</span>}
+          </p>
+        </div>
       </div>
 
       {/* Batch Progress - File List Only (No Progress Bar) */}
