@@ -5,16 +5,10 @@ import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { useLogs } from '@/contexts/LogContext'
-import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
-
-const DEFAULT_OPTIONS: MarkerOptions = {
-  paginate: false,
-  format_lines: false,
-  use_llm: false,
-  disable_image_extraction: false,
-  output_format: 'markdown',
-  langs: 'English'
-}
+import type { MarkerOptions } from '@/types'
+import { MARKER_CONFIG, STORAGE_KEYS, FILE_SIZE } from '@/lib/constants'
+import * as storageService from '@/lib/services/storageService'
+import { convertPdfToMarkdown } from '@/lib/services/markerApiService'
 
 export default function PdfToMarkdownPage() {
   // API key - defaults to test key from env var, not persisted across sessions
@@ -25,7 +19,7 @@ export default function PdfToMarkdownPage() {
   const [error, setError] = useState('')
 
   // Options with localStorage persistence
-  const [options, setOptions] = useState<MarkerOptions>(DEFAULT_OPTIONS)
+  const [options, setOptions] = useState<MarkerOptions>(MARKER_CONFIG.DEFAULT_OPTIONS)
   const [hasLoadedOptions, setHasLoadedOptions] = useState(false)
 
   // Use global logging context (do not destructure clearLogs - we never clear logs)
@@ -33,43 +27,37 @@ export default function PdfToMarkdownPage() {
 
   // Refs for cleanup and memory leak prevention
   const isMountedRef = useRef(true)
-  const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Cleanup on unmount to prevent memory leaks
   useEffect(() => {
     isMountedRef.current = true
     return () => {
       isMountedRef.current = false
-      if (pollTimeoutRef.current) {
-        clearTimeout(pollTimeoutRef.current)
-        pollTimeoutRef.current = null
+      // Cancel any ongoing conversion
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
       }
     }
   }, [])
 
   // Load options from localStorage on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedOptions = localStorage.getItem('markerOptions')
-      if (savedOptions) {
-        try {
-          const parsed = JSON.parse(savedOptions) as Partial<MarkerOptions>
-          // Merge with defaults to handle missing fields from old versions
-          const mergedOptions = { ...DEFAULT_OPTIONS, ...parsed }
-          setOptions(mergedOptions)
-          addLog('info', 'Loaded saved options from localStorage', { options: mergedOptions })
-        } catch (err) {
-          addLog('error', 'Failed to parse saved options, using defaults', { error: String(err) })
-        }
-      }
-      setHasLoadedOptions(true)
+    const savedOptions = storageService.getJSON<Partial<MarkerOptions>>(STORAGE_KEYS.MARKER_OPTIONS)
+    if (savedOptions) {
+      // Merge with defaults to handle missing fields from old versions
+      const mergedOptions = { ...MARKER_CONFIG.DEFAULT_OPTIONS, ...savedOptions }
+      setOptions(mergedOptions)
+      addLog('info', 'Loaded saved options from localStorage', { options: mergedOptions })
     }
+    setHasLoadedOptions(true)
   }, [addLog])
 
   // Save options to localStorage whenever they change (after initial load)
   useEffect(() => {
-    if (typeof window !== 'undefined' && hasLoadedOptions) {
-      localStorage.setItem('markerOptions', JSON.stringify(options))
+    if (hasLoadedOptions) {
+      storageService.setJSON(STORAGE_KEYS.MARKER_OPTIONS, options)
     }
   }, [options, hasLoadedOptions])
 
@@ -121,193 +109,85 @@ export default function PdfToMarkdownPage() {
 
     addLog('info', `Starting PDF conversion`, {
       fileName: file.name,
-      fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      fileSize: `${(file.size / FILE_SIZE.BYTES_PER_MB).toFixed(2)}MB`,
       fileType: file.type,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      options: options
     })
 
     try {
-      // Submit file to our API route
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('apiKey', apiKey)
-      formData.append('options', JSON.stringify(options))
+      // Create abort controller for cancellation support
+      abortControllerRef.current = new AbortController()
 
-      addLog('info', 'Submitting to Marker API via /api/marker endpoint', {
-        endpoint: '/api/marker',
-        method: 'POST',
-        fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
-        options: options
-      })
+      // Progress callback for status updates
+      const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
+        if (!isMountedRef.current) return
 
-      const submitStartTime = Date.now()
-      const submitResponse = await fetch('/api/marker', {
-        method: 'POST',
-        body: formData,
-      })
-      const submitDuration = Date.now() - submitStartTime
+        const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
+        setStatus(`Processing PDF... (${attemptNumber}/${maxAttempts} checks, ${elapsedSeconds.toFixed(0)}s elapsed)`)
 
-      const submitData = await submitResponse.json() as MarkerSubmitResponse
-
-      addLog('success', `Submit response received (${submitDuration}ms)`, {
-        status: submitResponse.status,
-        statusText: submitResponse.ok ? 'OK' : 'Error',
-        duration: `${submitDuration}ms`,
-        responseKeys: Object.keys(submitData)
-      })
-
-      if (!submitResponse.ok || !submitData.success) {
-        addLog('error', 'Submission failed', {
-          error: submitData.error,
-          details: submitData.details
+        addLog('info', `Poll attempt ${attemptNumber}/${maxAttempts}`, {
+          status: status,
+          attemptNumber: attemptNumber,
+          elapsedTime: `${elapsedSeconds.toFixed(1)}s`
         })
-        throw new Error(submitData.error || 'Failed to submit file')
       }
 
-      // Start polling for results
-      setStatus('Processing PDF... This may take a minute.')
-      const checkUrl = submitData.request_check_url
+      // Use service to handle conversion
+      const result = await convertPdfToMarkdown(
+        file,
+        apiKey,
+        options,
+        onProgress,
+        abortControllerRef.current.signal
+      )
 
-      // Validate checkUrl exists
-      if (!checkUrl) {
-        addLog('error', 'No status check URL returned from API')
-        throw new Error('No status check URL returned from API')
+      const totalConversionTime = Date.now() - conversionStartTime
+
+      if (!result.success || !result.markdown) {
+        addLog('error', 'Conversion failed', {
+          error: result.error,
+          duration: `${(totalConversionTime / 1000).toFixed(1)}s`
+        })
+        throw new Error(result.error || 'Conversion failed')
       }
 
-      const pollingStartTime = Date.now()
+      // Success - download the result
+      setStatus('Download starting...')
 
-      addLog('info', 'Starting polling for conversion status', {
-        checkUrl: checkUrl,
-        requestId: submitData.request_id,
-        pollInterval: '2 seconds',
-        maxDuration: '5 minutes'
+      addLog('success', `Conversion complete! (${(totalConversionTime / 1000).toFixed(1)}s total)`, {
+        totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`,
+        contentLength: `${result.markdown.length} characters`,
+        contentSizeKB: `${(result.markdown.length / 1024).toFixed(2)}KB`
       })
 
-      const pollInterval = 2000 // Poll every 2 seconds
-      const maxPolls = 150 // 5 minutes max (150 * 2 seconds)
-      let pollCount = 0
+      const filename = replaceExtension(file.name, 'md')
+      addLog('info', `Triggering file download`, {
+        originalFile: file.name,
+        outputFile: filename,
+        mimeType: 'text/markdown'
+      })
 
-      const poll = async (): Promise<void> => {
-        // Check if component is still mounted
-        if (!isMountedRef.current) {
-          addLog('info', 'Component unmounted, stopping polling')
-          return
-        }
+      downloadFile(result.markdown, filename, 'text/markdown')
 
-        if (pollCount >= maxPolls) {
-          const timeoutDuration = Date.now() - pollingStartTime
-          addLog('error', `Polling timeout after ${pollCount} attempts (${(timeoutDuration / 1000).toFixed(1)}s)`)
-          throw new Error('Processing timeout. Please try again.')
-        }
+      addLog('success', 'File download triggered successfully', {
+        filename: filename,
+        totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
+      })
 
-        pollCount++
-        const pollStartTime = Date.now()
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setStatus('Conversion complete! File downloaded.')
+        setProcessing(false)
+        setFile(null)
 
-        addLog('info', `Poll attempt ${pollCount}/${maxPolls}`, {
-          attemptNumber: pollCount,
-          elapsedTime: `${((pollStartTime - pollingStartTime) / 1000).toFixed(1)}s`
-        })
-
-        const pollResponse = await fetch(
-          `/api/marker?checkUrl=${encodeURIComponent(checkUrl)}`,
-          {
-            headers: {
-              'x-api-key': apiKey
-            }
-          }
-        )
-        const pollDuration = Date.now() - pollStartTime
-
-        // Check again after async operation
-        if (!isMountedRef.current) {
-          addLog('info', 'Component unmounted during polling, aborting')
-          return
-        }
-
-        const pollData = await pollResponse.json() as MarkerPollResponse
-
-        addLog('info', `Poll response received (${pollDuration}ms)`, {
-          status: pollData.status,
-          httpStatus: pollResponse.status,
-          duration: `${pollDuration}ms`,
-          attemptNumber: pollCount
-        })
-
-        if (!pollResponse.ok || !pollData.success) {
-          throw new Error(pollData.error || 'Failed to check status')
-        }
-
-        if (pollData.status === 'complete') {
-          const totalConversionTime = Date.now() - conversionStartTime
-          const pollingTime = Date.now() - pollingStartTime
-
-          // Download the result
-          setStatus('Download starting...')
-
-          addLog('success', `Conversion complete! (${(totalConversionTime / 1000).toFixed(1)}s total)`, {
-            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`,
-            pollingDuration: `${(pollingTime / 1000).toFixed(1)}s`,
-            pollAttempts: pollCount
-          })
-
-          // Log what we received
-          addLog('info', 'API response structure', {
-            fields: Object.keys(pollData),
-            status: pollData.status
-          })
-
-          // Get the content (field name is 'markdown' regardless of output format)
-          const content = pollData.markdown
-
-          if (!content) {
-            addLog('error', 'No content in response!', {
-              receivedFields: Object.keys(pollData),
-              status: pollData.status
-            })
-            throw new Error('No content received from API')
-          }
-
-          addLog('info', 'Markdown content received', {
-            length: `${content.length} characters`,
-            sizeKB: `${(content.length / 1024).toFixed(2)}KB`,
-            preview: content.substring(0, 200)
-          })
-
-          const filename = replaceExtension(file.name, 'md')
-          addLog('info', `Triggering file download`, {
-            originalFile: file.name,
-            outputFile: filename,
-            mimeType: 'text/markdown'
-          })
-
-          downloadFile(content, filename, 'text/markdown')
-
-          addLog('success', 'File download triggered successfully', {
-            filename: filename,
-            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
-          })
-
-          // Only update state if component is still mounted
+        // Clear status after 3 seconds
+        setTimeout(() => {
           if (isMountedRef.current) {
-            setStatus('Conversion complete! File downloaded.')
-            setProcessing(false)
-            setFile(null)
-
-            // Clear status after 3 seconds
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                setStatus('')
-              }
-            }, 3000)
+            setStatus('')
           }
-        } else {
-          // Still processing, poll again
-          addLog('info', `Status: ${pollData.status} - Waiting ${pollInterval}ms before next poll`)
-          pollTimeoutRef.current = setTimeout(poll, pollInterval)
-        }
+        }, 3000)
       }
-
-      await poll()
 
     } catch (err) {
       const totalDuration = Date.now() - conversionStartTime
@@ -326,6 +206,9 @@ export default function PdfToMarkdownPage() {
         setProcessing(false)
         setStatus('')
       }
+    } finally {
+      // Cleanup abort controller
+      abortControllerRef.current = null
     }
   }
 
@@ -374,7 +257,7 @@ export default function PdfToMarkdownPage() {
           key={file?.name || 'empty'} // Force remount when file changes to clear state
           accept=".pdf,application/pdf"
           onFileSelect={handleFileSelect}
-          maxSize={200 * 1024 * 1024} // 200MB
+          maxSize={FILE_SIZE.MAX_PDF_FILE_SIZE}
         />
       </div>
 
