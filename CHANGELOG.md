@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Diagnostics Panel Scroll Leak** (2025-11-13):
+  - Fixed page scrolling while scrolling within diagnostics panel
+  - Corrected boundary detection logic in scroll handler
+  - Page scroll only allowed when at edge AND scrolling past it
+  - Fixed bug where scrolling down from top would scroll both panel and page
+  - Panel always scrolls first, page only scrolls when trying to go beyond edges
+  - **Impact**: Panel scrolling is now isolated from page scrolling
+  - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+
+### Fixed
 - **PDF File Upload and Download UX Improvements** (2025-11-13):
   - **Fixed file upload requiring two clicks**:
     - Removed `key` prop from FileUpload component that was causing unnecessary remounts

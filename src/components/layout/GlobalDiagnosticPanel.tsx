@@ -160,7 +160,29 @@ Log Format: #ID [timestamp] TYPE: message
           </div>
 
           {/* Logs content - user-select-text makes it easy to select and copy */}
-          <div ref={logsContainerRef} className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text">
+          <div
+            ref={logsContainerRef}
+            className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text"
+            onWheel={(e) => {
+              const container = logsContainerRef.current
+              if (!container) return
+
+              const isScrollingDown = e.deltaY > 0
+              const isScrollingUp = e.deltaY < 0
+              const isAtBottom = container.scrollHeight - container.scrollTop === container.clientHeight
+              const isAtTop = container.scrollTop === 0
+
+              // Only allow page scroll when we're at an edge AND scrolling past it
+              // At top scrolling up -> allow page scroll
+              // At bottom scrolling down -> allow page scroll
+              // All other cases -> stop propagation (scroll panel only)
+              const shouldScrollPage = (isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)
+
+              if (!shouldScrollPage) {
+                e.stopPropagation()
+              }
+            }}
+          >
             {logs.length === 0 ? (
               <div className="text-gray-400 text-center py-8 select-none">
                 No logs yet. Logs will appear here as you interact with the website.

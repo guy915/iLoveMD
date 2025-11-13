@@ -488,6 +488,16 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-13 - Diagnostics Panel Scroll Leak Fix
+- **Fixed**:
+  - Page no longer scrolls while scrolling within diagnostics panel
+  - Corrected boundary detection logic (was allowing propagation incorrectly)
+  - Now only allows page scroll when at edge AND scrolling past it
+  - Fixed: scrolling down from top no longer scrolls both panel and page
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 1 (GlobalDiagnosticPanel.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-13 - PDF File Upload and Download UX Improvements
 - **Fixed**:
   - File upload now works correctly on first click (removed unnecessary key prop remount)
