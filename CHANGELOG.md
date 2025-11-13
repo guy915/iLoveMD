@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Annotated non-existent directories (hooks, processors, api, storage, tools)
     - Removed reference to deleted useLocalStorage hook
     - Marked Help and About pages as completed (files exist at `src/app/help/page.tsx` and `src/app/about/page.tsx`)
+    - Fixed architecture inconsistencies for future tasks:
+      - `htmlProcessor.ts` → `src/lib/utils/htmlProcessor.ts` (client-side processing)
+      - `mergeProcessor.ts` → `src/lib/utils/mergeProcessor.ts` (client-side processing)
+      - `TabSelector.tsx` → `src/components/common/TabSelector.tsx` (or inline)
+      - `FileList.tsx` → `src/components/common/FileList.tsx` (common component)
   - **README.md Status Update**:
     - Changed "PDF to Markdown (In Progress)" to "PDF to Markdown"
     - Updated description to reflect tool is complete with configurable options
@@ -22,8 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Documentation now accurately reflects current codebase structure
     - No confusion about file extensions after TypeScript migration
     - Clear indication of which directories were planned but not needed
+    - Future task file locations align with documented architecture (client-side processing in lib/utils, shared components in components/common)
     - Accurate project status representation
-  - Build: ✅ | Lint: ✅ | Files changed: 2
+  - Build: ✅ | Lint: ✅ | Files changed: 3
 
 ### Added
 - **PDF to Markdown Configuration Options** (2025-11-12):
