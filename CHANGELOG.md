@@ -16,11 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **Impact**: Users can now upload files with a single interaction
   - **Replaced automatic download with user-controlled save dialog**:
     - Conversion result now stored in state instead of immediately downloading
-    - Added "Download Markdown File" button that appears after conversion completes
+    - Added "Download" button that appears after conversion completes and persists
+    - Download button stays available for multiple downloads until new file is uploaded
     - Implemented File System Access API for modern browsers (Chrome/Edge)
     - Users can now choose save location and filename via native save dialog
     - Fallback to traditional download for browsers without File System Access API
-    - **Impact**: Users have full control over where and how to save converted files
+    - Button text simplified from "Download Markdown File" to "Download"
+    - **Impact**: Users have full control over where and how to save converted files, and can download multiple times
+  - **Fixed potential memory leak**: Added clearTimeout before setting new timeout in download handler
   - **Updated "How it works" section** to reflect new download workflow
   - **Files Modified**: page.tsx, FileUpload.tsx
   - Build: ✅ | Lint: ✅

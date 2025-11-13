@@ -257,14 +257,15 @@ export default function PdfToMarkdownPage() {
             filename: outputFilename
           })
 
-          setStatus('File saved successfully!')
+          setStatus('File saved successfully! You can download again or upload a new file.')
 
-          // Clear status and results after 3 seconds
+          // Clear status message after 3 seconds, but keep download button available
+          if (statusTimeoutRef.current) {
+            clearTimeout(statusTimeoutRef.current)
+          }
           statusTimeoutRef.current = setTimeout(() => {
             if (isMountedRef.current) {
               setStatus('')
-              setConvertedMarkdown(null)
-              setOutputFilename(null)
             }
             statusTimeoutRef.current = null
           }, 3000)
@@ -286,14 +287,15 @@ export default function PdfToMarkdownPage() {
           filename: outputFilename
         })
 
-        setStatus('File download started! Check your downloads folder.')
+        setStatus('File download started! Check your downloads folder. You can download again or upload a new file.')
 
-        // Clear status and results after 3 seconds
+        // Clear status message after 3 seconds, but keep download button available
+        if (statusTimeoutRef.current) {
+          clearTimeout(statusTimeoutRef.current)
+        }
         statusTimeoutRef.current = setTimeout(() => {
           if (isMountedRef.current) {
             setStatus('')
-            setConvertedMarkdown(null)
-            setOutputFilename(null)
           }
           statusTimeoutRef.current = null
         }, 3000)
@@ -467,7 +469,7 @@ export default function PdfToMarkdownPage() {
             onClick={handleDownload}
             variant="primary"
           >
-            Download Markdown File
+            Download
           </Button>
         )}
       </div>
