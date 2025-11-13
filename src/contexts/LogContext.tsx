@@ -149,8 +149,8 @@ export function LogProvider({ children }: LogProviderProps) {
   }, [logs])
 
   const addLog = useCallback((type: LogType, message: string, data: Record<string, unknown> | null = null) => {
-    // Create a simple hash for deduplication - use lightweight hash instead of expensive JSON.stringify
-    // For large objects, just use the keys instead of full stringification
+    // Create a hash for deduplication - hybrid approach for correctness + performance
+    // Include both keys and a value snippet to prevent false deduplication while limiting JSON.stringify cost
     const dataKeys = data ? Object.keys(data).filter(k => k !== 'timestamp').sort().join(',') : ''
     const dataValuesSnippet = data ? JSON.stringify(data).slice(0, 32) : ''
     const hash = `${type}:${message}:${dataKeys}:${dataValuesSnippet}`
