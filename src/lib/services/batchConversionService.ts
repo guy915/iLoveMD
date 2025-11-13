@@ -3,7 +3,7 @@
  *
  * Features:
  * - Parallel processing with configurable concurrency (up to 200 per Marker API limits)
- * - Exponential backoff retry for failed conversions (3 retries: 1s, 2s, 4s, 8s, 16s, max 32s)
+ * - Exponential backoff retry for failed conversions (3 retries with delays: 1s, 2s, 4s)
  * - Progress tracking with real-time updates
  * - Defensive programming for memory management
  * - Graceful degradation on errors
@@ -121,7 +121,8 @@ async function convertFileWithRetry(
     result.attempts = attempt + 1
 
     try {
-      const conversionResult = await convertPdfToMarkdown(file, apiKey, markerOptions)
+      // Forward abort signal to individual conversion
+      const conversionResult = await convertPdfToMarkdown(file, apiKey, markerOptions, undefined, signal)
 
       if (conversionResult.success && conversionResult.markdown) {
         result.markdown = conversionResult.markdown
@@ -189,6 +190,9 @@ export async function convertBatchPdfToMarkdown(
     onProgress?.(progress)
   }
 
+  // Create file-to-index map for O(1) lookups instead of O(n) indexOf
+  const fileIndexMap = new Map(files.map((file, index) => [file, index]))
+
   // Queue of files to process
   const queue = [...files]
   const inProgress = new Set<Promise<void>>()
@@ -203,7 +207,7 @@ export async function convertBatchPdfToMarkdown(
     // Start new conversions up to concurrency limit
     while (queue.length > 0 && inProgress.size < maxConcurrent) {
       const file = queue.shift()!
-      const resultIndex = files.indexOf(file)
+      const resultIndex = fileIndexMap.get(file)!
 
       // Mark as in progress
       results[resultIndex].status = 'processing'
@@ -320,6 +324,24 @@ export function filterPdfFiles(files: File[]): File[] {
   return files.filter(f =>
     f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
   )
+}
+
+/**
+ * Filter files to only include those in the immediate folder (not subfolders)
+ */
+export function filterImmediateFolderFiles(files: File[]): File[] {
+  return files.filter(file => {
+    // @ts-ignore - webkitRelativePath is not in TypeScript definitions
+    const relativePath = file.webkitRelativePath as string | undefined
+
+    if (!relativePath) return true // Not from a folder, include it
+
+    // Count slashes - if there's exactly one slash, file is in immediate folder
+    // e.g., "folder/file.pdf" = 1 slash (immediate) ✓
+    // e.g., "folder/subfolder/file.pdf" = 2 slashes (nested) ✗
+    const slashCount = (relativePath.match(/\//g) || []).length
+    return slashCount === 1
+  })
 }
 
 /**
