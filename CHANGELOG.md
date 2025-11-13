@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Diagnostics Panel Scroll Propagation** (2025-11-13):
+  - Fixed scroll events in diagnostics panel propagating to document body
+  - Users can now scroll within the logs panel without the website scrolling
+  - Added `onWheel` event handler with `e.stopPropagation()` to logs container
+  - Scroll events are now contained within the panel boundaries
+  - **Impact**: Better UX when reviewing logs - no unexpected page scrolling
+  - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+
+### Fixed
 - **PDF File Upload and Download UX Improvements** (2025-11-13):
   - **Fixed file upload requiring two clicks**:
     - Removed `key` prop from FileUpload component that was causing unnecessary remounts
