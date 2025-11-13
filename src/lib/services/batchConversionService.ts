@@ -14,7 +14,6 @@
  * - 200 concurrent API requests maximum
  */
 
-import JSZip from 'jszip'
 import { convertPdfToMarkdown } from './markerApiService'
 import { replaceExtension } from '@/lib/utils/downloadUtils'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
@@ -305,6 +304,8 @@ export async function convertBatchPdfToMarkdown(
 
   // Create ZIP file with successful conversions
   try {
+    // Dynamically import JSZip (client-side only library)
+    const JSZip = (await import('jszip')).default
     const zip = new JSZip()
 
     for (const result of completed) {
