@@ -27,7 +27,7 @@ Merge Markdown files.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/AI-Doc-Prep.git
+git clone https://github.com/guy915/AI-Doc-Prep.git
 cd AI-Doc-Prep
 
 # Install dependencies
@@ -76,7 +76,7 @@ The app includes a comprehensive diagnostic logging system visible in the header
 - Check that your key has remaining credits
 
 ### "File too large" error
-- Maximum file size is 1GB
+- Maximum PDF file size is 200MB (Marker API limit)
 - Try splitting large PDFs before conversion
 
 ### Processing takes too long
