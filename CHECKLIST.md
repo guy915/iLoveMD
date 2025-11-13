@@ -18,6 +18,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] Enable App Router
   - [x] Enable import alias (@/*)
   - [x] **Migrated to TypeScript** (2025-11-12) - See Phase 3 notes
+  - [x] **TypeScript Migration Cleanup** (2025-11-13) - Converted config files, updated docs
 
 - [x] Install dependencies
   - [x] `npm install turndown`
@@ -40,7 +41,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] ~~src/hooks/~~ (Not needed - hooks inlined in components)
 
 - [x] Configure Tailwind
-  - [x] Update tailwind.config.js with custom colors
+  - [x] Update tailwind.config.ts with custom colors (migrated from .js)
   - [x] Test Tailwind works
 
 - [x] Create globals.css
