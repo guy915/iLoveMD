@@ -10,13 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Batch PDF Processing with Parallel Conversion** (2025-11-13):
   - **Major Feature**: Added batch mode for converting multiple PDFs simultaneously
-  - **Mode Selector**: Radio buttons to switch between Single File and Batch/Folder modes
+  - **Automatic Mode Detection**: Single vs batch automatically detected based on file count (no mode selector needed)
   - **Multiple File Upload**: Select up to 10,000 PDF files (100GB total) at once
   - **Folder Upload**: Select entire folders - all PDFs in the folder converted (subfolders ignored)
   - **Parallel Processing**: 200 concurrent conversions (Marker API limit) for maximum speed
   - **Exponential Backoff Retry**: Failed files automatically retried 3 times with exponential delays (1s, 2s, 4s, 8s, 16s, 32s max)
   - **Real-time Progress Tracking**:
-    - Overall progress bar showing completion percentage
+    - Spinning animation for all conversions (single and batch)
     - File-by-file status list with icons (✓ complete, ⟳ processing, ✗ failed, ○ pending)
     - Live counters: "15/50 complete • 3 in progress • 2 failed"
     - Individual file durations displayed on completion
@@ -43,12 +43,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - New service: `batchConversionService.ts` (350+ lines)
     - Batch constants in `constants.ts` (MAX_CONCURRENT, MAX_RETRIES, delays)
     - Updated `downloadUtils.ts` to support Blob downloads
+    - Updated `FileUpload.tsx` to support multiple files and folders
     - JSZip library for ZIP creation (402 packages)
+  - **UX Improvements**:
+    - Removed mode selector radio buttons (automatic detection)
+    - Removed progress bar (consistent spinner animation)
+    - Simplified UI: one upload area handles all scenarios
   - **Testing**:
     - Build: ✅ | Lint: ✅
     - TypeScript compilation: ✅
   - **Files Created**: 1 (batchConversionService.ts)
-  - **Files Modified**: 4 (page.tsx, constants.ts, downloadUtils.ts, package.json)
+  - **Files Modified**: 5 (page.tsx, FileUpload.tsx, constants.ts, downloadUtils.ts, package.json)
   - **Dependencies Added**: 1 (jszip)
 
 ### Fixed

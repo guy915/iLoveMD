@@ -491,13 +491,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 2025-11-13 - Batch PDF Processing Implementation
 - **Added**:
   - Complete batch processing system for converting multiple PDFs in parallel
-  - Mode selector: Single File vs Batch/Folder
+  - Automatic mode detection: single vs batch based on file count (no selector needed)
   - Multiple file upload (up to 10,000 files / 100GB total)
   - Folder upload with automatic PDF filtering
   - 200 concurrent conversions (Marker API maximum)
   - Exponential backoff retry (3 attempts per file)
   - Real-time progress tracking with file-by-file status
-  - Progress UI: overall progress bar + individual file list with icons
+  - Consistent spinner animation for single and batch modes
+  - File list with status icons (no progress bar)
   - ZIP download with File System Access API + fallback
   - Comprehensive error handling and validation
   - Defensive programming (memory management, cleanup, cancellation)
@@ -506,7 +507,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Added JSZip library for ZIP creation
 - **Testing**: Build ✅ | Lint ✅ | TypeScript ✅
 - **Files Created**: 1 (batchConversionService.ts)
-- **Files Modified**: 4 (page.tsx, constants.ts, downloadUtils.ts, package.json)
+- **Files Modified**: 5 (page.tsx, FileUpload.tsx, constants.ts, downloadUtils.ts, package.json)
 - **Dependencies Added**: 1 (jszip - 402 packages)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
