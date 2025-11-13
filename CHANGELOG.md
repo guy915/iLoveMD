@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Performance Optimizations** (2025-11-13):
   - **Comprehensive performance audit and optimization across entire application**:
     - Identified 19 performance bottlenecks through systematic codebase analysis
-    - Implemented 11 high-impact optimizations (2 HIGH priority, 9 MEDIUM priority)
-    - Estimated overall performance improvement: 40-60%
+    - Implemented 10 high-impact optimizations (2 HIGH priority, 8 MEDIUM priority)
+    - One optimization reverted due to bug (see Fixed section)
+    - Estimated overall performance improvement: 35-55%
   - **LogContext.tsx - HIGH PRIORITY fixes** (src/contexts/LogContext.tsx):
     - **Debounced sessionStorage writes** (Lines 136-149):
       - Added 1-second debounce to batch rapid log writes
@@ -22,10 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - Only slice array when exceeding MAX_LOGS (500 entries)
       - Previously sliced on every log, even when under limit
       - **Impact**: Reduces O(n) operations by 90% during normal usage
-    - **Lightweight hash for deduplication** (Lines 152-155):
-      - Replaced expensive JSON.stringify with key-based hash
-      - Only uses sorted object keys instead of full serialization
-      - **Impact**: 5-20ms saved per log with large objects
+    - **~~Lightweight hash for deduplication~~** (**REVERTED** - see Fixed section):
+      - ~~Replaced expensive JSON.stringify with key-based hash~~
+      - ~~Only uses sorted object keys instead of full serialization~~
+      - **Bug**: Caused legitimate logs to be incorrectly deduplicated (reverted)
     - **Optimized console wrapper JSON.stringify** (Lines 280, 295, 309):
       - Added null check: only stringify objects, not primitives
       - **Impact**: Reduces overhead on every console.log/warn/error
@@ -66,8 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - **Impact**: Prevents Link component re-renders
   - **Performance Improvements by Priority**:
     - **HIGH Priority (2 fixes)**: 30-50% reduction in re-renders + UI freeze elimination
-    - **MEDIUM Priority (9 fixes)**: 10-20% improvement in interaction responsiveness
-    - **Overall Estimated Impact**: 40-60% performance improvement
+    - **MEDIUM Priority (8 fixes)**: 10-20% improvement in interaction responsiveness
+    - **Overall Estimated Impact**: 35-55% performance improvement (revised after bug fix)
   - **Testing**:
     - Build: ✅ (`npm run build` - passes)
     - Lint: ✅ (`npm run lint` - no errors)
@@ -80,6 +81,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Prevented memory leaks with proper cleanup
     - Optimized array and string operations
     - Components properly memoized throughout
+
+### Fixed
+- **Deduplication Hash Bug Fix** (2025-11-13):
+  - **CRITICAL: Fixed overly-aggressive log deduplication** (src/contexts/LogContext.tsx:151-157):
+    - **Problem**: Previous optimization used only data object keys for hash, ignoring actual values
+    - **Impact**: Legitimate logs with same keys but different values were incorrectly deduplicated and lost
+    - **Example**: Two errors with `{ message: "Error A", url: "/page1" }` and `{ message: "Error B", url: "/page2" }` had identical hashes (both: `"error:Console Error:message,url"`), causing the second to be silently dropped
+    - **Solution**: Reverted to value-based hash using `Object.fromEntries` to filter timestamp, then stringify the result
+    - **Result**: Deduplication now correctly preserves all unique logs while still excluding timestamp field
+    - **Trade-off**: Slight performance cost for correctness (acceptable and necessary)
+    - **Credit**: Bug identified by Codex automated code review
+    - Build: ✅ | Lint: ✅ | Files modified: 1
 
 ### Changed
 - **Architecture Refactoring: Improved Modularity and Reduced Coupling** (2025-11-13):
