@@ -89,9 +89,6 @@ export default function FileUpload({
   }, [addLog, validateAndSelect])
 
   const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    // Restore focus to browser window after file dialog closes
-    window.focus()
-
     if (e.target.files && e.target.files[0]) {
       addLog('info', 'File selected via file browser')
       validateAndSelect(e.target.files[0])

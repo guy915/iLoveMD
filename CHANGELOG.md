@@ -23,9 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Fallback to traditional download for browsers without File System Access API
     - Button text simplified from "Download Markdown File" to "Download"
     - Success message now stays visible (no disappearing/moving UI elements)
-    - Browser focus automatically restored after all file dialogs close (upload and download)
-    - Focus restoration works whether user completes action or cancels
-    - **Impact**: Users have full control over where and how to save converted files, and can download multiple times with single clicks
+    - **Impact**: Users have full control over where and how to save converted files, and can download multiple times
   - **Updated "How it works" section** to reflect new download workflow
   - **Files Modified**: page.tsx, FileUpload.tsx
   - Build: ✅ | Lint: ✅
