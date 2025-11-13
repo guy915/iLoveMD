@@ -488,6 +488,15 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-13 - Diagnostics Panel Scroll Leak Fix
+- **Fixed**:
+  - Scroll events in diagnostics panel no longer propagate to document body
+  - Added `onWheel` handler with `e.stopPropagation()` to logs container
+  - Users can now scroll within logs panel without website scrolling
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 1 (GlobalDiagnosticPanel.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-13 - PDF File Upload and Download UX Improvements
 - **Fixed**:
   - File upload now works correctly on first click (removed unnecessary key prop remount)
