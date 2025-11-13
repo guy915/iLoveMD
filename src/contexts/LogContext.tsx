@@ -205,67 +205,66 @@ export function LogProvider({ children }: LogProviderProps) {
     const originalWarn = console.warn
     const originalLog = console['log']
 
-    // Check if already wrapped to prevent double-wrapping during hot reload
-    if ((console.error as any).__wrapped__) {
-      return
-    }
-
-    const wrappedError = (...args: unknown[]) => {
-      addLog('error', 'Console Error', {
-        message: args.map(arg =>
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' '),
-        url: window.location.href,
-        occurredAt: new Date().toISOString()
-      })
-      originalError.apply(console, args)
-    };
-    (wrappedError as any).__wrapped__ = true
-    console.error = wrappedError
-
-    const wrappedWarn = (...args: unknown[]) => {
-      addLog('error', 'Console Warning', {
-        message: args.map(arg =>
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' '),
-        url: window.location.href,
-        occurredAt: new Date().toISOString()
-      })
-      originalWarn.apply(console, args)
-    };
-    (wrappedWarn as any).__wrapped__ = true
-    console.warn = wrappedWarn
-
-    const wrappedLog = (...args: unknown[]) => {
-      const message = args.map(arg =>
-        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-      ).join(' ')
-
-      // Filter out Next.js dev server noise
-      const shouldLogConsole = !message.startsWith('[Fast Refresh]')
-
-      if (shouldLogConsole) {
-        addLog('info', 'Console Log', {
-          message,
+    // Wrap console methods only if not already wrapped
+    if (!(console.error as any).__wrapped__) {
+      const wrappedError = (...args: unknown[]) => {
+        addLog('error', 'Console Error', {
+          message: args.map(arg =>
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          ).join(' '),
           url: window.location.href,
           occurredAt: new Date().toISOString()
         })
-      }
+        originalError.apply(console, args)
+      };
+      (wrappedError as any).__wrapped__ = true
+      console.error = wrappedError
+    }
 
-      originalLog.apply(console, args)
-    };
-    (wrappedLog as any).__wrapped__ = true
-    console['log'] = wrappedLog
+    if (!(console.warn as any).__wrapped__) {
+      const wrappedWarn = (...args: unknown[]) => {
+        addLog('error', 'Console Warning', {
+          message: args.map(arg =>
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          ).join(' '),
+          url: window.location.href,
+          occurredAt: new Date().toISOString()
+        })
+        originalWarn.apply(console, args)
+      };
+      (wrappedWarn as any).__wrapped__ = true
+      console.warn = wrappedWarn
+    }
+
+    if (!(console['log'] as any).__wrapped__) {
+      const wrappedLog = (...args: unknown[]) => {
+        const message = args.map(arg =>
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' ')
+
+        // Filter out Next.js dev server noise
+        const shouldLogConsole = !message.startsWith('[Fast Refresh]')
+
+        if (shouldLogConsole) {
+          addLog('info', 'Console Log', {
+            message,
+            url: window.location.href,
+            occurredAt: new Date().toISOString()
+          })
+        }
+
+        originalLog.apply(console, args)
+      };
+      (wrappedLog as any).__wrapped__ = true
+      console['log'] = wrappedLog
+    }
 
     // Intercept fetch() for network request visibility
     const originalFetch = window.fetch
 
-    // Check if already wrapped
-    if ((window.fetch as any).__wrapped__) {
-      return
-    }
-
-    const wrappedFetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
+    // Wrap fetch only if not already wrapped
+    if (!(window.fetch as any).__wrapped__) {
+      const wrappedFetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
       const startTime = Date.now()
       const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || 'Unknown URL'
       const options = args[1] || {}
@@ -338,9 +337,10 @@ export function LogProvider({ children }: LogProviderProps) {
 
         throw error
       }
-    };
-    (wrappedFetch as any).__wrapped__ = true
-    window.fetch = wrappedFetch
+      };
+      (wrappedFetch as any).__wrapped__ = true
+      window.fetch = wrappedFetch
+    }
 
     // Intercept XMLHttpRequest for network request visibility
     // Use WeakMap to prevent metadata conflicts with reused XHR objects
@@ -354,12 +354,9 @@ export function LogProvider({ children }: LogProviderProps) {
     const originalXHROpen = XMLHttpRequest.prototype.open
     const originalXHRSend = XMLHttpRequest.prototype.send
 
-    // Check if already wrapped
-    if ((XMLHttpRequest.prototype.open as any).__wrapped__) {
-      return
-    }
-
-    const wrappedXHROpen = function(
+    // Wrap XMLHttpRequest only if not already wrapped
+    if (!(XMLHttpRequest.prototype.open as any).__wrapped__) {
+      const wrappedXHROpen = function(
       this: XMLHttpRequest,
       method: string,
       url: string | URL,
@@ -435,9 +432,10 @@ export function LogProvider({ children }: LogProviderProps) {
       })
 
       return originalXHRSend.call(this, body)
-    };
-    (wrappedXHRSend as any).__wrapped__ = true
-    XMLHttpRequest.prototype.send = wrappedXHRSend
+      };
+      (wrappedXHRSend as any).__wrapped__ = true
+      XMLHttpRequest.prototype.send = wrappedXHRSend
+    }
 
     // Use capture phase for error events to catch resource loading failures
     window.addEventListener('error', handleError, true)
