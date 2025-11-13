@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **PDF File Upload and Download UX Improvements** (2025-11-13):
+  - **Fixed file upload requiring two clicks**:
+    - Removed `key` prop from FileUpload component that was causing unnecessary remounts
+    - Added `e.target.value = ''` reset in handleChange to allow re-selecting the same file
+    - File selection via file browser now works correctly on first attempt
+    - **Impact**: Users can now upload files with a single interaction
+  - **Replaced automatic download with user-controlled save dialog**:
+    - Conversion result now stored in state instead of immediately downloading
+    - Added "Download" button that appears after conversion completes and persists
+    - Download button stays available for multiple downloads until new file is uploaded
+    - Implemented File System Access API for modern browsers (Chrome/Edge)
+    - Users can now choose save location and filename via native save dialog
+    - Fallback to traditional download for browsers without File System Access API
+    - Button text simplified from "Download Markdown File" to "Download"
+    - Success message now stays visible (no disappearing/moving UI elements)
+    - **Impact**: Users have full control over where and how to save converted files, and can download multiple times
+  - **Updated "How it works" section** to reflect new download workflow
+  - **Files Modified**: page.tsx, FileUpload.tsx
+  - Build: ✅ | Lint: ✅
+
+### Fixed
 - **React setState-in-render Warning Fixed** (2025-11-13):
   - Fixed "Cannot update a component while rendering a different component" warning in PDF tool
   - **Root cause**: `addLog()` was called inside `setOptions()` state updater function

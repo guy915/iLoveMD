@@ -92,6 +92,11 @@ export default function FileUpload({
     if (e.target.files && e.target.files[0]) {
       addLog('info', 'File selected via file browser')
       validateAndSelect(e.target.files[0])
+      // Reset input value to allow selecting the same file again
+      e.target.value = ''
+    } else {
+      // User cancelled file selection
+      addLog('info', 'File selection cancelled')
     }
   }, [addLog, validateAndSelect])
 
