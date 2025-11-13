@@ -56,9 +56,12 @@ Create a `.env.local` file (optional, for development):
 2. Enter your Marker API key (stored locally in your browser)
    - Get your free API key at [datalab.to](https://www.datalab.to/)
 3. Upload a PDF file
-4. Click "Convert to Markdown"
-5. Wait for processing (may take a few minutes for large files)
-6. Download automatically starts when complete
+4. Configure conversion options (optional)
+5. Click "Convert to Markdown"
+6. Wait for processing (may take a few minutes for large files)
+7. Click "Download" to save the file
+   - On modern browsers (Chrome/Edge), you'll get a save dialog to choose where to save
+   - On other browsers, the file downloads to your default downloads folder
 
 ---
 
