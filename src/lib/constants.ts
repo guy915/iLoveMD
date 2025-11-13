@@ -57,7 +57,6 @@ export const API_ENDPOINTS = {
 
 // LocalStorage keys
 export const STORAGE_KEYS = {
-  MARKER_API_KEY: 'markerApiKey',
   MARKER_OPTIONS: 'markerOptions',
 } as const
 
