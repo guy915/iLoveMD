@@ -51,6 +51,12 @@ These steps should be your first to-do (a session will begin with a system promp
 
 ---
 
+## Documentation
+
+Before updating documentation, read it fully.
+
+---
+
 ## Development API Keys
 
 **Test Marker API Key:** `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
@@ -61,26 +67,6 @@ These steps should be your first to-do (a session will begin with a system promp
 ```typescript
 const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
 ```
-
-**Why it's hardcoded:**
-- This is a **development/testing key** provided for convenience
-- The app is still in **development** - this is NOT a production security risk
-- Users can still provide their own API key if they want
-- The key is **intentionally public** for testing purposes
-- It makes the app immediately testable without configuration
-
-**DO NOT:**
-- ❌ Remove the hardcoded key thinking it's a security risk
-- ❌ Move it to environment variables (`.env.local` is gitignored and not shared)
-- ❌ Replace it with an empty string
-- ❌ Flag it as a security issue
-
-**This is intentional and approved by the project owner.**
-
-**Note about `.env.local`:**
-- `.env.local` exists for local development but is gitignored
-- The hardcoded value is the source of truth
-- Environment variables are NOT used for this project
 
 ---
 
