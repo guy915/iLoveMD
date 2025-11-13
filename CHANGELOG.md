@@ -7,29 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Autoscroll to Diagnostic Logging Panel** (2025-11-13):
+  - Logs now automatically scroll to bottom when new entries are added
+  - Implemented smooth scrolling behavior for better UX
+  - Added `logsContainerRef` to track scrollable container
+  - Implemented useEffect hook to scroll on logs change
+  - Only scrolls when panel is open and logs exist
+  - **Impact**: Users no longer need to manually scroll to see latest logs
+  - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+
+### Changed
+- **Log Counter Display Improvement** (2025-11-13):
+  - Changed log counter from array length to latest log ID
+  - Counter now shows consistent sequential number (persists across navigation)
+  - Shows total number of logs created in session, not just current array size
+  - **Impact**: More accurate and consistent log count display
+  - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+
 ### Fixed
-- **API Key Persistence & Diagnostic Panel Improvements** (2025-11-13):
-  - **Removed unused API key storage constant**:
-    - Deleted `STORAGE_KEYS.MARKER_API_KEY` from constants.ts
-    - API key already not persisted (resets to test key on each session)
-    - Cleanup of vestigial code from earlier implementation
-  - **Added autoscroll to diagnostic logging panel**:
-    - Logs now automatically scroll to bottom when new entries are added
-    - Added `logsContainerRef` to track scrollable container
-    - Implemented useEffect hook to scroll on logs change
-    - Only scrolls when panel is open and logs exist
-    - **Impact**: Users no longer need to manually scroll to see latest logs
-  - **Fixed API key not loading**:
-    - Created `.env.local` file with test API key
-    - Environment variable `NEXT_PUBLIC_MARKER_TEST_KEY` now properly loaded
-    - API key input box now pre-filled with test key on page load
-    - **Impact**: Users can immediately test PDF conversion without entering key
-  - **Removed log counter from diagnostic panel button**:
-    - Removed badge showing log count from "Logs" button
-    - Simplified button UI to just "Logs" with dropdown arrow
-    - **Impact**: Cleaner, less cluttered interface
-  - **Files Modified**: 2 (constants.ts, GlobalDiagnosticPanel.tsx)
-  - **Files Created**: 1 (.env.local)
+- **API Key Pre-fill Issue** (2025-11-13):
+  - Hardcoded test API key directly in component state initialization
+  - API key input box now pre-filled with test key on page load
+  - Removed dependency on `.env.local` (which is gitignored and not shared)
+  - **Impact**: Users can immediately test PDF conversion without configuration
+  - **Files Modified**: pdf-to-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
+
+### Removed
+- **Unused API Key Storage Constant** (2025-11-13):
+  - Deleted `STORAGE_KEYS.MARKER_API_KEY` from constants.ts
+  - API key already not persisted (resets to test key on each session)
+  - Cleanup of vestigial code from earlier implementation
+  - **Files Modified**: constants.ts
   - Build: ✅ | Lint: ✅
 
 ### Changed

@@ -489,14 +489,16 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ## Session Notes (Current Session Only)
 
 ### 2025-11-13 - API Key Persistence & Diagnostic Panel Improvements
-- **Changes**:
-  - Removed unused `STORAGE_KEYS.MARKER_API_KEY` constant (vestigial code)
-  - Added autoscroll to diagnostic logging panel (scrolls to latest log automatically)
-  - Fixed API key not loading (created .env.local with test key)
-  - Removed log counter badge from diagnostic panel button (cleaner UI)
+- **Added**:
+  - Autoscroll to diagnostic logging panel (smooth scrolling to latest log)
+- **Changed**:
+  - Log counter now shows latest log ID instead of array length (more consistent)
+- **Fixed**:
+  - API key now pre-filled with hardcoded test key (no env file needed)
+- **Removed**:
+  - Unused `STORAGE_KEYS.MARKER_API_KEY` constant (cleanup)
 - **Testing**: Build ✅ | Lint ✅ | Manual testing pending
-- **Files Modified**: 2 (constants.ts, GlobalDiagnosticPanel.tsx)
-- **Files Created**: 1 (.env.local)
+- **Files Modified**: 3 (constants.ts, GlobalDiagnosticPanel.tsx, pdf-to-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
 ---

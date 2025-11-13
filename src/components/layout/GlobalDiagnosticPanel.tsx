@@ -13,7 +13,10 @@ export default function GlobalDiagnosticPanel() {
   useEffect(() => {
     if (isOpen && logsContainerRef.current && logs.length > 0) {
       // Scroll to bottom with smooth behavior
-      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight
+      logsContainerRef.current.scrollTo({
+        top: logsContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      })
     }
   }, [logs, isOpen])
 
@@ -46,6 +49,9 @@ export default function GlobalDiagnosticPanel() {
         aria-label="Toggle diagnostic logs"
       >
         <span className="text-sm font-medium">Logs</span>
+        <span className="bg-blue-500 px-2 py-0.5 rounded-full text-xs" suppressHydrationWarning>
+          {logs.length > 0 ? logs[logs.length - 1].id : 0}
+        </span>
         <span className="text-xs" aria-hidden="true">
           {isOpen ? '▼' : '▶'}
         </span>
