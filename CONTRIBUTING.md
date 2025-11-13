@@ -143,10 +143,11 @@ export default function ComponentName({ prop1, prop2 }) {
 
 ### Naming Conventions
 
-- **Components**: PascalCase (e.g., `Button.js`, `FileUpload.js`)
-- **Utilities**: camelCase (e.g., `downloadUtils.js`)
-- **Pages**: lowercase (e.g., `page.js`, `layout.js`)
-- **Hooks**: camelCase with 'use' prefix (e.g., `useLocalStorage.js`)
+- **Components**: PascalCase (e.g., `Button.tsx`, `FileUpload.tsx`)
+- **Utilities**: camelCase (e.g., `downloadUtils.ts`)
+- **Pages**: lowercase (e.g., `page.tsx`, `layout.tsx`)
+- **Services**: camelCase (e.g., `storageService.ts`, `markerApiService.ts`)
+- **Types**: lowercase (e.g., `index.ts` in types directory)
 
 ### Tailwind CSS
 
