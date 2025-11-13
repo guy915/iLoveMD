@@ -493,11 +493,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - File upload now works correctly on first click (removed unnecessary key prop remount)
   - Added input value reset to allow re-selecting same file
   - Replaced automatic download with user-controlled save dialog
+  - Download button now persists after download (stays until new file uploaded)
   - Implemented File System Access API for modern browsers with fallback
   - Users now get native save dialog to choose location and filename
+  - Button text simplified from "Download Markdown File" to "Download"
+  - Fixed potential memory leak by clearing timeout before setting new one
 - **Updated**: README.md and page instructions to reflect new download workflow
 - **Testing**: Build ✅ | Lint ✅
-- **Files Modified**: 3 (page.tsx, FileUpload.tsx, README.md, CHANGELOG.md)
+- **Files Modified**: 2 (page.tsx, FileUpload.tsx)
 - **Documentation Updated**: CHANGELOG.md, README.md, CHECKLIST.md
 
 ### 2025-11-13 - React setState Warning Fix
