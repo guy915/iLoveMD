@@ -32,15 +32,9 @@ ui:
 tools:
   - changed-files:
     - any-glob-to-any-file:
-      - 'src/lib/processors/**/*'
       - 'src/app/pdf-to-markdown/**/*'
       - 'src/app/html-to-markdown/**/*'
       - 'src/app/merge-markdown/**/*'
-
-hooks:
-  - changed-files:
-    - any-glob-to-any-file:
-      - 'src/hooks/**/*'
 
 api:
   - changed-files:

@@ -52,9 +52,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       }
     }
 
-    // Log the options being used
-    console.log('[Marker API] Processing with options:', options)
-
     // Prepare form data for Marker API
     const markerFormData = new FormData()
     markerFormData.append('file', file)
