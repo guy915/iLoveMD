@@ -7,6 +7,15 @@ export default function GlobalDiagnosticPanel() {
   const { logs, addLog } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+  const logsContainerRef = useRef<HTMLDivElement>(null)
+
+  // Autoscroll to latest log when logs change and panel is open
+  useEffect(() => {
+    if (isOpen && logsContainerRef.current && logs.length > 0) {
+      // Scroll to bottom instantly (no animation - faster with many logs)
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight
+    }
+  }, [logs, isOpen])
 
   // Click outside to close
   useEffect(() => {
@@ -38,7 +47,7 @@ export default function GlobalDiagnosticPanel() {
       >
         <span className="text-sm font-medium">Logs</span>
         <span className="bg-blue-500 px-2 py-0.5 rounded-full text-xs" suppressHydrationWarning>
-          {logs.length}
+          {logs.length > 0 ? logs[logs.length - 1].id : 0}
         </span>
         <span className="text-xs" aria-hidden="true">
           {isOpen ? '▼' : '▶'}
@@ -142,10 +151,7 @@ Log Format: #ID [timestamp] TYPE: message
                 const fullCopy = metadata + logsText
 
                 navigator.clipboard.writeText(fullCopy)
-                addLog('info', 'Logs copied to clipboard', {
-                  logCount: logs.length,
-                  timestamp: new Date().toISOString()
-                })
+                addLog('info', 'Logs copied to clipboard')
               }}
               className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
             >
@@ -154,7 +160,7 @@ Log Format: #ID [timestamp] TYPE: message
           </div>
 
           {/* Logs content - user-select-text makes it easy to select and copy */}
-          <div className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text">
+          <div ref={logsContainerRef} className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text">
             {logs.length === 0 ? (
               <div className="text-gray-400 text-center py-8 select-none">
                 No logs yet. Logs will appear here as you interact with the website.

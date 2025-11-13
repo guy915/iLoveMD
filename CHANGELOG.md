@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Removed Confusing logCount from Copy Logs** (2025-11-13):
+  - Removed `logCount` and `timestamp` from "Logs copied to clipboard" log data
+  - These values were confusing (showed count BEFORE the log was added)
+  - The log ID already provides sequential count information
+  - Timestamp is already part of every log entry
+  - **Impact**: Cleaner, less confusing log entries
+  - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+
+### Added
+- **Autoscroll to Diagnostic Logging Panel** (2025-11-13):
+  - Logs now automatically scroll to bottom when new entries are added
+  - Uses instant scrolling (no animation) for better performance with many logs
+  - Added `logsContainerRef` to track scrollable container
+  - Implemented useEffect hook to scroll on logs change
+  - Only scrolls when panel is open and logs exist
+  - **Impact**: Users no longer need to manually scroll to see latest logs
+  - **Note**: Smooth scrolling was tested but removed - caused annoying delays with hundreds of logs
+  - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+- **Development API Key Documentation** (2025-11-13):
+  - Added comprehensive documentation in CLAUDE.md about hardcoded test API key
+  - Explicitly states the key should NOT be removed by future Claude sessions
+  - Explains why it's hardcoded and that it's intentional for development
+  - Prevents future confusion about "security risks"
+  - **Files Modified**: CLAUDE.md
+  - Build: ✅ | Lint: ✅
+
+### Changed
+- **Log Counter Display Improvement** (2025-11-13):
+  - Changed log counter from array length to latest log ID
+  - Counter now shows consistent sequential number (persists across navigation)
+  - Shows total number of logs created in session, not just current array size
+  - **Impact**: More accurate and consistent log count display
+  - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+
+### Fixed
+- **API Key Pre-fill Issue** (2025-11-13):
+  - Hardcoded test API key directly in component state initialization
+  - API key input box now pre-filled with test key on page load
+  - Removed dependency on `.env.local` (which is gitignored and not shared)
+  - **Impact**: Users can immediately test PDF conversion without configuration
+  - **Files Modified**: pdf-to-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
+
+### Removed
+- **Unused API Key Storage Constant** (2025-11-13):
+  - Deleted `STORAGE_KEYS.MARKER_API_KEY` from constants.ts
+  - API key already not persisted (resets to test key on each session)
+  - Cleanup of vestigial code from earlier implementation
+  - **Files Modified**: constants.ts
+  - Build: ✅ | Lint: ✅
+
 ### Changed
 - **Codebase Cleanup and Polish** (2025-11-13):
   - **CI/CD Console Detection Fix** (`.github/workflows/ci.yml`):
