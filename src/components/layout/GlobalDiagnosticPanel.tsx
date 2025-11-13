@@ -151,10 +151,7 @@ Log Format: #ID [timestamp] TYPE: message
                 const fullCopy = metadata + logsText
 
                 navigator.clipboard.writeText(fullCopy)
-                addLog('info', 'Logs copied to clipboard', {
-                  logCount: logs.length,
-                  timestamp: new Date().toISOString()
-                })
+                addLog('info', 'Logs copied to clipboard')
               }}
               className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
             >

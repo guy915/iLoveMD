@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Removed Confusing logCount from Copy Logs** (2025-11-13):
+  - Removed `logCount` and `timestamp` from "Logs copied to clipboard" log data
+  - These values were confusing (showed count BEFORE the log was added)
+  - The log ID already provides sequential count information
+  - Timestamp is already part of every log entry
+  - **Impact**: Cleaner, less confusing log entries
+  - **Files Modified**: GlobalDiagnosticPanel.tsx
+  - Build: ✅ | Lint: ✅
+
 ### Added
 - **Autoscroll to Diagnostic Logging Panel** (2025-11-13):
   - Logs now automatically scroll to bottom when new entries are added
