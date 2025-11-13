@@ -259,13 +259,7 @@ export default function PdfToMarkdownPage() {
 
           setStatus('File saved successfully! You can download again or upload a new file.')
 
-          // Restore focus to browser window after save dialog closes
-          window.focus()
-
         } catch (apiError: any) {
-          // Restore focus even if cancelled
-          window.focus()
-
           // User cancelled or API error
           if (apiError.name === 'AbortError') {
             addLog('info', 'User cancelled save dialog')
