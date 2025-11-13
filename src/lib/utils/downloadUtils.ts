@@ -3,17 +3,53 @@
  * @param content - The file content
  * @param filename - The filename to save as
  * @param mimeType - The MIME type of the file
+ * @throws Error if download fails (Blob creation, URL creation, or DOM operations fail)
  */
 export function downloadFile(content: string, filename: string, mimeType: string = 'text/markdown'): void {
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  let url: string | null = null
+  let link: HTMLAnchorElement | null = null
+
+  try {
+    // Validate inputs
+    if (!content) {
+      throw new Error('Cannot download empty content')
+    }
+    if (!filename || filename.trim().length === 0) {
+      throw new Error('Invalid filename provided')
+    }
+
+    // Create Blob (might fail if out of memory)
+    const blob = new Blob([content], { type: mimeType })
+
+    // Create object URL (might fail if too many URLs created)
+    url = URL.createObjectURL(blob)
+
+    // Create and trigger download link
+    link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+
+  } catch (error) {
+    // Re-throw with more context
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to download file "${filename}": ${errorMessage}`)
+
+  } finally {
+    // Cleanup: Always try to cleanup even if error occurred
+    try {
+      if (link && document.body.contains(link)) {
+        document.body.removeChild(link)
+      }
+      if (url) {
+        URL.revokeObjectURL(url)
+      }
+    } catch (cleanupError) {
+      // Log cleanup errors but don't throw
+      console.warn('Error during download cleanup:', cleanupError)
+    }
+  }
 }
 
 /**

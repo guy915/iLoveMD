@@ -8,16 +8,64 @@ const LOGS_STORAGE_KEY = 'diagnosticLogs'
 const LOG_COUNTER_KEY = 'diagnosticLogCounter'
 const MAX_LOGS = 500
 
+// Storage helper with quota checking
+let storageQuotaExceeded = false // Flag to avoid repeated quota errors
+let storageUnavailable = false // Flag if storage is completely unavailable
+
+function safeStorageGet(key: string): string | null {
+  if (typeof window === 'undefined' || storageUnavailable) return null
+
+  try {
+    return window.sessionStorage.getItem(key)
+  } catch (error) {
+    // Storage unavailable (private browsing, disabled, etc.)
+    if (!storageUnavailable) {
+      console.warn('sessionStorage unavailable:', error)
+      storageUnavailable = true
+    }
+    return null
+  }
+}
+
+function safeStorageSet(key: string, value: string): boolean {
+  if (typeof window === 'undefined' || storageUnavailable) return false
+
+  try {
+    window.sessionStorage.setItem(key, value)
+    storageQuotaExceeded = false // Reset flag on successful write
+    return true
+  } catch (error) {
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      if (!storageQuotaExceeded) {
+        console.warn('sessionStorage quota exceeded. Logs will continue in memory but won\'t persist across page refreshes.')
+        storageQuotaExceeded = true
+      }
+    } else {
+      if (!storageUnavailable) {
+        console.warn('sessionStorage write failed:', error)
+        storageUnavailable = true
+      }
+    }
+    return false
+  }
+}
+
+function safeStorageRemove(key: string): boolean {
+  if (typeof window === 'undefined' || storageUnavailable) return false
+
+  try {
+    window.sessionStorage.removeItem(key)
+    return true
+  } catch (error) {
+    console.warn('sessionStorage remove failed:', error)
+    return false
+  }
+}
+
 // Persistent session counter - survives page navigation, resets on browser close
 const getInitialCounter = (): number => {
-  if (typeof window === 'undefined') return 1
-  try {
-    const stored = window.sessionStorage.getItem(LOG_COUNTER_KEY)
-    return stored ? parseInt(stored, 10) : 1
-  } catch (error) {
-    console.error('Error loading log counter:', error)
-    return 1
-  }
+  const stored = safeStorageGet(LOG_COUNTER_KEY)
+  return stored ? parseInt(stored, 10) : 1
 }
 
 let persistentLogCounter = getInitialCounter()
@@ -50,25 +98,22 @@ interface LogProviderProps {
 export function LogProvider({ children }: LogProviderProps) {
   // Initialize logs from sessionStorage if available
   const [logs, setLogs] = useState<LogEntry[]>(() => {
-    if (typeof window === 'undefined') return []
-
     try {
-      const stored = window.sessionStorage.getItem(LOGS_STORAGE_KEY)
+      const stored = safeStorageGet(LOGS_STORAGE_KEY)
       return stored ? JSON.parse(stored) : []
     } catch (error) {
-      console.error('Error loading logs from sessionStorage:', error)
+      console.error('Error parsing logs from sessionStorage:', error)
       return []
     }
   })
 
   // Save logs to sessionStorage whenever they change
   useEffect(() => {
-    if (typeof window === 'undefined') return
-
     try {
-      window.sessionStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs))
+      safeStorageSet(LOGS_STORAGE_KEY, JSON.stringify(logs))
     } catch (error) {
-      console.error('Error saving logs to sessionStorage:', error)
+      // JSON.stringify might fail for circular references or large objects
+      console.error('Error stringifying logs for sessionStorage:', error)
     }
   }, [logs])
 
@@ -100,13 +145,7 @@ export function LogProvider({ children }: LogProviderProps) {
     const id = persistentLogCounter++
 
     // Save counter to sessionStorage for persistence across navigation
-    if (typeof window !== 'undefined') {
-      try {
-        window.sessionStorage.setItem(LOG_COUNTER_KEY, persistentLogCounter.toString())
-      } catch (error) {
-        console.error('Error saving log counter:', error)
-      }
-    }
+    safeStorageSet(LOG_COUNTER_KEY, persistentLogCounter.toString())
 
     const newLog: LogEntry = { timestamp, type, message, data, id }
     // Keep only last 500 logs (sliding window)
@@ -116,14 +155,8 @@ export function LogProvider({ children }: LogProviderProps) {
   const clearLogs = useCallback(() => {
     setLogs([])
     persistentLogCounter = 1 // Reset counter to 1 (logs start at #1)
-    if (typeof window !== 'undefined') {
-      try {
-        window.sessionStorage.removeItem(LOGS_STORAGE_KEY)
-        window.sessionStorage.removeItem(LOG_COUNTER_KEY)
-      } catch (error) {
-        console.error('Error clearing logs from sessionStorage:', error)
-      }
-    }
+    safeStorageRemove(LOGS_STORAGE_KEY)
+    safeStorageRemove(LOG_COUNTER_KEY)
   }, [])
 
   // Global error handlers - capture all JavaScript errors and promise rejections
