@@ -20,7 +20,7 @@ Converts documents to markdown (optimized for LLMs) with 3 tools:
 
 ### Session Initialization
 
-1. Read **all** documentation **fully**
+1. Read **all** documentation **fully** (CHANGELOG.md is exempt from a *full* read)
 2. Explore the codebase
 3. Ask questions
 
@@ -53,7 +53,7 @@ These steps should be your first to-do (a session will begin with a system promp
 
 ## Documentation
 
-Before updating documentation, read the full file.
+Before updating documentation, read the **full** file (CHANGELOG.md is exempt from a *full* read).
 
 ---
 
