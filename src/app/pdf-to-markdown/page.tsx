@@ -18,6 +18,8 @@ export default function PdfToMarkdownPage() {
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const [convertedMarkdown, setConvertedMarkdown] = useState<string | null>(null)
+  const [outputFilename, setOutputFilename] = useState<string | null>(null)
 
   // Options with localStorage persistence
   const [options, setOptions] = useState<MarkerOptions>(MARKER_CONFIG.DEFAULT_OPTIONS)
@@ -114,6 +116,9 @@ export default function PdfToMarkdownPage() {
   const handleFileSelect = useCallback((selectedFile: File) => {
     setFile(selectedFile)
     setError('')
+    // Clear previous conversion result when new file is selected
+    setConvertedMarkdown(null)
+    setOutputFilename(null)
   }, [])
 
   const handleConvert = useCallback(async () => {
@@ -181,42 +186,22 @@ export default function PdfToMarkdownPage() {
         throw new Error(result.error || 'Conversion failed')
       }
 
-      // Success - download the result
-      setStatus('Download starting...')
+      // Success - store the result for download
+      const filename = replaceExtension(file.name, 'md')
 
       addLog('success', `Conversion complete! (${formatDuration(totalConversionTime)} total)`, {
         totalDuration: formatDuration(totalConversionTime),
         contentLength: `${result.markdown.length} characters`,
-        contentSizeKB: formatBytesToKB(result.markdown.length)
-      })
-
-      const filename = replaceExtension(file.name, 'md')
-      addLog('info', `Triggering file download`, {
-        originalFile: file.name,
-        outputFile: filename,
-        mimeType: 'text/markdown'
-      })
-
-      downloadFile(result.markdown, filename, 'text/markdown')
-
-      addLog('success', 'File download triggered successfully', {
-        filename: filename,
-        totalDuration: formatDuration(totalConversionTime)
+        contentSizeKB: formatBytesToKB(result.markdown.length),
+        outputFile: filename
       })
 
       // Only update state if component is still mounted
       if (isMountedRef.current) {
-        setStatus('Conversion complete! File downloaded.')
+        setConvertedMarkdown(result.markdown)
+        setOutputFilename(filename)
+        setStatus('Conversion complete! Click Download to save the file.')
         setProcessing(false)
-        setFile(null)
-
-        // Clear status after 3 seconds (store timeout for cleanup)
-        statusTimeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            setStatus('')
-          }
-          statusTimeoutRef.current = null
-        }, 3000)
       }
 
     } catch (err) {
@@ -241,6 +226,88 @@ export default function PdfToMarkdownPage() {
       abortControllerRef.current = null
     }
   }, [apiKey, file, options, addLog])
+
+  const handleDownload = useCallback(async () => {
+    if (!convertedMarkdown || !outputFilename) return
+
+    try {
+      addLog('info', 'Download button clicked', {
+        filename: outputFilename,
+        contentSize: formatBytesToKB(convertedMarkdown.length)
+      })
+
+      // Check if File System Access API is available (Chrome/Edge)
+      if ('showSaveFilePicker' in window) {
+        try {
+          addLog('info', 'Using File System Access API for save dialog')
+
+          const handle = await (window as any).showSaveFilePicker({
+            suggestedName: outputFilename,
+            types: [{
+              description: 'Markdown files',
+              accept: { 'text/markdown': ['.md'] }
+            }]
+          })
+
+          const writable = await handle.createWritable()
+          await writable.write(convertedMarkdown)
+          await writable.close()
+
+          addLog('success', 'File saved successfully via File System Access API', {
+            filename: outputFilename
+          })
+
+          setStatus('File saved successfully!')
+
+          // Clear status and results after 3 seconds
+          statusTimeoutRef.current = setTimeout(() => {
+            if (isMountedRef.current) {
+              setStatus('')
+              setConvertedMarkdown(null)
+              setOutputFilename(null)
+            }
+            statusTimeoutRef.current = null
+          }, 3000)
+
+        } catch (apiError: any) {
+          // User cancelled or API error
+          if (apiError.name === 'AbortError') {
+            addLog('info', 'User cancelled save dialog')
+            return
+          }
+          throw apiError
+        }
+      } else {
+        // Fallback to traditional download for browsers without File System Access API
+        addLog('info', 'Using traditional download method (File System Access API not available)')
+        downloadFile(convertedMarkdown, outputFilename, 'text/markdown')
+
+        addLog('success', 'File download triggered', {
+          filename: outputFilename
+        })
+
+        setStatus('File download started! Check your downloads folder.')
+
+        // Clear status and results after 3 seconds
+        statusTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current) {
+            setStatus('')
+            setConvertedMarkdown(null)
+            setOutputFilename(null)
+          }
+          statusTimeoutRef.current = null
+        }, 3000)
+      }
+
+    } catch (err) {
+      const error = err as Error
+      addLog('error', `Download failed: ${error.message}`, {
+        error: error.message,
+        filename: outputFilename
+      })
+      setError(`Failed to download file: ${error.message}`)
+    }
+  }, [convertedMarkdown, outputFilename, addLog])
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
@@ -286,7 +353,6 @@ export default function PdfToMarkdownPage() {
       {/* File Upload Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <FileUpload
-          key={file?.name || 'empty'} // Force remount when file changes to clear state
           accept=".pdf,application/pdf"
           onFileSelect={handleFileSelect}
           maxSize={FILE_SIZE.MAX_PDF_FILE_SIZE}
@@ -381,16 +447,29 @@ export default function PdfToMarkdownPage() {
         </div>
       )}
 
-      {/* Convert Button */}
-      <div className="flex justify-center">
-        <Button
-          onClick={handleConvert}
-          disabled={processing || !file || !apiKey.trim()}
-          loading={processing}
-          variant="primary"
-        >
-          {processing ? 'Converting...' : 'Convert to Markdown'}
-        </Button>
+      {/* Action Buttons */}
+      <div className="flex justify-center gap-4">
+        {/* Convert Button - show when no conversion result or after download complete */}
+        {!convertedMarkdown && (
+          <Button
+            onClick={handleConvert}
+            disabled={processing || !file || !apiKey.trim()}
+            loading={processing}
+            variant="primary"
+          >
+            {processing ? 'Converting...' : 'Convert to Markdown'}
+          </Button>
+        )}
+
+        {/* Download Button - show when conversion is complete */}
+        {convertedMarkdown && (
+          <Button
+            onClick={handleDownload}
+            variant="primary"
+          >
+            Download Markdown File
+          </Button>
+        )}
       </div>
 
       {/* Info Section */}
@@ -401,12 +480,13 @@ export default function PdfToMarkdownPage() {
         <ul className="space-y-2 text-gray-600">
           <li>1. Enter your Marker API key (test key provided by default)</li>
           <li>2. Upload a PDF file (up to 200MB)</li>
-          <li>3. Click &quot;Convert to Markdown&quot;</li>
-          <li>4. Wait for processing (usually 30-60 seconds)</li>
-          <li>5. Your markdown file will download automatically</li>
+          <li>3. Configure conversion options (optional)</li>
+          <li>4. Click &quot;Convert to Markdown&quot;</li>
+          <li>5. Wait for processing (usually 30-60 seconds)</li>
+          <li>6. Click &quot;Download&quot; to save the file</li>
         </ul>
         <p className="mt-4 text-sm text-gray-500">
-          Note: API keys are not saved between sessions. Your files are never stored on our servers - processing happens through the Marker API.
+          Note: API keys are not saved between sessions. Your files are never stored on our servers - processing happens through the Marker API. On modern browsers (Chrome/Edge), you&apos;ll get a save dialog to choose where to save the file.
         </p>
       </div>
     </div>
