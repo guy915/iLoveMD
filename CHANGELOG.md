@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Additional Bug Fixes from Automated Review** (2025-11-13):
+  - **CRITICAL: LogContext Early Return Issues** (src/contexts/LogContext.tsx):
+    - Fixed early returns in wrapped checks that prevented subsequent setup
+    - Console, fetch, and XHR wrapping now skip only their specific operation, not entire setup
+    - Event listeners and cleanup handlers now always registered
+    - Impact: Network and error logging work correctly even after hot reload
+  - **CRITICAL: replaceExtension Logic Error** (src/lib/utils/downloadUtils.ts:31-48):
+    - Fixed handling of multiple leading dots (e.g., `..config`)
+    - Previous fix incorrectly produced `..md` instead of `..config.md`
+    - Now checks if all chars before last dot are dots using regex `/^\.+$/`
+    - Added comprehensive test case for `...config` → `...config.md`
+    - Impact: Correct filename generation for all edge cases including hidden files
+  - **Testing**:
+    - Build: ✅ (`npm run build` - passes)
+    - Lint: ✅ (`npm run lint` - passes)
+    - Addressed all issues flagged by Codex and Copilot AI automated reviews
+  - **Files Modified**: 2 (downloadUtils.ts, LogContext.tsx)
+
 - **Critical Bug Fixes and Code Quality Improvements** (2025-11-13):
   - **CRITICAL: Memory Leak in PDF Polling** (src/app/pdf-to-markdown/page.tsx):
     - Fixed memory leak where polling continued after component unmount
