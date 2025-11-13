@@ -57,6 +57,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅ | Tested: ✅
 
 ### Changed
+- **Complete TypeScript Migration** (2025-11-12):
+  - **Completed migration of remaining app files to TypeScript**:
+    - **Core app files migrated** (4 files):
+      - `src/app/layout.js` → `layout.tsx` - Added Metadata type, ReactNode for children prop
+      - `src/app/page.js` → `page.tsx` - Homepage component fully typed
+      - `src/app/loading.js` → `loading.tsx` - Loading component
+      - `src/app/not-found.js` → `not-found.tsx` - 404 error page
+    - **Configuration cleanup**:
+      - Deleted `jsconfig.json` (no longer needed after full TS migration)
+      - TypeScript now handles all path aliases via `tsconfig.json`
+    - **100% TypeScript coverage** - All logic files now TypeScript:
+      - Components: ✅ All TypeScript
+      - Utilities: ✅ All TypeScript
+      - API routes: ✅ All TypeScript
+      - Pages: ✅ All TypeScript
+      - Contexts: ✅ All TypeScript
+  - **Benefits**:
+    - Complete type safety across entire application
+    - No more JS/TS mixing - consistent codebase
+    - Better IDE support and autocomplete everywhere
+    - Safer refactoring with type checking on all files
+  - Build: ✅ | Lint: ✅ | Files migrated: 4 | jsconfig.json deleted
+
+- **Type System Cleanup** (2025-11-12):
+  - **Removed duplicate type definitions** from `src/types/index.ts`:
+    - Removed `ButtonProps` (already defined in Button.tsx with loadingText prop)
+    - Removed `FileUploadProps` (already defined in FileUpload.tsx)
+    - Removed `ToolTileProps` (already defined in ToolTile.tsx)
+  - **Improved type organization**:
+    - Component prop types kept in component files (better tree-shaking)
+    - Shared types (API, logging, navigation) kept in types/index.ts
+    - Eliminated type inconsistencies between component and types file
+  - **Benefits**:
+    - Single source of truth for component types
+    - No duplicate maintenance of type definitions
+    - Better code organization and type locality
+  - Build: ✅ | Lines removed: ~47
+
+### Added
+- **Placeholder Pages for Missing Routes** (2025-11-12):
+  - Created professional "Coming Soon" pages for planned features:
+    - `/html-to-markdown` - HTML to Markdown converter placeholder
+    - `/merge-markdown` - Merge Markdown files placeholder
+    - `/help` - Comprehensive help and troubleshooting page
+    - `/about` - Project information and technology page
+  - **Each placeholder includes**:
+    - Professional design with icon and coming soon badge
+    - Planned features list
+    - Navigation back to home and working tools
+    - Consistent styling with rest of application
+  - **Help page includes**:
+    - Getting Started section (What is AI Doc Prep, API key instructions, security)
+    - Troubleshooting guide (common errors and solutions)
+    - Diagnostic logs usage instructions
+    - Contact information for additional support
+  - **About page includes**:
+    - Project mission and philosophy
+    - Why we built this (privacy, simplicity, no accounts)
+    - Technology stack breakdown
+    - Current feature status (PDF available, others coming soon)
+    - Open source information
+  - **Benefits**:
+    - No more 404 errors for navigation menu links
+    - Clear communication about feature roadmap
+    - Professional user experience
+    - SEO-friendly pages with proper content
+  - Build: ✅ | Lint: ✅ | Files created: 4
+
+### Fixed
+- **CI/CD Pattern Updates** (2025-11-12):
+  - **Updated code quality checks to include TypeScript files**:
+    - Console.log check: Added `"*.ts" "*.tsx"` to pattern (was only checking .js/.jsx)
+    - TODO check: Added `"*.ts" "*.tsx"` to pattern
+    - Hardcoded secrets check: Added `"*.ts" "*.tsx"` to pattern
+  - **Fixes issue where**:
+    - CI/CD was only checking JavaScript files
+    - TypeScript files were skipped in quality checks
+    - Would miss console.log statements in .tsx files
+  - **Benefits**:
+    - Comprehensive code quality checks across all file types
+    - Catches issues in TypeScript files
+    - Consistent enforcement of code standards
+  - Files modified: `.github/workflows/ci.yml`
+
+- **Labeler Configuration Cleanup** (2025-11-12):
+  - **Removed references to non-existent directories**:
+    - Removed `src/lib/processors/**/*` (directory doesn't exist)
+    - Removed `hooks:` section entirely (no hooks directory)
+  - **Benefits**:
+    - No more labeler warnings about missing paths
+    - Accurate PR labeling based on actual directory structure
+    - Cleaner CI/CD output
+  - Files modified: `.github/labeler.yml`
+
+- **Environment Variable Security** (2025-11-12):
+  - **Moved hardcoded API key to environment variable**:
+    - Created `.env.example` with documentation
+    - Created `.env.local` with test API key (gitignored)
+    - Updated PDF tool to use `process.env.NEXT_PUBLIC_MARKER_TEST_KEY`
+    - Removed hardcoded key from source code
+  - **Security improvements**:
+    - API key no longer in version control
+    - Easy to change key without code changes
+    - Proper separation of config from code
+    - `.env.local` is gitignored
+  - **Benefits**:
+    - Better security practices
+    - Easier key management
+    - Follows Next.js best practices
+    - CI/CD secret check now passes
+  - Files created: `.env.example`, `.env.local` | Files modified: `pdf-to-markdown/page.tsx`
+
+### Changed
 - **TypeScript Refactoring** (2025-11-12):
   - **Migrated codebase from JavaScript to TypeScript** for improved type safety and developer experience:
     - **Setup & Configuration**:

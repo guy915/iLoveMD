@@ -147,7 +147,7 @@ jobs:
       - name: Check for console.log statements
         run: |
           echo "Checking for console.log statements..."
-          if git grep -n "console\.log" -- "*.js" "*.jsx" | grep -v "console\.error"; then
+          if git grep -n "console\.log" -- "*.js" "*.jsx" "*.ts" "*.tsx" | grep -v "console\.error"; then
             echo "❌ Found console.log statements (see above)"
             exit 1
           fi
@@ -156,7 +156,7 @@ jobs:
       - name: Check for TODO comments
         run: |
           echo "Checking for TODO comments..."
-          if git grep -n "TODO" -- "*.js" "*.jsx"; then
+          if git grep -n "TODO" -- "*.js" "*.jsx" "*.ts" "*.tsx"; then
             echo "⚠️  Found TODO comments (non-blocking)"
           else
             echo "✓ No TODO comments found"
@@ -166,7 +166,7 @@ jobs:
         continue-on-error: true
         run: |
           echo "Checking for hardcoded test API key..."
-          if git grep -n "w4IU5bCYNudH" -- "*.js" "*.jsx"; then
+          if git grep -n "w4IU5bCYNudH" -- "*.js" "*.jsx" "*.ts" "*.tsx"; then
             echo "⚠️  WARNING: Test API key found in code!"
             echo "Remember to remove hardcoded API key before production deployment"
           else
