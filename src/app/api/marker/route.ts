@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { FILE_SIZE, MARKER_CONFIG } from '@/lib/constants'
+import { MARKER_CONFIG, FILE_SIZE, API_ENDPOINTS } from '@/lib/constants'
 import { formatBytesToMB } from '@/lib/utils/formatUtils'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
 
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
 
     // Validate API key format (basic check)
     const trimmedKey = apiKey.trim()
-    if (trimmedKey.length < 10) {
+    if (trimmedKey.length < MARKER_CONFIG.VALIDATION.MIN_API_KEY_LENGTH) {
       return NextResponse.json(
         { success: false, error: 'Invalid API key format' },
         { status: 400 }
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     // Submit to Marker API with timeout
     let response: Response
     try {
-      response = await fetchWithTimeout('https://www.datalab.to/api/v1/marker', {
+      response = await fetchWithTimeout(API_ENDPOINTS.MARKER_EXTERNAL, {
         method: 'POST',
         headers: {
           'X-Api-Key': trimmedKey,

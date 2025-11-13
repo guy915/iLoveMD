@@ -21,26 +21,6 @@ export const FILE_SIZE = {
   MAX_TOTAL_MERGE_SIZE: GB, // 1GB total
 } as const
 
-// Marker API Configuration
-export const MARKER_CONFIG = {
-  // Polling settings for async conversion status checks
-  POLL_INTERVAL_MS: 2000, // Poll every 2 seconds
-  MAX_POLL_ATTEMPTS: 150, // 5 minutes max (150 * 2 seconds = 300 seconds)
-
-  // API URLs
-  SIGN_UP_URL: 'https://www.datalab.to/app/keys',
-
-  // Default conversion options
-  DEFAULT_OPTIONS: {
-    paginate: false,
-    format_lines: false,
-    use_llm: false,
-    disable_image_extraction: false,
-    output_format: 'markdown',
-    langs: 'English'
-  } as MarkerOptions,
-} as const
-
 // Navigation links for header
 export const NAV_LINKS: readonly NavLink[] = [
   { href: '/pdf-to-markdown', label: 'PDF to Markdown', shortLabel: 'PDF' },
@@ -72,9 +52,41 @@ export const TOOL_CARDS: readonly ToolCard[] = [
 // API endpoints
 export const API_ENDPOINTS = {
   MARKER: '/api/marker',
+  MARKER_EXTERNAL: 'https://www.datalab.to/api/v1/marker',
 } as const
 
 // LocalStorage keys
 export const STORAGE_KEYS = {
   MARKER_API_KEY: 'markerApiKey',
+  MARKER_OPTIONS: 'markerOptions',
+} as const
+
+// Marker API configuration
+export const MARKER_CONFIG = {
+  // Default options for PDF conversion
+  DEFAULT_OPTIONS: {
+    paginate: false,
+    format_lines: false,
+    use_llm: false,
+    disable_image_extraction: false,
+    output_format: 'markdown',
+    langs: 'English'
+  } as MarkerOptions,
+
+  // Polling configuration
+  POLLING: {
+    INTERVAL_MS: 2000, // Poll every 2 seconds
+    MAX_ATTEMPTS: 150, // 5 minutes max (150 * 2 seconds)
+    TIMEOUT_DURATION_MS: 300000, // 5 minutes in milliseconds
+  },
+
+  // Validation rules
+  VALIDATION: {
+    MIN_API_KEY_LENGTH: 10,
+    ACCEPTED_MIME_TYPES: ['application/pdf'] as const,
+    ACCEPTED_EXTENSIONS: ['.pdf'] as const,
+  },
+
+  // API URLs
+  SIGN_UP_URL: 'https://www.datalab.to/app/keys',
 } as const
