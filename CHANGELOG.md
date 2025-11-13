@@ -8,13 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **Diagnostics Panel Scroll Prevention** (2025-11-13):
-  - Fixed page scrolling when mouse is inside diagnostics panel
-  - Implemented hover detection with mouseenter/mouseleave handlers
-  - Added document-level wheel event listener that prevents default when hovering
-  - Page scroll is now completely disabled when mouse is over the panel
-  - Panel content still scrolls normally
-  - **Impact**: No page scrolling while reviewing logs - better UX
+- **Diagnostics Panel Scroll Leak** (2025-11-13):
+  - Fixed page scrolling while scrolling within diagnostics panel
+  - Added boundary detection to logs container scroll handler
+  - Panel scrolls normally, page only scrolls when at top/bottom edge
+  - Prevents scroll event propagation when scrolling within panel content
+  - Allows natural scroll chaining when reaching panel edges
+  - **Impact**: Page stays still while reviewing logs, natural behavior at edges
   - **Files Modified**: GlobalDiagnosticPanel.tsx
   - Build: ✅ | Lint: ✅
 
