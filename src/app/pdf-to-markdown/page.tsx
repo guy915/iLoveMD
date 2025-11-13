@@ -259,16 +259,8 @@ export default function PdfToMarkdownPage() {
 
           setStatus('File saved successfully! You can download again or upload a new file.')
 
-          // Clear status message after 3 seconds, but keep download button available
-          if (statusTimeoutRef.current) {
-            clearTimeout(statusTimeoutRef.current)
-          }
-          statusTimeoutRef.current = setTimeout(() => {
-            if (isMountedRef.current) {
-              setStatus('')
-            }
-            statusTimeoutRef.current = null
-          }, 3000)
+          // Restore focus to browser window after save dialog closes
+          window.focus()
 
         } catch (apiError: any) {
           // User cancelled or API error
@@ -288,17 +280,6 @@ export default function PdfToMarkdownPage() {
         })
 
         setStatus('File download started! Check your downloads folder. You can download again or upload a new file.')
-
-        // Clear status message after 3 seconds, but keep download button available
-        if (statusTimeoutRef.current) {
-          clearTimeout(statusTimeoutRef.current)
-        }
-        statusTimeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            setStatus('')
-          }
-          statusTimeoutRef.current = null
-        }, 3000)
       }
 
     } catch (err) {

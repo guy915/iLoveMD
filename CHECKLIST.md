@@ -497,7 +497,8 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Implemented File System Access API for modern browsers with fallback
   - Users now get native save dialog to choose location and filename
   - Button text simplified from "Download Markdown File" to "Download"
-  - Fixed potential memory leak by clearing timeout before setting new one
+  - Success message now stays visible (no disappearing timer causing UI shifts)
+  - Browser focus automatically restored after save dialog (no double-click required)
 - **Updated**: README.md and page instructions to reflect new download workflow
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 2 (page.tsx, FileUpload.tsx)

@@ -22,8 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Users can now choose save location and filename via native save dialog
     - Fallback to traditional download for browsers without File System Access API
     - Button text simplified from "Download Markdown File" to "Download"
-    - **Impact**: Users have full control over where and how to save converted files, and can download multiple times
-  - **Fixed potential memory leak**: Added clearTimeout before setting new timeout in download handler
+    - Success message now stays visible (no disappearing/moving UI elements)
+    - Browser focus automatically restored after save dialog closes (no double-click needed)
+    - **Impact**: Users have full control over where and how to save converted files, and can download multiple times with single clicks
   - **Updated "How it works" section** to reflect new download workflow
   - **Files Modified**: page.tsx, FileUpload.tsx
   - Build: ✅ | Lint: ✅
