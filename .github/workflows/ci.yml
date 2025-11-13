@@ -147,7 +147,7 @@ jobs:
       - name: Check for console.log statements
         run: |
           echo "Checking for console.log statements..."
-          if git grep -n "console\.log" -- "*.js" "*.jsx" "*.ts" "*.tsx" | grep -v "console\.error"; then
+          if git grep -n "console\.log" -- "*.js" "*.jsx" "*.ts" "*.tsx" | grep -v "console\.error" | grep -v "console\.warn"; then
             echo "❌ Found console.log statements (see above)"
             exit 1
           fi
