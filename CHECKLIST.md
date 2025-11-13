@@ -488,12 +488,12 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
-### 2025-11-13 - Diagnostics Panel Scroll Prevention
+### 2025-11-13 - Diagnostics Panel Scroll Leak Fix
 - **Fixed**:
-  - Page scrolling disabled when mouse is inside diagnostics panel
-  - Implemented hover tracking with isHovering state
-  - Added document-level wheel event listener with preventDefault
-  - Panel content scrolls normally while page scroll is blocked
+  - Page no longer scrolls while scrolling within diagnostics panel
+  - Implemented boundary detection in onWheel handler
+  - Stops event propagation when scrolling within content
+  - Allows scroll chaining at top/bottom edges (natural UX)
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (GlobalDiagnosticPanel.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
