@@ -241,8 +241,8 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ### 4.2 HTML Processing Utilities
 
-- [ ] Create HTML processor
-  - [ ] File: src/lib/processors/htmlProcessor.ts
+- [ ] Create HTML processor (client-side)
+  - [ ] File: src/lib/utils/htmlProcessor.ts
   - [ ] cleanHTML() function (remove scripts, styles, etc.)
   - [ ] convertToMarkdown() function (using Turndown)
   - [ ] Configure Turndown options
@@ -263,7 +263,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [ ] Download trigger
 
 - [ ] Implement tab selector
-  - [ ] Component: src/components/tools/TabSelector.tsx (optional)
+  - [ ] Inline in page component or create: src/components/common/TabSelector.tsx (optional)
   - [ ] Switch between file upload and URL input
   - [ ] Clear state when switching tabs
 
@@ -303,8 +303,8 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ### 5.1 Merge Processing Utilities
 
-- [ ] Create merge processor
-  - [ ] File: src/lib/processors/mergeProcessor.ts
+- [ ] Create merge processor (client-side)
+  - [ ] File: src/lib/utils/mergeProcessor.ts
   - [ ] readFiles() function
   - [ ] orderFiles() function
   - [ ] mergeFiles() function
@@ -315,7 +315,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 5.2 Merge Tool Components
 
 - [ ] Create FileList component
-  - [ ] File: src/components/tools/FileList.tsx
+  - [ ] File: src/components/common/FileList.tsx
   - [ ] Display uploaded files
   - [ ] Drag handles for reordering
   - [ ] Remove file buttons
