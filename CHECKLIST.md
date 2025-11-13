@@ -492,7 +492,10 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Fixed**:
   - React warning: "Cannot update a component while rendering a different component"
   - Root cause: `addLog()` called inside `setOptions()` state updater function
-  - Solution: Moved `addLog()` call outside updater using `setTimeout(..., 0)`
+  - Initial solution: Used `setTimeout(..., 0)` (had race condition issues per Copilot review)
+  - Improved solution: Implemented `useEffect` to observe option changes
+  - Added `prevOptionsRef` to detect which option changed by comparing states
+  - Logs now reflect actual committed state, no race conditions
   - Warning no longer appears when toggling conversion options
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (pdf-to-markdown/page.tsx)
