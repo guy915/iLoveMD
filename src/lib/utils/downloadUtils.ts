@@ -34,9 +34,9 @@ export function downloadFile(content: string, filename: string, mimeType: string
     link.click()
 
   } catch (error) {
-    // Re-throw with more context
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to download file "${filename}": ${errorMessage}`)
+    // Re-throw with more context and preserve error chain
+    const err = error instanceof Error ? error : new Error('Unknown download error')
+    throw new Error(`Failed to download file "${filename}": ${err.message}`, { cause: err })
 
   } finally {
     // Cleanup: Always try to cleanup even if error occurred
