@@ -71,7 +71,11 @@ export default function PdfToMarkdownPage() {
   const handleOptionChange = useCallback((key: keyof MarkerOptions, value: boolean | string) => {
     setOptions(prev => {
       const newOptions = { ...prev, [key]: value }
-      addLog('info', `Option changed: ${key}`, { newValue: value, allOptions: newOptions })
+      // Schedule log after state update completes (not during render)
+      // This prevents "Cannot update a component while rendering a different component" warning
+      setTimeout(() => {
+        addLog('info', `Option changed: ${key}`, { newValue: value, allOptions: newOptions })
+      }, 0)
       return newOptions
     })
   }, [addLog])
