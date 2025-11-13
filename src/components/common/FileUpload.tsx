@@ -37,7 +37,7 @@ export default function FileUpload({
   // Memoize file size calculations to avoid recalculating on every render
   const maxSizeMB = useMemo(() => Math.round(maxSize / FILE_SIZE.BYTES_PER_MB), [maxSize])
 
-  const handleDrag = (e: DragEvent<HTMLDivElement>) => {
+  const handleDrag = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -48,7 +48,7 @@ export default function FileUpload({
     } else if (e.type === "dragleave") {
       setDragActive(false)
     }
-  }
+  }, [addLog])
 
   const validateAndSelect = useCallback((file: File) => {
     setError(null)
@@ -77,7 +77,7 @@ export default function FileUpload({
     addLog('success', 'File validated and selected successfully', { fileName: file.name })
   }, [maxSize, maxSizeMB, onFileSelect, addLog])
 
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
@@ -86,26 +86,26 @@ export default function FileUpload({
       addLog('info', 'File dropped in drop zone')
       validateAndSelect(e.dataTransfer.files[0])
     }
-  }
+  }, [addLog, validateAndSelect])
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       addLog('info', 'File selected via file browser')
       validateAndSelect(e.target.files[0])
     }
-  }
+  }, [addLog, validateAndSelect])
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     addLog('info', 'File upload area clicked - Opening file browser')
     fileInputRef.current?.click()
-  }
+  }, [addLog])
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       fileInputRef.current?.click()
     }
-  }
+  }, [])
 
   return (
     <div>
