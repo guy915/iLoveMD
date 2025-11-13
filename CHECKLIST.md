@@ -491,9 +491,9 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 2025-11-13 - Diagnostics Panel Scroll Leak Fix
 - **Fixed**:
   - Page no longer scrolls while scrolling within diagnostics panel
-  - Implemented boundary detection in onWheel handler
-  - Stops event propagation when scrolling within content
-  - Allows scroll chaining at top/bottom edges (natural UX)
+  - Corrected boundary detection logic (was allowing propagation incorrectly)
+  - Now only allows page scroll when at edge AND scrolling past it
+  - Fixed: scrolling down from top no longer scrolls both panel and page
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (GlobalDiagnosticPanel.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md

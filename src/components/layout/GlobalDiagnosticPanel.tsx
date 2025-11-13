@@ -172,9 +172,13 @@ Log Format: #ID [timestamp] TYPE: message
               const isAtBottom = container.scrollHeight - container.scrollTop === container.clientHeight
               const isAtTop = container.scrollTop === 0
 
-              // Prevent page scroll if we're scrolling within the container bounds
-              // Only allow page scroll if we're at the edge and trying to scroll further
-              if ((isScrollingDown && !isAtBottom) || (isScrollingUp && !isAtTop)) {
+              // Only allow page scroll when we're at an edge AND scrolling past it
+              // At top scrolling up -> allow page scroll
+              // At bottom scrolling down -> allow page scroll
+              // All other cases -> stop propagation (scroll panel only)
+              const shouldScrollPage = (isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)
+
+              if (!shouldScrollPage) {
                 e.stopPropagation()
               }
             }}
