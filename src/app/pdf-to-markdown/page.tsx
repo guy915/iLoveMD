@@ -29,6 +29,7 @@ export default function PdfToMarkdownPage() {
   // Refs for cleanup and memory leak prevention
   const isMountedRef = useRef(true)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const statusTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Cleanup on unmount to prevent memory leaks
   useEffect(() => {
@@ -39,6 +40,11 @@ export default function PdfToMarkdownPage() {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
         abortControllerRef.current = null
+      }
+      // Clear status timeout
+      if (statusTimeoutRef.current) {
+        clearTimeout(statusTimeoutRef.current)
+        statusTimeoutRef.current = null
       }
     }
   }, [])
@@ -62,13 +68,13 @@ export default function PdfToMarkdownPage() {
     }
   }, [options, hasLoadedOptions])
 
-  const handleOptionChange = (key: keyof MarkerOptions, value: boolean | string) => {
+  const handleOptionChange = useCallback((key: keyof MarkerOptions, value: boolean | string) => {
     setOptions(prev => {
       const newOptions = { ...prev, [key]: value }
       addLog('info', `Option changed: ${key}`, { newValue: value, allOptions: newOptions })
       return newOptions
     })
-  }
+  }, [addLog])
 
   // Log component mount (once)
   useEffect(() => {
@@ -88,7 +94,7 @@ export default function PdfToMarkdownPage() {
     setError('')
   }, [])
 
-  const handleConvert = async () => {
+  const handleConvert = useCallback(async () => {
     if (!apiKey.trim()) {
       const errorMsg = 'Please enter your API key'
       setError(errorMsg)
@@ -182,11 +188,12 @@ export default function PdfToMarkdownPage() {
         setProcessing(false)
         setFile(null)
 
-        // Clear status after 3 seconds
-        setTimeout(() => {
+        // Clear status after 3 seconds (store timeout for cleanup)
+        statusTimeoutRef.current = setTimeout(() => {
           if (isMountedRef.current) {
             setStatus('')
           }
+          statusTimeoutRef.current = null
         }, 3000)
       }
 
@@ -211,7 +218,7 @@ export default function PdfToMarkdownPage() {
       // Cleanup abort controller
       abortControllerRef.current = null
     }
-  }
+  }, [apiKey, file, options, addLog])
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
