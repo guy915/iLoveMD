@@ -2,8 +2,10 @@
  * Triggers a file download in the browser
  * @param content - The file content
  * @param filename - The filename to save as
- * @param mimeType - The MIME type of the file
- * @throws Error if download fails (Blob creation, URL creation, or DOM operations fail)
+ * @param mimeType - The MIME type of the file (default: 'text/markdown')
+ * @throws Error if Blob creation, URL creation, or DOM operations fail.
+ *         Does NOT throw if the download is cancelled by the user or blocked by browser restrictions (e.g., popup blockers).
+ *         All errors include the filename in the error message for better debugging.
  */
 export function downloadFile(content: string, filename: string, mimeType: string = 'text/markdown'): void {
   let url: string | null = null

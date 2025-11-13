@@ -72,7 +72,13 @@ export interface MarkerPollResponse {
   error?: string
   /** Processing progress percentage (0-100) */
   progress?: number
-  /** Additional error details */
+  /**
+   * Additional structured error details.
+   * Populated when an error occurs (i.e., when `error` is set or `success` is false).
+   * Contains diagnostic information such as error type, HTTP status codes, or keys from malformed responses.
+   * Used for debugging and providing more informative feedback.
+   * Sanitized to avoid exposing sensitive internal implementation details.
+   */
   details?: Record<string, unknown>
 }
 
