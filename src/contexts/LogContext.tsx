@@ -152,7 +152,8 @@ export function LogProvider({ children }: LogProviderProps) {
     // Create a simple hash for deduplication - use lightweight hash instead of expensive JSON.stringify
     // For large objects, just use the keys instead of full stringification
     const dataKeys = data ? Object.keys(data).filter(k => k !== 'timestamp').sort().join(',') : ''
-    const hash = `${type}:${message}:${dataKeys}`
+    const dataValuesSnippet = data ? JSON.stringify(data).slice(0, 32) : ''
+    const hash = `${type}:${message}:${dataKeys}:${dataValuesSnippet}`
     const now = Date.now()
 
     // Check if we've seen this exact log recently (within deduplication window)
