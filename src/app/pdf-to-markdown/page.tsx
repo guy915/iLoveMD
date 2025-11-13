@@ -30,6 +30,7 @@ export default function PdfToMarkdownPage() {
   const isMountedRef = useRef(true)
   const abortControllerRef = useRef<AbortController | null>(null)
   const statusTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const prevOptionsRef = useRef<MarkerOptions>(options)
 
   // Cleanup on unmount to prevent memory leaks
   useEffect(() => {
@@ -68,13 +69,34 @@ export default function PdfToMarkdownPage() {
     }
   }, [options, hasLoadedOptions])
 
+  // Log option changes using useEffect to avoid setState-during-render warning
+  // This observes the committed state changes rather than calling addLog during render
+  useEffect(() => {
+    // Skip logging on initial load
+    if (!hasLoadedOptions) return
+
+    // Find which option changed by comparing with previous state
+    const prev = prevOptionsRef.current
+    const current = options
+
+    for (const key in current) {
+      const typedKey = key as keyof MarkerOptions
+      if (prev[typedKey] !== current[typedKey]) {
+        addLog('info', `Option changed: ${key}`, {
+          newValue: current[typedKey],
+          allOptions: current
+        })
+        break // Only log first change to avoid duplicate logs when multiple options change
+      }
+    }
+
+    // Update ref for next comparison
+    prevOptionsRef.current = options
+  }, [options, hasLoadedOptions, addLog])
+
   const handleOptionChange = useCallback((key: keyof MarkerOptions, value: boolean | string) => {
-    setOptions(prev => {
-      const newOptions = { ...prev, [key]: value }
-      addLog('info', `Option changed: ${key}`, { newValue: value, allOptions: newOptions })
-      return newOptions
-    })
-  }, [addLog])
+    setOptions(prev => ({ ...prev, [key]: value }))
+  }, [])
 
   // Log component mount (once)
   useEffect(() => {

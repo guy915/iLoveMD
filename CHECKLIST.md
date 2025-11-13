@@ -488,6 +488,19 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-13 - React setState Warning Fix
+- **Fixed**:
+  - React warning: "Cannot update a component while rendering a different component"
+  - Root cause: `addLog()` called inside `setOptions()` state updater function
+  - Initial solution: Used `setTimeout(..., 0)` (had race condition issues per Copilot review)
+  - Improved solution: Implemented `useEffect` to observe option changes
+  - Added `prevOptionsRef` to detect which option changed by comparing states
+  - Logs now reflect actual committed state, no race conditions
+  - Warning no longer appears when toggling conversion options
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 1 (pdf-to-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-13 - API Key Persistence & Diagnostic Panel Improvements
 - **Added**:
   - Autoscroll to diagnostic logging panel (instant scroll, no animation)
