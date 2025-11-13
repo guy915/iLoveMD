@@ -305,7 +305,9 @@ export async function convertBatchPdfToMarkdown(
   // Create ZIP file with successful conversions
   try {
     // Dynamically import JSZip (client-side only library)
-    const JSZip = (await import('jszip')).default
+    // Handle both ESM and CommonJS module formats
+    const JSZipModule = await import('jszip')
+    const JSZip = JSZipModule.default || JSZipModule
     const zip = new JSZip()
 
     for (const result of completed) {
