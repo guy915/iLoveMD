@@ -53,7 +53,7 @@ These steps should be your first to-do (a session will begin with a system promp
 
 ## Documentation
 
-Before updating documentation, read it fully.
+Before updating documentation, read the full file.
 
 ---
 
