@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **React setState-in-render Warning Fixed** (2025-11-13):
   - Fixed "Cannot update a component while rendering a different component" warning in PDF tool
-  - Issue occurred when changing options (checkboxes) - `addLog()` was called inside `setOptions()` updater function
-  - Moved logging call outside state updater using `setTimeout(..., 0)` to schedule after render completes
-  - Warning appeared at pdf-to-markdown/page.tsx:71-80 when LogProvider tried to update while PdfToMarkdownPage was rendering
-  - **Impact**: Console is now clean, no React warnings when toggling conversion options
+  - **Root cause**: `addLog()` was called inside `setOptions()` state updater function
+  - **Initial fix**: Used `setTimeout(..., 0)` to defer logging (had race condition issues)
+  - **Improved fix**: Implemented `useEffect` to observe option changes and log committed state
+  - Added `prevOptionsRef` to track previous options and detect which option changed
+  - Prevents race conditions from rapid option changes and logs the actual committed state
+  - Warning appeared at pdf-to-markdown/page.tsx when LogProvider tried to update while PdfToMarkdownPage was rendering
+  - **Impact**: Console is now clean, no React warnings, no race conditions, logs reflect actual state
   - **Files Modified**: pdf-to-markdown/page.tsx
   - Build: ✅ | Lint: ✅
 
