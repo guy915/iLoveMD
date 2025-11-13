@@ -1,4 +1,4 @@
-import type { NavLink, ToolCard } from '@/types'
+import type { NavLink, ToolCard, MarkerOptions } from '@/types'
 
 /**
  * Shared constants for AI Doc Prep application
@@ -16,8 +16,29 @@ export const FILE_SIZE = {
 
   // Default limits
   MAX_FILE_SIZE: GB, // 1GB
+  MAX_PDF_FILE_SIZE: 200 * MB, // 200MB - Marker API limit
   MAX_MERGE_FILES: 50,
   MAX_TOTAL_MERGE_SIZE: GB, // 1GB total
+} as const
+
+// Marker API Configuration
+export const MARKER_CONFIG = {
+  // Polling settings for async conversion status checks
+  POLL_INTERVAL_MS: 2000, // Poll every 2 seconds
+  MAX_POLL_ATTEMPTS: 150, // 5 minutes max (150 * 2 seconds = 300 seconds)
+
+  // API URLs
+  SIGN_UP_URL: 'https://www.datalab.to/app/keys',
+
+  // Default conversion options
+  DEFAULT_OPTIONS: {
+    paginate: false,
+    format_lines: false,
+    use_llm: false,
+    disable_image_extraction: false,
+    output_format: 'markdown',
+    langs: 'English'
+  } as MarkerOptions,
 } as const
 
 // Navigation links for header

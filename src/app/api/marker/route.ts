@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { FILE_SIZE, MARKER_CONFIG } from '@/lib/constants'
+import { formatBytesToMB } from '@/lib/utils/formatUtils'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
-
-const DEFAULT_OPTIONS: MarkerOptions = {
-  paginate: false,
-  format_lines: false,
-  use_llm: false,
-  disable_image_extraction: false,
-  output_format: 'markdown',
-  langs: 'English'
-}
 
 // Network error types for better error messaging
 type NetworkErrorType = 'timeout' | 'connection' | 'dns' | 'unknown'
@@ -169,13 +162,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
-    // Validate file size (200MB limit)
-    const maxSize = 200 * 1024 * 1024 // 200MB
-    if (file.size > maxSize) {
+    // Validate file size (200MB limit per Marker API)
+    if (file.size > FILE_SIZE.MAX_PDF_FILE_SIZE) {
       return NextResponse.json(
         {
           success: false,
-          error: `File too large (max 200MB). Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`
+          error: `File too large (max 200MB). Your file is ${formatBytesToMB(file.size)}`
         },
         { status: 413 }
       )
@@ -191,13 +183,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     }
 
     // Parse options or use defaults
-    let options: MarkerOptions = DEFAULT_OPTIONS
+    let options: MarkerOptions = MARKER_CONFIG.DEFAULT_OPTIONS
 
     if (optionsJson) {
       try {
         const parsed = JSON.parse(optionsJson) as Partial<MarkerOptions>
         // Merge with defaults to handle missing fields
-        options = { ...DEFAULT_OPTIONS, ...parsed }
+        options = { ...MARKER_CONFIG.DEFAULT_OPTIONS, ...parsed }
       } catch (err) {
         console.error('[Marker API] Failed to parse options:', err, 'Raw JSON:', optionsJson)
         return NextResponse.json(

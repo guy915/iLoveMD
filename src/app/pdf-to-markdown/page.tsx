@@ -4,17 +4,10 @@ import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react'
 import FileUpload from '@/components/common/FileUpload'
 import Button from '@/components/common/Button'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
+import { formatBytesToMB, formatBytesToKB, formatDuration } from '@/lib/utils/formatUtils'
+import { FILE_SIZE, MARKER_CONFIG } from '@/lib/constants'
 import { useLogs } from '@/contexts/LogContext'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
-
-const DEFAULT_OPTIONS: MarkerOptions = {
-  paginate: false,
-  format_lines: false,
-  use_llm: false,
-  disable_image_extraction: false,
-  output_format: 'markdown',
-  langs: 'English'
-}
 
 export default function PdfToMarkdownPage() {
   // API key - defaults to test key from env var, not persisted across sessions
@@ -25,7 +18,7 @@ export default function PdfToMarkdownPage() {
   const [error, setError] = useState('')
 
   // Options with localStorage persistence
-  const [options, setOptions] = useState<MarkerOptions>(DEFAULT_OPTIONS)
+  const [options, setOptions] = useState<MarkerOptions>(MARKER_CONFIG.DEFAULT_OPTIONS)
   const [hasLoadedOptions, setHasLoadedOptions] = useState(false)
 
   // Use global logging context (do not destructure clearLogs - we never clear logs)
@@ -55,7 +48,7 @@ export default function PdfToMarkdownPage() {
         try {
           const parsed = JSON.parse(savedOptions) as Partial<MarkerOptions>
           // Merge with defaults to handle missing fields from old versions
-          const mergedOptions = { ...DEFAULT_OPTIONS, ...parsed }
+          const mergedOptions = { ...MARKER_CONFIG.DEFAULT_OPTIONS, ...parsed }
           setOptions(mergedOptions)
           addLog('info', 'Loaded saved options from localStorage', { options: mergedOptions })
         } catch (err) {
@@ -121,7 +114,7 @@ export default function PdfToMarkdownPage() {
 
     addLog('info', `Starting PDF conversion`, {
       fileName: file.name,
-      fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      fileSize: formatBytesToMB(file.size),
       fileType: file.type,
       timestamp: new Date().toISOString()
     })
@@ -136,7 +129,7 @@ export default function PdfToMarkdownPage() {
       addLog('info', 'Submitting to Marker API via /api/marker endpoint', {
         endpoint: '/api/marker',
         method: 'POST',
-        fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        fileSize: formatBytesToMB(file.size),
         options: options
       })
 
@@ -179,12 +172,10 @@ export default function PdfToMarkdownPage() {
       addLog('info', 'Starting polling for conversion status', {
         checkUrl: checkUrl,
         requestId: submitData.request_id,
-        pollInterval: '2 seconds',
-        maxDuration: '5 minutes'
+        pollInterval: `${MARKER_CONFIG.POLL_INTERVAL_MS}ms`,
+        maxDuration: `${MARKER_CONFIG.MAX_POLL_ATTEMPTS * MARKER_CONFIG.POLL_INTERVAL_MS / 1000}s`
       })
 
-      const pollInterval = 2000 // Poll every 2 seconds
-      const maxPolls = 150 // 5 minutes max (150 * 2 seconds)
       let pollCount = 0
 
       const poll = async (): Promise<void> => {
@@ -194,18 +185,18 @@ export default function PdfToMarkdownPage() {
           return
         }
 
-        if (pollCount >= maxPolls) {
+        if (pollCount >= MARKER_CONFIG.MAX_POLL_ATTEMPTS) {
           const timeoutDuration = Date.now() - pollingStartTime
-          addLog('error', `Polling timeout after ${pollCount} attempts (${(timeoutDuration / 1000).toFixed(1)}s)`)
+          addLog('error', `Polling timeout after ${pollCount} attempts (${formatDuration(timeoutDuration)})`)
           throw new Error('Processing timeout. Please try again.')
         }
 
         pollCount++
         const pollStartTime = Date.now()
 
-        addLog('info', `Poll attempt ${pollCount}/${maxPolls}`, {
+        addLog('info', `Poll attempt ${pollCount}/${MARKER_CONFIG.MAX_POLL_ATTEMPTS}`, {
           attemptNumber: pollCount,
-          elapsedTime: `${((pollStartTime - pollingStartTime) / 1000).toFixed(1)}s`
+          elapsedTime: formatDuration(pollStartTime - pollingStartTime)
         })
 
         const pollResponse = await fetch(
@@ -256,9 +247,9 @@ export default function PdfToMarkdownPage() {
           // Download the result
           setStatus('Download starting...')
 
-          addLog('success', `Conversion complete! (${(totalConversionTime / 1000).toFixed(1)}s total)`, {
-            totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`,
-            pollingDuration: `${(pollingTime / 1000).toFixed(1)}s`,
+          addLog('success', `Conversion complete! (${formatDuration(totalConversionTime)} total)`, {
+            totalDuration: formatDuration(totalConversionTime),
+            pollingDuration: formatDuration(pollingTime),
             pollAttempts: pollCount
           })
 
@@ -281,7 +272,7 @@ export default function PdfToMarkdownPage() {
 
           addLog('info', 'Markdown content received', {
             length: `${content.length} characters`,
-            sizeKB: `${(content.length / 1024).toFixed(2)}KB`,
+            sizeKB: formatBytesToKB(content.length),
             preview: content.substring(0, 200)
           })
 
@@ -296,7 +287,7 @@ export default function PdfToMarkdownPage() {
             downloadFile(content, filename, 'text/markdown')
             addLog('success', 'File download triggered successfully', {
               filename: filename,
-              totalDuration: `${(totalConversionTime / 1000).toFixed(1)}s`
+              totalDuration: formatDuration(totalConversionTime)
             })
           } catch (downloadError) {
             const errorMsg = downloadError instanceof Error ? downloadError.message : String(downloadError)
@@ -322,8 +313,8 @@ export default function PdfToMarkdownPage() {
           }
         } else {
           // Still processing, poll again
-          addLog('info', `Status: ${pollData.status} - Waiting ${pollInterval}ms before next poll`)
-          pollTimeoutRef.current = setTimeout(poll, pollInterval)
+          addLog('info', `Status: ${pollData.status} - Waiting ${MARKER_CONFIG.POLL_INTERVAL_MS}ms before next poll`)
+          pollTimeoutRef.current = setTimeout(poll, MARKER_CONFIG.POLL_INTERVAL_MS)
         }
       }
 
@@ -336,7 +327,7 @@ export default function PdfToMarkdownPage() {
       addLog('error', `Conversion failed: ${error.message}`, {
         error: error.message,
         errorType: error.name,
-        duration: `${(totalDuration / 1000).toFixed(1)}s`,
+        duration: formatDuration(totalDuration),
         stack: error.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
       })
 
@@ -363,21 +354,23 @@ export default function PdfToMarkdownPage() {
 
       {/* API Key Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
           Marker API Key
         </label>
         <input
+          id="api-key-input"
           type="password"
           value={apiKey}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
           placeholder="Enter your API key"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           disabled={processing}
+          aria-label="Marker API Key"
         />
         <p className="mt-2 text-sm text-gray-500">
           Don&apos;t have an API key?{' '}
           <a
-            href="https://www.datalab.to/app/keys"
+            href={MARKER_CONFIG.SIGN_UP_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-700 underline"
@@ -394,7 +387,7 @@ export default function PdfToMarkdownPage() {
           key={file?.name || 'empty'} // Force remount when file changes to clear state
           accept=".pdf,application/pdf"
           onFileSelect={handleFileSelect}
-          maxSize={200 * 1024 * 1024} // 200MB
+          maxSize={FILE_SIZE.MAX_PDF_FILE_SIZE}
         />
       </div>
 
