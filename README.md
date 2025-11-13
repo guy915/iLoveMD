@@ -48,18 +48,6 @@ Create a `.env.local` file (optional, for development):
 # Add any development-specific variables here
 ```
 
-## Usage
-
-### PDF to Markdown
-
-1. Navigate to the PDF to Markdown tool
-2. Enter your Marker API key (stored locally in your browser)
-   - Get your free API key at [datalab.to](https://www.datalab.to/)
-3. Upload a PDF file
-4. Click "Convert to Markdown"
-5. Wait for processing (may take a few minutes for large files)
-6. Download automatically starts when complete
-
 ---
 
 **Note:** This tool requires external API keys that you must obtain yourself. We don't provide API access or pay for API usage.
