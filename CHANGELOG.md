@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **API Key Persistence & Diagnostic Panel Improvements** (2025-11-13):
+  - **Removed unused API key storage constant**:
+    - Deleted `STORAGE_KEYS.MARKER_API_KEY` from constants.ts
+    - API key already not persisted (resets to test key on each session)
+    - Cleanup of vestigial code from earlier implementation
+  - **Added autoscroll to diagnostic logging panel**:
+    - Logs now automatically scroll to bottom when new entries are added
+    - Added `logsContainerRef` to track scrollable container
+    - Implemented useEffect hook to scroll on logs change
+    - Only scrolls when panel is open and logs exist
+    - **Impact**: Users no longer need to manually scroll to see latest logs
+  - **Files Modified**: 2 (constants.ts, GlobalDiagnosticPanel.tsx)
+  - Build: ✅ | Lint: ✅
+
 ### Changed
 - **Codebase Cleanup and Polish** (2025-11-13):
   - **CI/CD Console Detection Fix** (`.github/workflows/ci.yml`):
