@@ -15,11 +15,9 @@ export default function PdfToMarkdownPage() {
   // Mode state - 'cloud' uses Marker API, 'local' uses local Marker instance
   // Read from localStorage immediately to prevent flickering
   const [mode, setMode] = useState<'cloud' | 'local'>(() => {
-    if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem('marker_mode') as 'cloud' | 'local' | null
-      if (savedMode === 'cloud' || savedMode === 'local') {
-        return savedMode
-      }
+    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'cloud' | 'local' | null
+    if (savedMode === 'cloud' || savedMode === 'local') {
+      return savedMode
     }
     return 'local' // Default for first-time users and SSR
   })
@@ -576,9 +574,9 @@ export default function PdfToMarkdownPage() {
       </div>
 
       {/* Mode Toggle Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6" suppressHydrationWarning>
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
-        <div className="flex items-center gap-4" suppressHydrationWarning>
+        <div className="flex items-center gap-4">
           <button
             onClick={() => {
               setMode('local')
