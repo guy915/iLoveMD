@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Testing Infrastructure Setup** (2025-11-14):
+  - **Installed testing framework and dependencies**:
+    - Vitest 2.1.8 as test runner (faster than Jest, better TypeScript/ESM support)
+    - @testing-library/react 16.1.0 for component testing
+    - @testing-library/jest-dom 6.6.3 for DOM matchers
+    - @testing-library/user-event 14.5.2 for user interaction simulation
+    - jsdom 25.0.1 for browser environment simulation
+    - MSW 2.6.8 for API mocking (future use)
+    - @vitest/coverage-v8 2.1.8 for code coverage reporting
+    - @vitest/ui 2.1.8 for interactive test UI
+  - **Created test configuration**:
+    - vitest.config.ts with jsdom environment, global test APIs, coverage thresholds (70%)
+    - src/test/setup.ts with localStorage/sessionStorage mocks, URL API mocks
+    - Test path aliases configured (@/ → src/)
+  - **Added test scripts to package.json**:
+    - `npm test` - Run tests in watch mode
+    - `npm run test:ui` - Run tests with interactive UI
+    - `npm run test:run` - Run tests once (CI mode)
+    - `npm run test:coverage` - Run tests with coverage report
+  - **Created example test**: src/lib/utils/classNames.test.ts (8 tests, all passing)
+  - **Updated CI/CD pipeline** (.github/workflows/ci.yml):
+    - Added test execution step to both Node 18.x and Node 20.x build jobs
+    - Added dedicated test coverage job with artifact upload
+    - Coverage reports uploaded and retained for 7 days
+  - **Impact**: Foundation established for comprehensive test coverage across utility functions, services, API routes, and components
+  - **Files Added**: vitest.config.ts, src/test/setup.ts, src/lib/utils/classNames.test.ts
+  - **Files Modified**: package.json, .github/workflows/ci.yml
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (8/8 passing)
+
 ### Fixed
 - **Diagnostics Panel Scroll Leak** (2025-11-13):
   - Fixed page scrolling while scrolling within diagnostics panel

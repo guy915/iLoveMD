@@ -488,26 +488,70 @@ downloadFile(content, filename)
 
 ## Testing Strategy
 
+### Testing Framework
+
+**Stack:**
+- **Vitest** - Fast, modern test runner with native TypeScript/ESM support
+- **@testing-library/react** - Component testing with user-centric queries
+- **@testing-library/jest-dom** - DOM matchers for assertions
+- **jsdom** - Browser environment simulation
+- **MSW** - API mocking for integration tests
+
+**Configuration:**
+- Test files: `**/*.{test,spec}.{ts,tsx}`
+- Environment: jsdom (browser APIs available)
+- Coverage thresholds: 70% (statements, branches, functions, lines)
+- Setup file: `src/test/setup.ts` (mocks localStorage, sessionStorage, URL APIs)
+
+**Commands:**
+```bash
+npm test              # Watch mode
+npm run test:ui       # Interactive UI
+npm run test:run      # CI mode (single run)
+npm run test:coverage # Generate coverage report
+```
+
 ### Unit Tests
-- Utility functions
-- Processing logic
-- Validation functions
+**Target: 80%+ coverage**
+- Utility functions (`formatUtils`, `downloadUtils`, `classNames`)
+- Service layer validation (`markerApiService`, `batchConversionService`)
+- Storage abstraction (`storageService`)
+- Type guards and validators
+
+**Status:** Foundation established (classNames.test.ts implemented)
 
 ### Integration Tests
-- API route functionality
-- Component interactions
-- localStorage operations
+**Target: 70%+ coverage**
+- API route functionality (`/api/marker` POST/GET handlers)
+- Component interactions (Button, FileUpload, ErrorBoundary)
+- localStorage operations (storageService with mocks)
+- Context providers (LogContext)
+
+**Status:** Framework configured, tests planned
 
 ### E2E Tests
-- Complete user flows
-- File upload/download
-- Error scenarios
+**Target: Future implementation**
+- Complete user flows (PDF upload → conversion → download)
+- File upload/download workflows
+- Error scenarios and recovery
+- Cross-browser compatibility
+
+**Recommended tool:** Playwright (better Next.js support than Cypress)
+
+**Status:** Deferred until unit/integration coverage is established
 
 ### Manual Testing
-- Cross-browser testing
-- Mobile responsiveness
-- Large file handling
-- Edge cases
+- Cross-browser testing (Chrome, Firefox, Safari, Edge)
+- Mobile responsiveness (iOS Safari, Chrome Android)
+- Large file handling (edge cases, memory limits)
+- Network failure scenarios
+
+### CI/CD Integration
+
+Tests run automatically on every PR and push:
+- **Build jobs** (Node 18.x, 20.x): Run `npm run test:run` before build
+- **Test coverage job**: Generates coverage report, uploads as artifact
+- **Coverage retention**: 7 days for review and analysis
 
 ## Design System Summary
 
