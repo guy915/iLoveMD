@@ -8,15 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **Full-Page Drop Zone Now Works Correctly** (2025-11-14):
-  - **Fixed overlay blocking drop events**:
-    - Bug: Inner white card in overlay was capturing pointer events despite parent having `pointer-events-none`
-    - Fix: Added `pointer-events-none` to inner card so events pass through to drop zone beneath
-    - Result: Full-page drop now works correctly anywhere on the page
-  - **Restored folder text**:
-    - Reverted text back to "Drop PDF files or folders here"
-    - Folder drag-and-drop does work in modern browsers (user verified)
-  - **Impact**: Users can now drop files or folders anywhere on the page as intended
+- **Full-Page Drop Zone Actually Works Now** (2025-11-14):
+  - **Root cause identified - drop handlers were on narrow div**:
+    - Bug: Drop handlers were on `max-w-4xl mx-auto` div (only 896px wide, centered)
+    - Not the full page width, despite overlay appearing full screen
+    - Users could only drop in narrow centered column, not anywhere on page
+  - **Solution - true full-page drop zone**:
+    - Created fixed `inset-0` wrapper div with all drag handlers
+    - Dynamically enable pointer-events only when dragging (via showDropOverlay state)
+    - Keeps content in centered 4xl container for layout while drop zone covers full viewport
+    - z-index layering: drop zone (z-10), overlay (z-50), content (normal flow)
+  - **Folder drag-and-drop clarification**:
+    - Browser drag-and-drop from OS doesn't expose folder contents
+    - Only "Browse Folders" button (with webkitdirectory) can access folder contents
+    - Updated overlay text to direct users to button: "Note: Use 'Browse Folders' button for folders"
+    - Changed drop zone text from "files or folders" to just "files"
+  - **Impact**: Drop zone now truly covers entire page - users can drop files anywhere
   - **Files Modified**: src/app/pdf-to-markdown/page.tsx
   - Build: ✅ | Lint: ✅
 
