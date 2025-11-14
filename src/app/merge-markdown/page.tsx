@@ -14,6 +14,8 @@ interface MarkdownFile {
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
+  const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
@@ -162,6 +164,70 @@ export default function MergeMarkdownPage() {
     }
   }, [processFiles, addLog])
 
+  // File card drag handlers (for reordering)
+  const handleFileCardDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    setDraggedFileId(fileId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', fileId)
+
+    const file = files.find(f => f.id === fileId)
+    if (file) {
+      addLog('info', `Started dragging file: ${file.file.name}`)
+    }
+  }, [files, addLog])
+
+  const handleFileCardDragOver = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (draggedFileId && draggedFileId !== fileId) {
+      e.dataTransfer.dropEffect = 'move'
+      setDragOverFileId(fileId)
+    }
+  }, [draggedFileId])
+
+  const handleFileCardDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOverFileId(null)
+  }, [])
+
+  const handleFileCardDrop = useCallback((e: DragEvent<HTMLDivElement>, targetFileId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!draggedFileId || draggedFileId === targetFileId) {
+      setDraggedFileId(null)
+      setDragOverFileId(null)
+      return
+    }
+
+    setFiles(prev => {
+      const draggedIndex = prev.findIndex(f => f.id === draggedFileId)
+      const targetIndex = prev.findIndex(f => f.id === targetFileId)
+
+      if (draggedIndex === -1 || targetIndex === -1) return prev
+
+      const newFiles = [...prev]
+      const [draggedFile] = newFiles.splice(draggedIndex, 1)
+      newFiles.splice(targetIndex, 0, draggedFile)
+
+      const draggedFileName = draggedFile.file.name
+      const targetFileName = prev[targetIndex].file.name
+      addLog('info', `Reordered: moved "${draggedFileName}" to position of "${targetFileName}"`)
+
+      return newFiles
+    })
+
+    setDraggedFileId(null)
+    setDragOverFileId(null)
+  }, [draggedFileId, addLog])
+
+  const handleFileCardDragEnd = useCallback(() => {
+    setDraggedFileId(null)
+    setDragOverFileId(null)
+  }, [])
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Canvas Area - Left Side */}
@@ -216,7 +282,19 @@ export default function MergeMarkdownPage() {
               {files.map((markdownFile) => (
                 <div
                   key={markdownFile.id}
-                  className="relative bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                  draggable
+                  onDragStart={(e) => handleFileCardDragStart(e, markdownFile.id)}
+                  onDragOver={(e) => handleFileCardDragOver(e, markdownFile.id)}
+                  onDragLeave={handleFileCardDragLeave}
+                  onDrop={(e) => handleFileCardDrop(e, markdownFile.id)}
+                  onDragEnd={handleFileCardDragEnd}
+                  className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all cursor-move ${
+                    draggedFileId === markdownFile.id
+                      ? 'opacity-50 border-primary-400'
+                      : dragOverFileId === markdownFile.id
+                      ? 'border-primary-500 border-dashed scale-105'
+                      : 'border-gray-200'
+                  }`}
                 >
                   {/* Remove button */}
                   <button
