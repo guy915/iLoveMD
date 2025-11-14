@@ -279,7 +279,7 @@ export default function MergeMarkdownPage() {
           {/* File Grid */}
           {files.length === 0 ? (
             <div
-              className="flex items-center justify-center min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
               onClick={handleEmptyCanvasClick}
               role="button"
               tabIndex={0}
