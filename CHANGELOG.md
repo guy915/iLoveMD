@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Updated Header Navigation Links** (2025-11-14):
+  - **Replaced old navigation links** with new structure:
+    - Removed: Help, About pages
+    - Changed shortLabel for tool pages: "PDF" → "PDF to Markdown", "Markdown" → "Merge Markdowns"
+    - Added external links: I Love PDF (https://www.ilovepdf.com), I Love Markdown (https://www.ilovemarkdown.com), Tokenizer (https://platform.openai.com/tokenizer)
+  - **Added support for external links in NavLink type**:
+    - Added optional `external` boolean field to NavLink interface
+    - External links render as anchor tags with target="_blank" and rel="noopener noreferrer"
+    - Internal links continue using Next.js Link component
+  - **Updated header component**:
+    - Desktop and mobile menus now conditionally render anchor tags for external links
+    - All external links open in new tab for better user experience
+    - Navigation logging works for both internal and external links
+  - **Files Modified**:
+    - Updated: `src/types/index.ts`, `src/lib/constants.ts`, `src/components/layout/Header.tsx`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped) | Coverage: 75.77%
+
 ### Added
 - **Cloud/Local Mode Toggle for PDF to Markdown** (2025-11-14):
   - **Added mode toggle UI** to switch between Local Marker and Cloud API:
