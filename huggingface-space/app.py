@@ -4,27 +4,37 @@ Cloud Free mode - runs on HuggingFace's free GPU tier
 """
 import os
 import uuid
-import shutil
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import marker
 from marker.convert import convert_single_pdf
 from marker.models import load_all_models
 
 # Initialize FastAPI app
 app = FastAPI(title="Marker PDF Converter", version="1.0.0")
 
-# Configure CORS to allow requests from your Next.js app
+# Get base URL from environment or use default
+# For HuggingFace Spaces, this should be set to your Space URL
+BASE_URL = os.environ.get("BASE_URL", "https://guy915-marker-pdf-converter.hf.space")
+
+# Get allowed origins from environment variable (comma-separated)
+# Example: export ALLOWED_ORIGINS="https://yourdomain.com,https://ai-doc-prep.vercel.app"
+allowed_origins_str = os.environ.get("ALLOWED_ORIGINS", "*")
+allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()] if allowed_origins_str != "*" else ["*"]
+
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with your domain
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# File size limit (200MB)
+MAX_PDF_FILE_SIZE = 200 * 1024 * 1024  # 200MB in bytes
 
 # Storage for conversion jobs (in-memory for simplicity)
 # In production, you'd use Redis or a database
@@ -98,48 +108,82 @@ async def convert_pdf(
     # Generate unique request ID
     request_id = str(uuid.uuid4())
 
-    # Save uploaded file
+    # Save uploaded file with size validation and cleanup on error
     file_path = UPLOAD_DIR / f"{request_id}.pdf"
-    with open(file_path, "wb") as f:
-        content = await file.read()
-        f.write(content)
+    job_initialized = False
 
-    # Initialize job status
-    conversion_jobs[request_id] = {
-        "status": "processing",
-        "file_path": str(file_path),
-        "options": {
-            "output_format": output_format,
-            "langs": langs,
-            "paginate": paginate_bool,
-            "format_lines": format_lines_bool,
-            "use_llm": use_llm_bool,
-            "disable_image_extraction": disable_image_extraction_bool,
-            "redo_inline_math": redo_inline_math_bool,
-            "gemini_api_key": geminiApiKey,
-        },
-        "markdown": None,
-        "error": None,
-    }
-
-    # Start background conversion (async processing)
-    # Note: For HF Spaces, we'll process synchronously but mark as processing
-    # to maintain API compatibility with local mode
     try:
-        # Process the PDF
-        markdown_text = await process_pdf(request_id)
-        conversion_jobs[request_id]["status"] = "complete"
-        conversion_jobs[request_id]["markdown"] = markdown_text
-    except Exception as e:
-        conversion_jobs[request_id]["status"] = "error"
-        conversion_jobs[request_id]["error"] = str(e)
+        # Read file content with size validation
+        content = await file.read()
+        if len(content) > MAX_PDF_FILE_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"PDF file size exceeds the maximum allowed size of {MAX_PDF_FILE_SIZE // (1024 * 1024)} MB"
+            )
 
-    # Return response
-    return JSONResponse(content={
-        "success": True,
-        "request_id": request_id,
-        "request_check_url": f"/check/{request_id}",
-    })
+        # Save file
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        # Initialize job status (don't store sensitive gemini_api_key)
+        conversion_jobs[request_id] = {
+            "status": "processing",
+            "file_path": str(file_path),
+            "options": {
+                "output_format": output_format,
+                "langs": langs,
+                "paginate": paginate_bool,
+                "format_lines": format_lines_bool,
+                "use_llm": use_llm_bool,
+                "disable_image_extraction": disable_image_extraction_bool,
+                "redo_inline_math": redo_inline_math_bool,
+                # Store API key separately for processing, not in logged job data
+                "_gemini_key": geminiApiKey if use_llm_bool else None,
+            },
+            "markdown": None,
+            "error": None,
+        }
+        job_initialized = True
+
+        # Start background conversion (async processing)
+        # Note: For HF Spaces, we'll process synchronously but mark as processing
+        # to maintain API compatibility with local mode
+        try:
+            # Process the PDF
+            markdown_text = await process_pdf(request_id)
+            conversion_jobs[request_id]["status"] = "complete"
+            conversion_jobs[request_id]["markdown"] = markdown_text
+            # Remove API key after processing
+            if "_gemini_key" in conversion_jobs[request_id]["options"]:
+                del conversion_jobs[request_id]["options"]["_gemini_key"]
+        except Exception as e:
+            conversion_jobs[request_id]["status"] = "error"
+            conversion_jobs[request_id]["error"] = str(e)
+            # Remove API key on error too
+            if "_gemini_key" in conversion_jobs[request_id]["options"]:
+                del conversion_jobs[request_id]["options"]["_gemini_key"]
+
+        # Return response with absolute check URL
+        return JSONResponse(content={
+            "success": True,
+            "request_id": request_id,
+            "request_check_url": f"{BASE_URL}/check/{request_id}",
+        })
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Cleanup orphaned file if job not initialized
+        if file_path.exists() and not job_initialized:
+            try:
+                file_path.unlink()
+            except Exception:
+                pass
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process file: {str(e)}"
+        )
 
 
 async def process_pdf(request_id: str) -> str:
@@ -148,30 +192,41 @@ async def process_pdf(request_id: str) -> str:
     file_path = job["file_path"]
     options = job["options"]
 
-    # Set Gemini API key if provided
-    if options["use_llm"] and options["gemini_api_key"]:
-        os.environ["GEMINI_API_KEY"] = options["gemini_api_key"]
+    # Get Gemini API key from job options (not env var to avoid leaking between requests)
+    gemini_key = options.get("_gemini_key")
 
-    # Convert PDF to markdown
-    full_text, images, out_meta = convert_single_pdf(
-        fname=file_path,
-        model_list=model_list,
-        max_pages=None,
-        langs=options["langs"].split(",") if options["langs"] else None,
-        batch_multiplier=1,
-        start_page=None,
-        # Marker options
-        paginate=options["paginate"],
-        format_lines=options["format_lines"],
-        disable_image_extraction=options["disable_image_extraction"],
-        redo_inline_math=options["redo_inline_math"],
-    )
+    # Temporarily set env var only for this conversion
+    original_key = os.environ.get("GEMINI_API_KEY")
+    if options["use_llm"] and gemini_key:
+        os.environ["GEMINI_API_KEY"] = gemini_key
 
-    # Clean up uploaded file
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    try:
+        # Convert PDF to markdown
+        full_text, images, out_meta = convert_single_pdf(
+            fname=file_path,
+            model_list=model_list,
+            max_pages=None,
+            langs=options["langs"].split(",") if options["langs"] else None,
+            batch_multiplier=1,
+            start_page=None,
+            # Marker options
+            paginate=options["paginate"],
+            format_lines=options["format_lines"],
+            disable_image_extraction=options["disable_image_extraction"],
+            redo_inline_math=options["redo_inline_math"],
+        )
 
-    return full_text
+        # Clean up uploaded file
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        return full_text
+    finally:
+        # Restore original API key or remove
+        if original_key:
+            os.environ["GEMINI_API_KEY"] = original_key
+        elif "GEMINI_API_KEY" in os.environ:
+            del os.environ["GEMINI_API_KEY"]
 
 
 @app.get("/check/{request_id}")

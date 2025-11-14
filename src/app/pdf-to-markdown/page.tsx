@@ -13,7 +13,16 @@ import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // Mode state - 'local' uses true local setup, 'cloud-free' uses HuggingFace GPU, 'cloud-paid' uses Marker API
-  const [mode, setMode] = useState<'local' | 'cloud-free' | 'cloud-paid'>('cloud-free')
+  // Initialize from localStorage or default to 'cloud-free'
+  const [mode, setMode] = useState<'local' | 'cloud-free' | 'cloud-paid'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEYS.MARKER_MODE)
+      if (saved === 'local' || saved === 'cloud-free' || saved === 'cloud-paid') {
+        return saved
+      }
+    }
+    return 'cloud-free'
+  })
 
   // API keys
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (cloud mode)
@@ -71,14 +80,8 @@ export default function PdfToMarkdownPage() {
     }
   }, [])
 
-  // Load mode and API keys from localStorage on mount
+  // Load API keys from localStorage on mount (mode is already loaded in initial state)
   useEffect(() => {
-    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'local' | 'cloud-free' | 'cloud-paid' | null
-    if (savedMode === 'local' || savedMode === 'cloud-free' || savedMode === 'cloud-paid') {
-      setMode(savedMode)
-      addLog('info', `Loaded saved mode: ${savedMode}`)
-    }
-
     const savedGeminiKey = storageService.getItem(STORAGE_KEYS.GEMINI_API_KEY)
     if (savedGeminiKey) {
       setGeminiApiKey(savedGeminiKey)
