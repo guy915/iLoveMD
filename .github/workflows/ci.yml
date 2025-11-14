@@ -36,6 +36,9 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Run tests
+        run: npm run test:run
+
       - name: Build project
         run: npm run build
         env:
@@ -81,6 +84,9 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+
+      - name: Run tests
+        run: npm run test:run
 
       - name: Build project
         run: npm run build
@@ -182,7 +188,42 @@ jobs:
           echo "Largest JavaScript files:"
           find .next -name "*.js" -type f -exec du -h {} + | sort -rh | head -10
 
-  # Sequential Job 5: Verify artifacts (runs after builds complete)
+  # Parallel Job 5: Test coverage
+  test-coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Display coverage summary
+        run: |
+          echo "📊 Test Coverage Summary:"
+          cat coverage/coverage-summary.json 2>/dev/null || echo "Coverage summary not available"
+
+      - name: Upload coverage reports
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+          retention-days: 7
+
+  # Sequential Job 6: Verify artifacts (runs after builds complete)
   verify:
     name: Verify Build Artifacts
     runs-on: ubuntu-latest
