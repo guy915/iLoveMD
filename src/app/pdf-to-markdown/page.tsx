@@ -628,8 +628,8 @@ export default function PdfToMarkdownPage() {
         </div>
       )}
 
-      {/* Gemini API Key Section - Local Mode with LLM */}
-      {mode === 'local' && options.use_llm && (
+      {/* Gemini API Key Section - Local Mode */}
+      {mode === 'local' && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <label htmlFor="gemini-api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
             Gemini API Key
@@ -640,20 +640,26 @@ export default function PdfToMarkdownPage() {
             value={geminiApiKey}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setGeminiApiKey(e.target.value)}
             placeholder="Enter your Gemini API key"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={processing}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            disabled={processing || !options.use_llm}
             aria-label="Gemini API Key"
           />
           <p className="mt-2 text-sm text-gray-500">
-            Required when using LLM enhancement in local mode.{' '}
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 underline"
-            >
-              Get a Gemini API key
-            </a>
+            {options.use_llm ? (
+              <>
+                Required when using LLM enhancement in local mode.{' '}
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 underline"
+                >
+                  Get a Gemini API key
+                </a>
+              </>
+            ) : (
+              'Enable "Use LLM enhancement" option below to activate this field'
+            )}
           </p>
         </div>
       )}

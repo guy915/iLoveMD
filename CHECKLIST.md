@@ -757,7 +757,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Button order: "Local Marker" (left, default) and "Cloud API" (right)
   - Conditional API key inputs:
     - Cloud mode: Marker API key (required)
-    - Local mode: Gemini API key (only shown when use_llm is enabled)
+    - Local mode: Gemini API key (always visible, disabled when use_llm is not enabled)
   - Dynamic validation for Convert button based on mode
   - Mode-specific "How it works" instructions
   - Explanatory text for each mode

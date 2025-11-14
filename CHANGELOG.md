@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Default mode: Local Marker
   - **Conditional API key inputs**:
     - Cloud mode: Shows Marker API key input (required)
-    - Local mode: Shows Gemini API key input (only when "Use LLM enhancement" is enabled)
+    - Local mode: Shows Gemini API key input (always visible, disabled when "Use LLM enhancement" is not enabled)
     - Both keys persisted to localStorage
   - **Dynamic UI based on mode**:
     - Convert button validates correct API key based on mode
