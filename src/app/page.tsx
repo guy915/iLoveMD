@@ -13,14 +13,15 @@ export default function Home() {
       </div>
 
       {/* Tool Grid */}
-      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
         {TOOL_CARDS.map((tool) => (
-          <ToolTile
-            key={tool.href}
-            title={tool.title}
-            description={tool.description}
-            href={tool.href}
-          />
+          <div key={tool.href} className="w-full md:w-[calc(33.333%-1rem)]">
+            <ToolTile
+              title={tool.title}
+              description={tool.description}
+              href={tool.href}
+            />
+          </div>
         ))}
       </div>
     </div>
