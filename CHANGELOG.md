@@ -38,6 +38,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅ | Tests: ✅ (8/8 passing)
 
 ### Fixed
+- **Merge Markdown Page Layout Issues** (2025-11-14):
+  - Fixed page layout structure to prevent unwanted page scrolling
+  - Removed incorrectly added footer element (global footer already exists)
+  - Reverted page structure from flex-col wrapper to simple flex layout
+  - Reduced empty state drop area height from h-full min-h-[600px] to h-96
+  - **Impact**: Page no longer scrolls (only canvas scrolls), proper layout hierarchy, no duplicate footers
+  - **Files Modified**: src/app/merge-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
+
 - **Diagnostics Panel Scroll Leak** (2025-11-13):
   - Fixed page scrolling while scrolling within diagnostics panel
   - Corrected boundary detection logic in scroll handler
