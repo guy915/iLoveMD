@@ -38,6 +38,7 @@ export default function MergeMarkdownPage() {
   const draggedIndexRef = useRef<number | null>(null)
   const dragStartOrderRef = useRef<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
   // Sort files based on current sort mode
@@ -175,6 +176,36 @@ export default function MergeMarkdownPage() {
     }
   }, [processFiles, addLog])
 
+  // Handle folder selection - only immediate markdown files, no subdirectories
+  const handleFolderSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files
+    if (!selectedFiles || selectedFiles.length === 0) {
+      addLog('info', 'Folder selection cancelled')
+      return
+    }
+
+    // Filter to only markdown files in the immediate directory (no subdirectories)
+    const filesArray = Array.from(selectedFiles)
+    const immediateFiles = filesArray.filter(file => {
+      const pathParts = file.webkitRelativePath.split('/')
+      // Only include files that are in the immediate folder (2 parts: folder/file.md)
+      return pathParts.length === 2 && (file.name.endsWith('.md') || file.name.endsWith('.markdown'))
+    })
+
+    if (immediateFiles.length === 0) {
+      addLog('error', 'No markdown files found in the immediate folder')
+      return
+    }
+
+    addLog('info', `Found ${immediateFiles.length} markdown file(s) in folder`)
+    await processFiles(immediateFiles)
+
+    // Reset input to allow re-selecting same folder
+    if (folderInputRef.current) {
+      folderInputRef.current.value = ''
+    }
+  }, [processFiles, addLog])
+
   // Read file as text
   const readFileAsText = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -295,6 +326,12 @@ export default function MergeMarkdownPage() {
     fileInputRef.current?.click()
   }, [addLog])
 
+  // Trigger folder input click
+  const handleFolderUploadClick = useCallback(() => {
+    addLog('info', 'Upload Folder button clicked')
+    folderInputRef.current?.click()
+  }, [addLog])
+
   // Handle click on empty canvas area
   const handleEmptyCanvasClick = useCallback(() => {
     addLog('info', 'Empty canvas area clicked - opening file browser')
@@ -337,6 +374,57 @@ export default function MergeMarkdownPage() {
     e.stopPropagation()
     setIsDragging(false)
 
+    // Check if items contain folders using DataTransferItem API
+    const items = e.dataTransfer.items
+    if (items && items.length > 0) {
+      const hasFolder = Array.from(items).some(item => item.webkitGetAsEntry?.()?.isDirectory)
+
+      if (hasFolder) {
+        // Handle folder drop
+        const allFiles: File[] = []
+        const folderPromises: Promise<void>[] = []
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
+          const entry = item.webkitGetAsEntry()
+
+          if (entry?.isDirectory) {
+            folderPromises.push(
+              new Promise<void>((resolve) => {
+                const dirReader = (entry as FileSystemDirectoryEntry).createReader()
+                dirReader.readEntries((entries) => {
+                  // Only process immediate files, not subdirectories
+                  const filePromises = entries
+                    .filter(entry => entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')))
+                    .map(entry =>
+                      new Promise<void>((resolveFile) => {
+                        (entry as FileSystemFileEntry).file((file) => {
+                          allFiles.push(file)
+                          resolveFile()
+                        })
+                      })
+                    )
+
+                  Promise.all(filePromises).then(() => resolve())
+                })
+              })
+            )
+          }
+        }
+
+        await Promise.all(folderPromises)
+
+        if (allFiles.length > 0) {
+          addLog('info', `${allFiles.length} markdown file(s) from folder(s) dropped`)
+          await processFiles(allFiles)
+        } else {
+          addLog('error', 'No markdown files found in dropped folder(s)')
+        }
+        return
+      }
+    }
+
+    // Handle regular file drop
     const droppedFiles = e.dataTransfer.files
     if (droppedFiles && droppedFiles.length > 0) {
       addLog('info', `${droppedFiles.length} file(s) dropped on canvas`)
@@ -572,7 +660,7 @@ export default function MergeMarkdownPage() {
                             img: ({alt}) => <span className="text-gray-500 text-[0.32rem] italic">[Image: {alt || 'no description'}]</span>,
                           }}
                         >
-                          {markdownFile.content.substring(0, 500)}
+                          {markdownFile.content}
                         </ReactMarkdown>
                       </div>
                     </div>
@@ -609,13 +697,31 @@ export default function MergeMarkdownPage() {
               onChange={handleFileSelect}
               className="hidden"
             />
-            <Button
-              onClick={handleUploadClick}
-              variant="primary"
-              className="w-full"
-            >
-              Upload Files
-            </Button>
+            <input
+              ref={folderInputRef}
+              type="file"
+              /* @ts-ignore - webkitdirectory is not in TypeScript types but works in browsers */
+              webkitdirectory=""
+              directory=""
+              onChange={handleFolderSelect}
+              className="hidden"
+            />
+            <div className="space-y-2">
+              <Button
+                onClick={handleUploadClick}
+                variant="primary"
+                className="w-full"
+              >
+                Upload Files
+              </Button>
+              <Button
+                onClick={handleFolderUploadClick}
+                variant="secondary"
+                className="w-full"
+              >
+                Upload Folder
+              </Button>
+            </div>
             <p className="text-xs text-gray-500 mt-2">
               {files.length} / {FILE_SIZE.MAX_MERGE_FILES} files
             </p>
