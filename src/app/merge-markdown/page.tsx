@@ -224,8 +224,8 @@ export default function MergeMarkdownPage() {
                     </svg>
                   </button>
 
-                  {/* File preview placeholder (A4 ratio: 210/297) */}
-                  <div className="aspect-[210/297] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
+                  {/* File preview placeholder */}
+                  <div className="aspect-[4/5] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
                     <div className="text-center">
                       <svg
                         className="w-16 h-16 mx-auto mb-2 text-gray-400"
