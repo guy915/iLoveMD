@@ -98,6 +98,8 @@ export interface MarkerOptions {
   use_llm: boolean
   /** Disable image extraction (requires use_llm) */
   disable_image_extraction: boolean
+  /** Redo inline math (local mode only) - reprocesses inline mathematical expressions */
+  redo_inline_math?: boolean
 }
 
 // ===== Navigation & Constants =====

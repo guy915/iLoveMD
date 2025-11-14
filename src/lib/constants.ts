@@ -74,6 +74,7 @@ export const MARKER_CONFIG = {
     format_lines: false,
     use_llm: false,
     disable_image_extraction: false,
+    redo_inline_math: false,
     output_format: 'markdown',
     langs: 'English'
   } as MarkerOptions,

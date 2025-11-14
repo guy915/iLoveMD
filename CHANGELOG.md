@@ -47,6 +47,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅
   - **Note**: This is PR 2 of 4 for local Marker support. Full single-file local conversion now functional. PR 3 will add local-specific options (redo_inline_math).
 
+- **Local Marker-Specific Options** (2025-11-14):
+  - **Added local-only conversion options** (PR 3 of 4):
+    - Added `redo_inline_math` option to MarkerOptions type (optional boolean)
+    - Added checkbox in Options Section (only visible when in local mode)
+    - Option checkbox appears below "Disable image extraction" when local mode is active
+    - Description: "Reprocess inline mathematical expressions (local mode only)"
+  - **Implementation details**:
+    - Added to MarkerOptions type in src/types/index.ts
+    - Added to DEFAULT_OPTIONS in constants.ts (default: false)
+    - UI conditionally renders based on mode (mode === 'local')
+    - Local API route passes option to Marker instance when defined
+  - **Why local-only**: Cloud Marker API does not support this option; local Marker Docker instance provides additional processing capabilities
+  - **Files Modified**:
+    - Updated: `src/types/index.ts`, `src/lib/constants.ts`, `src/app/pdf-to-markdown/page.tsx`, `src/app/api/marker/local/route.ts`
+  - Build: ✅ | Lint: ✅
+  - **Note**: This is PR 3 of 4 for local Marker support. Local mode now has feature parity with cloud mode plus additional local-specific options. PR 4 will add testing, documentation, and polish.
+
 ### Removed
 - **HTML to Markdown Feature** (2025-11-14):
   - **Removed all traces of HTML to Markdown feature**:
