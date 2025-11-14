@@ -559,14 +559,22 @@ Track your progress through each implementation phase. Update checkboxes as you 
 ### 2025-11-14 - Merge Markdown File Reordering (PR 3)
 - **Added**:
   - Drag-and-drop file reordering in file grid
-  - Visual feedback (opacity, border, scale, cursor) during drag operations
+  - Visual feedback: dragged card (scale-95, rotate-2, opacity-40), drop target (scale-105, shadow-2xl, bg tint)
+  - Cursor feedback: cursor-grab/cursor-grabbing for better UX
   - Custom data type to differentiate reordering from file uploads
   - State tracking: draggedFileId, dragOverFileId
   - All drag handlers: handleFileDragStart, handleFileDragOver, handleFileDragEnter, handleFileDragLeave, handleFileDrop, handleFileDragEnd
   - Reordering logic using array splice
+  - Smooth 300ms transitions for all state changes
   - Comprehensive logging (drag start, reorder with positions)
-- **Impact**: Users can reorder files by dragging cards to desired positions
+- **Fixed**:
+  - Canvas drop zone no longer appears when reordering files
+  - Flickering on drag leave (checks relatedTarget)
+  - Drop effect not set incorrectly during reordering
+  - All Copilot review feedback addressed
+- **Impact**: Users can reorder files by dragging cards with professional, polished UX
 - **Testing**: Build ✅ | Lint ✅
+- **Commits**: 3 commits (a8fa95e initial, 9e5fc27 docs, 8e153c5 bug fixes)
 - **Files Modified**: 1 (src/app/merge-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 

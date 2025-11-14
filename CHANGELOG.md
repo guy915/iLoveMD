@@ -12,19 +12,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Implemented drag-and-drop file reordering in file grid**:
     - Added drag-and-drop functionality to reorder uploaded markdown files
     - Files can be dragged and dropped to change their order in the grid
-    - Visual feedback during drag: dragged card becomes semi-transparent (opacity-50)
-    - Drop target highlighted with primary border and slight scale effect
-    - Cursor changes to move cursor to indicate draggable cards
+    - Visual feedback during drag: dragged card scales down, rotates, becomes semi-transparent
+    - Drop target prominently highlighted with shadow, primary background tint, and scale effect
+    - Cursor feedback: cursor-grab when hovering, cursor-grabbing when actively dragging
   - **Technical implementation**:
     - Added draggedFileId and dragOverFileId state tracking
     - Implemented custom data type 'application/x-file-reorder' to differentiate from file upload drags
     - Drag handlers: handleFileDragStart, handleFileDragOver, handleFileDragEnter, handleFileDragLeave, handleFileDrop, handleFileDragEnd
     - Reordering logic uses array splice to move files to new positions
     - All drag events properly memoized with useCallback
+  - **Bug fixes and improvements**:
+    - Fixed canvas drop zone appearing during file reordering (checks for custom data type)
+    - Fixed flickering on drag leave (checks relatedTarget to avoid child element triggers)
+    - Fixed dropEffect being incorrectly set during reordering
+    - Smooth 300ms transitions for all state changes (ease-in-out)
+    - Addressed all Copilot review feedback (cursor improvements, flickering fix)
   - **Logging and UX**:
     - Logs when file drag starts (includes filename)
     - Logs when files are reordered (includes from/to positions and filename)
-    - Smooth visual transitions with transition-all class
+    - Professional, polished drag-and-drop experience
   - **Impact**: Users can now reorder files by dragging them to desired positions, improving workflow flexibility
   - **Files Modified**: src/app/merge-markdown/page.tsx
   - Build: ✅ | Lint: ✅
