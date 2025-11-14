@@ -17,8 +17,11 @@ export const FILE_SIZE = {
   // Default limits
   MAX_FILE_SIZE: GB, // 1GB
   MAX_PDF_FILE_SIZE: 200 * MB, // 200MB - Marker API limit per file (applies to both single and batch)
-  MAX_MERGE_FILES: 50,
-  MAX_TOTAL_MERGE_SIZE: GB, // 1GB total
+
+  // Merge markdown limits
+  MAX_MERGE_FILE_SIZE: 10 * GB, // 10GB per markdown file
+  MAX_MERGE_FILES: 200, // Maximum 200 files
+  MAX_TOTAL_MERGE_SIZE: 100 * GB, // 100GB total for all merged files
 
   // Batch processing limits
   MAX_BATCH_TOTAL_SIZE: 100 * GB, // 100GB total for entire batch
