@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
 import { FILE_SIZE } from '@/lib/constants'
@@ -426,19 +427,29 @@ export default function MergeMarkdownPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <AnimatePresence mode="popLayout">
               {files.map((markdownFile) => {
                 const isDraggedCard = draggedFileId === markdownFile.id
                 const isDropTarget = dragOverFileId === markdownFile.id
 
                 return (
-                <div
+                <motion.div
                   key={markdownFile.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{
+                    layout: { type: 'spring', stiffness: 300, damping: 30 },
+                    opacity: { duration: 0.2 },
+                    scale: { duration: 0.2 }
+                  }}
                   draggable
-                  onDragStart={(e) => handleFileDragStart(e, markdownFile.id)}
-                  onDragOver={(e) => handleFileDragOver(e, markdownFile.id)}
-                  onDragEnter={(e) => handleFileDragEnter(e, markdownFile.id)}
-                  onDragLeave={(e) => handleFileDragLeave(e)}
-                  onDrop={(e) => handleFileDrop(e, markdownFile.id)}
+                  onDragStart={(e) => handleFileDragStart(e as unknown as DragEvent<HTMLDivElement>, markdownFile.id)}
+                  onDragOver={(e) => handleFileDragOver(e as unknown as DragEvent<HTMLDivElement>, markdownFile.id)}
+                  onDragEnter={(e) => handleFileDragEnter(e as unknown as DragEvent<HTMLDivElement>, markdownFile.id)}
+                  onDragLeave={(e) => handleFileDragLeave(e as unknown as DragEvent<HTMLDivElement>)}
+                  onDrop={(e) => handleFileDrop(e as unknown as DragEvent<HTMLDivElement>, markdownFile.id)}
                   onDragEnd={handleFileDragEnd}
                   className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out aspect-[5/7] flex flex-col ${
                     isDraggedCard
@@ -488,9 +499,10 @@ export default function MergeMarkdownPage() {
                       {formatFileSize(markdownFile.file.size)}
                     </p>
                   </div>
-                </div>
+                </motion.div>
                 )
               })}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -528,11 +540,7 @@ export default function MergeMarkdownPage() {
             <button
               onClick={handleToggleAlphabetical}
               aria-pressed={sortMode !== 'none'}
-              className={`w-full px-3 py-2 text-sm font-medium rounded transition-colors ${
-                sortMode !== 'none'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className="w-full px-3 py-2 text-sm font-medium rounded transition-colors bg-primary-600 text-white hover:bg-primary-700"
             >
               {sortMode === 'reverseAlphabetical' ? 'Z → A' : 'A → Z'}
             </button>
