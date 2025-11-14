@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Full-Page Drop Zone FINALLY Works** (2025-11-14):
+  - **Root causes (multiple attempts to fix)**:
+    1. First: Drop handlers on narrow `max-w-4xl` div (896px wide, not full page)
+    2. Second: Fixed div with conditional `pointer-events` - chicken-and-egg bug!
+       - When not dragging: `pointer-events: 'none'` to avoid blocking clicks
+       - But `pointer-events: 'none'` also blocked drag events from firing
+       - So overlay never showed and drops never worked
+  - **Final solution - document-level event listeners**:
+    - Added drag event listeners directly to `document` in useEffect
+    - No wrapper div needed - nothing blocks clicks or events
+    - Drag events fire anywhere on the entire page
+    - Clean up listeners on component unmount
+    - Same approach used successfully in merge-markdown page
+  - **Folder drag-and-drop note**:
+    - Dragging folders from OS file explorer: Browser security prevents accessing contents
+    - Only "Browse Folders" button works (uses webkitdirectory attribute)
+    - Overlay shows: "Note: Use 'Browse Folders' button for folders"
+  - **Impact**: Drop zone NOW covers entire page - drag anywhere works!
+  - **Files Modified**: src/app/pdf-to-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
+
+### Added
+- **Full-Page Drop Zone for PDF to Markdown** (2025-11-14):
+  - **Implemented full-page drop overlay**:
+    - When dragging files over the page, a full-screen overlay appears with clear drop target
+    - Overlay uses blue translucent background with backdrop blur for modern feel
+    - Central white card with dashed border displays "Drop files or folders here" message
+    - Automatically hides when files are dropped or drag leaves the page
+    - Uses drag counter to track nested drag events correctly
+  - **Technical implementation**:
+    - Added `showDropOverlay` state and `dragCounterRef` for tracking drag state
+    - Implemented `handlePageDragEnter`, `handlePageDragLeave`, `handlePageDragOver` handlers
+    - Wrapped entire page content in drag event listeners
+    - Fixed z-index layering with `fixed inset-0 z-50` positioning
+    - Both overlay divs have `pointer-events-none` to allow drop events to pass through
+  - **UX improvements**:
+    - Users can now drop files or folders anywhere on the page, not just the small drop box
+    - Clear visual feedback when dragging over the page
+    - More intuitive and forgiving file upload experience
+  - **Impact**: Significantly improved drag-and-drop UX, making file uploads more intuitive
+  - **Files Modified**: src/app/pdf-to-markdown/page.tsx
+  - Build: ✅ | Lint: ✅ | Tests: ✅
 ### Added
 - **Merge Markdown Page Tests** (2025-11-14):
   - **Created comprehensive test suite for merge-markdown/page.tsx**:
@@ -87,6 +130,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅ | Tests: ✅ (390 passed, 6 skipped)
 
 ### Changed
+- **Improved File Selection Button Labels** (2025-11-14):
+  - Added descriptive subtext to buttons: "Select individual PDFs" and "Select entire folder"
+  - Changed button layout to flex-col for better text stacking
+  - **Impact**: Clearer distinction between file and folder selection methods
+  - **Files Modified**: src/app/pdf-to-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
+
 - **PDF to Markdown UI Improvements** (2025-11-14):
   - **Added visual separator** between drop zone text and file browser buttons
     - Cleaner visual hierarchy in file upload area
