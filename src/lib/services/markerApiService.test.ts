@@ -3,9 +3,12 @@
  *
  * Tests cover:
  * - Validation functions: validateApiKey, validatePdfFile
- * - API submission: submitPdfConversion with mocked fetch
- * - Status polling: pollConversionStatus with various statuses
- * - Complete conversion flow: convertPdfToMarkdown with polling simulation
+ * - Cloud API submission: submitPdfConversion with mocked fetch
+ * - Cloud status polling: pollConversionStatus with various statuses
+ * - Cloud conversion flow: convertPdfToMarkdown with polling simulation
+ * - Local API submission: submitPdfConversionLocal with Gemini key support
+ * - Local status polling: pollConversionStatusLocal without API key requirement
+ * - Local conversion flow: convertPdfToMarkdownLocal with redo_inline_math option
  * - Error handling: network errors, API errors, timeouts
  * - Cancellation: AbortSignal support
  * - Progress callbacks: onProgress updates
@@ -18,6 +21,9 @@ import {
   submitPdfConversion,
   pollConversionStatus,
   convertPdfToMarkdown,
+  submitPdfConversionLocal,
+  pollConversionStatusLocal,
+  convertPdfToMarkdownLocal,
 } from './markerApiService'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
@@ -45,6 +51,7 @@ const defaultOptions: MarkerOptions = {
   format_lines: false,
   use_llm: false,
   disable_image_extraction: false,
+  redo_inline_math: false,
 }
 
 describe('markerApiService', () => {
@@ -588,6 +595,511 @@ describe('markerApiService', () => {
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Poll error')
+    })
+  })
+
+  describe('submitPdfConversionLocal', () => {
+    let fetchMock: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      fetchMock = vi.fn()
+      global.fetch = fetchMock
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('should submit file successfully without Gemini API key', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          request_id: 'local-req-123',
+          request_check_url: 'http://localhost:8000/check/123',
+        }),
+      })
+
+      const result = await submitPdfConversionLocal(file, null, defaultOptions)
+
+      expect(result.success).toBe(true)
+      expect(result.request_id).toBe('local-req-123')
+      expect(result.request_check_url).toBe('http://localhost:8000/check/123')
+      expect(fetchMock).toHaveBeenCalledWith('/api/marker/local', {
+        method: 'POST',
+        body: expect.any(FormData),
+      })
+    })
+
+    it('should submit file with Gemini API key when use_llm is enabled', async () => {
+      const file = createMockFile('test.pdf', 1024)
+      const geminiApiKey = 'gemini-test-key'
+      const options: MarkerOptions = {
+        ...defaultOptions,
+        use_llm: true,
+      }
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+
+      await submitPdfConversionLocal(file, geminiApiKey, options)
+
+      const call = fetchMock.mock.calls[0]
+      const formData = call[1].body as FormData
+
+      expect(formData.get('file')).toBe(file)
+      expect(formData.get('geminiApiKey')).toBe(geminiApiKey)
+      expect(formData.get('options')).toBe(JSON.stringify(options))
+    })
+
+    it('should include redo_inline_math option', async () => {
+      const file = createMockFile('test.pdf', 1024)
+      const options: MarkerOptions = {
+        ...defaultOptions,
+        redo_inline_math: true,
+      }
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+
+      await submitPdfConversionLocal(file, null, options)
+
+      const call = fetchMock.mock.calls[0]
+      const formData = call[1].body as FormData
+
+      expect(formData.get('options')).toBe(JSON.stringify(options))
+    })
+
+    it('should throw error if response is not ok', async () => {
+      fetchMock.mockResolvedValue({
+        ok: false,
+        json: async () => ({ success: false, error: 'Local Marker instance not running' }),
+      })
+
+      const file = createMockFile('test.pdf', 1024)
+
+      await expect(submitPdfConversionLocal(file, null, defaultOptions))
+        .rejects.toThrow('Local Marker instance not running')
+    })
+
+    it('should throw generic error if no error message provided', async () => {
+      fetchMock.mockResolvedValue({
+        ok: false,
+        json: async () => ({ success: false }),
+      })
+
+      const file = createMockFile('test.pdf', 1024)
+
+      await expect(submitPdfConversionLocal(file, null, defaultOptions))
+        .rejects.toThrow('Failed to submit file for local conversion')
+    })
+
+    it('should handle network errors', async () => {
+      fetchMock.mockRejectedValue(new Error('Connection refused'))
+
+      const file = createMockFile('test.pdf', 1024)
+
+      await expect(submitPdfConversionLocal(file, null, defaultOptions))
+        .rejects.toThrow('Connection refused')
+    })
+  })
+
+  describe('pollConversionStatusLocal', () => {
+    let fetchMock: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      fetchMock = vi.fn()
+      global.fetch = fetchMock
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('should poll status successfully without API key', async () => {
+      const checkUrl = 'http://localhost:8000/check/123'
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          status: 'processing',
+          progress: 50,
+        }),
+      })
+
+      const result = await pollConversionStatusLocal(checkUrl)
+
+      expect(result.success).toBe(true)
+      expect(result.status).toBe('processing')
+      expect(result.progress).toBe(50)
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining(encodeURIComponent(checkUrl))
+      )
+    })
+
+    it('should return complete status with markdown', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          status: 'complete',
+          markdown: '# Local Converted Content',
+        }),
+      })
+
+      const result = await pollConversionStatusLocal('url')
+
+      expect(result.status).toBe('complete')
+      expect(result.markdown).toBe('# Local Converted Content')
+    })
+
+    it('should handle error status from local Marker', async () => {
+      fetchMock.mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          success: false,
+          error: 'Local conversion failed',
+        }),
+      })
+
+      await expect(pollConversionStatusLocal('url'))
+        .rejects.toThrow('Local conversion failed')
+    })
+
+    it('should encode checkUrl in query parameter', async () => {
+      const checkUrl = 'http://localhost:8000/check?id=123&token=abc'
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, status: 'pending' }),
+      })
+
+      await pollConversionStatusLocal(checkUrl)
+
+      const call = fetchMock.mock.calls[0][0] as string
+      expect(call).toContain(encodeURIComponent(checkUrl))
+    })
+
+    it('should throw generic error if no error message provided', async () => {
+      fetchMock.mockResolvedValue({
+        ok: false,
+        json: async () => ({ success: false }),
+      })
+
+      await expect(pollConversionStatusLocal('url'))
+        .rejects.toThrow('Failed to check local conversion status')
+    })
+  })
+
+  describe('convertPdfToMarkdownLocal', () => {
+    let fetchMock: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      fetchMock = vi.fn()
+      global.fetch = fetchMock
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+      vi.useRealTimers()
+    })
+
+    it('should complete full local conversion workflow', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      // Mock submit response
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          request_check_url: 'local-check-url',
+        }),
+      })
+
+      // Mock poll response (complete)
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          status: 'complete',
+          markdown: '# Local Result',
+        }),
+      })
+
+      const promise = convertPdfToMarkdownLocal(file, null, defaultOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(true)
+      expect(result.markdown).toBe('# Local Result')
+    })
+
+    it('should poll multiple times until complete', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      // Submit response
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          request_check_url: 'check-url',
+        }),
+      })
+
+      // First poll: pending
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          status: 'pending',
+        }),
+      })
+
+      // Second poll: processing
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          status: 'processing',
+        }),
+      })
+
+      // Third poll: complete
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          status: 'complete',
+          markdown: '# Done Locally',
+        }),
+      })
+
+      const promise = convertPdfToMarkdownLocal(file, null, defaultOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(true)
+      expect(result.markdown).toBe('# Done Locally')
+      expect(fetchMock).toHaveBeenCalledTimes(4) // 1 submit + 3 polls
+    })
+
+    it('should call onProgress callback', async () => {
+      const file = createMockFile('test.pdf', 1024)
+      const onProgress = vi.fn()
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, status: 'processing' }),
+      })
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, status: 'complete', markdown: '# Done' }),
+      })
+
+      const promise = convertPdfToMarkdownLocal(file, null, defaultOptions, onProgress)
+      await vi.runAllTimersAsync()
+      await promise
+
+      expect(onProgress).toHaveBeenCalledWith('processing', 1, expect.any(Number))
+      expect(onProgress).toHaveBeenCalledWith('complete', 2, expect.any(Number))
+    })
+
+    it('should handle cancellation via AbortSignal', async () => {
+      const file = createMockFile('test.pdf', 1024)
+      const controller = new AbortController()
+
+      // Cancel immediately
+      controller.abort()
+
+      const result = await convertPdfToMarkdownLocal(file, null, defaultOptions, undefined, controller.signal)
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Conversion cancelled')
+    })
+
+    it('should handle cancellation during polling', async () => {
+      const file = createMockFile('test.pdf', 1024)
+      const controller = new AbortController()
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, status: 'processing' }),
+      })
+
+      const promise = convertPdfToMarkdownLocal(file, null, defaultOptions, undefined, controller.signal)
+
+      // Cancel after first poll
+      await vi.advanceTimersByTimeAsync(100)
+      controller.abort()
+      await vi.runAllTimersAsync()
+
+      const result = await promise
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Conversion cancelled')
+    })
+
+    it('should timeout after max attempts', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+
+      // Always return processing status
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, status: 'processing' }),
+      })
+
+      const promise = convertPdfToMarkdownLocal(file, null, defaultOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Conversion timeout. Please try again.')
+    })
+
+    it('should handle error status from local Marker', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, status: 'error' }),
+      })
+
+      const promise = convertPdfToMarkdownLocal(file, null, defaultOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Conversion failed on local Marker')
+    })
+
+    it('should handle missing check URL from submit', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }), // No request_check_url
+      })
+
+      const result = await convertPdfToMarkdownLocal(file, null, defaultOptions)
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('No status check URL returned from local Marker')
+    })
+
+    it('should handle missing markdown in complete response', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, status: 'complete' }), // No markdown
+      })
+
+      const promise = convertPdfToMarkdownLocal(file, null, defaultOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('No content received from local Marker')
+    })
+
+    it('should catch and return errors from submit', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockRejectedValueOnce(new Error('Connection refused'))
+
+      const result = await convertPdfToMarkdownLocal(file, null, defaultOptions)
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Connection refused')
+    })
+
+    it('should catch and return errors from polling', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+
+      fetchMock.mockRejectedValueOnce(new Error('Poll error'))
+
+      const promise = convertPdfToMarkdownLocal(file, null, defaultOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Poll error')
+    })
+
+    it('should pass Gemini API key when use_llm is enabled', async () => {
+      const file = createMockFile('test.pdf', 1024)
+      const geminiApiKey = 'gemini-key-123'
+      const options: MarkerOptions = {
+        ...defaultOptions,
+        use_llm: true,
+      }
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          request_check_url: 'url',
+        }),
+      })
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          status: 'complete',
+          markdown: '# Result',
+        }),
+      })
+
+      const promise = convertPdfToMarkdownLocal(file, geminiApiKey, options)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(true)
+
+      // Verify Gemini API key was passed in submit
+      const submitCall = fetchMock.mock.calls[0]
+      const formData = submitCall[1].body as FormData
+      expect(formData.get('geminiApiKey')).toBe(geminiApiKey)
     })
   })
 })

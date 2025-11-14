@@ -766,6 +766,63 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ---
 
+### 2025-11-14 - Local Marker Support PR 4: Testing and Polish
+
+**What Changed**:
+- Added comprehensive test coverage for all local Marker service functions
+- Updated test file header documentation
+- Verified all tests pass and coverage meets requirements
+
+**New Tests Added** (27 total):
+- `submitPdfConversionLocal()` tests:
+  - Submit without Gemini API key
+  - Submit with Gemini API key when use_llm enabled
+  - Include redo_inline_math option in request
+  - Error handling (not ok response, missing error message, network errors)
+- `pollConversionStatusLocal()` tests:
+  - Poll status without API key requirement
+  - Return complete status with markdown
+  - Error handling from local Marker
+  - URL encoding in query parameters
+  - Generic error handling
+- `convertPdfToMarkdownLocal()` tests:
+  - Complete local conversion workflow
+  - Multiple polling rounds until completion
+  - Progress callback invocation
+  - Cancellation via AbortSignal (immediate and during polling)
+  - Timeout after max attempts
+  - Error status handling
+  - Missing check URL validation
+  - Missing markdown in complete response
+  - Error handling (submit errors, poll errors)
+  - Gemini API key validation when use_llm enabled
+
+**Test Coverage**:
+- Total tests: 413 passing (up from 386)
+- markerApiService.test.ts: 58 tests (31 cloud + 27 local)
+- Overall coverage: 75.96% (exceeds 70% threshold)
+- All local mode functions have comprehensive test coverage matching cloud mode test patterns
+
+**Implementation Details**:
+- Updated `defaultOptions` in test file to include `redo_inline_math: false`
+- Updated test file header to document local mode test coverage
+- All local mode tests follow same structure as cloud mode tests for consistency
+- Tests verify Gemini API key handling, redo_inline_math option, error scenarios, and polling behavior
+
+**Why This Matters**:
+- Ensures local mode functionality is thoroughly tested
+- Prevents regressions as codebase evolves
+- Documents expected behavior through tests
+- Validates all edge cases and error scenarios
+
+**Note**: This is PR 4 of 4-part plan for local Marker support. Testing complete. Local Marker mode is now fully functional with comprehensive test coverage.
+- **Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
+- **Files Modified**: 1
+  - Updated: src/lib/services/markerApiService.test.ts
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+---
+
 ## Project Complete!
 
 - [ ] All phases completed
