@@ -193,16 +193,22 @@ export default function MergeMarkdownPage() {
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!isDragging) {
-      setIsDragging(true)
-      addLog('info', 'Files dragged over canvas')
+    // Only show drop zone if we're uploading files, not reordering
+    if (!e.dataTransfer.types.includes('application/x-file-reorder')) {
+      if (!isDragging) {
+        setIsDragging(true)
+        addLog('info', 'Files dragged over canvas')
+      }
     }
   }, [isDragging, addLog])
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    e.dataTransfer.dropEffect = 'copy'
+    // Only set dropEffect if we're uploading files
+    if (!e.dataTransfer.types.includes('application/x-file-reorder')) {
+      e.dataTransfer.dropEffect = 'copy'
+    }
   }, [])
 
   const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
@@ -252,8 +258,11 @@ export default function MergeMarkdownPage() {
     }
   }, [])
 
-  const handleFileDragLeave = useCallback(() => {
-    setDragOverFileId(null)
+  const handleFileDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    // Only clear if we're leaving the card entirely, not moving to a child element
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverFileId(null)
+    }
   }, [])
 
   const handleFileDrop = useCallback((e: DragEvent<HTMLDivElement>, dropTargetId: string) => {
@@ -382,15 +391,15 @@ export default function MergeMarkdownPage() {
                   onDragStart={(e) => handleFileDragStart(e, markdownFile.id)}
                   onDragOver={(e) => handleFileDragOver(e, markdownFile.id)}
                   onDragEnter={(e) => handleFileDragEnter(e, markdownFile.id)}
-                  onDragLeave={handleFileDragLeave}
+                  onDragLeave={(e) => handleFileDragLeave(e)}
                   onDrop={(e) => handleFileDrop(e, markdownFile.id)}
                   onDragEnd={handleFileDragEnd}
-                  className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all aspect-[5/7] flex flex-col cursor-move ${
+                  className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out aspect-[5/7] flex flex-col ${
                     isDraggedCard
-                      ? 'opacity-50 border-primary-400'
+                      ? 'cursor-grabbing opacity-40 border-primary-400 scale-95 rotate-2'
                       : isDropTarget
-                      ? 'border-primary-500 border-4 scale-105'
-                      : 'border-gray-200'
+                      ? 'border-primary-500 border-4 scale-105 shadow-2xl bg-primary-50'
+                      : 'cursor-grab border-gray-200'
                   }`}
                 >
                   {/* Remove button */}
