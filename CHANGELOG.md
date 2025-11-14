@@ -7,7 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Full-Page Drop Zone for PDF to Markdown** (2025-11-14):
+  - **Implemented full-page drop overlay**:
+    - When dragging files over the page, a full-screen overlay appears with clear drop target
+    - Overlay uses blue translucent background with backdrop blur for modern feel
+    - Central white card with dashed border displays "Drop PDF files here" message
+    - Automatically hides when files are dropped or drag leaves the page
+    - Uses drag counter to track nested drag events correctly
+  - **Technical implementation**:
+    - Added `showDropOverlay` state and `dragCounterRef` for tracking drag state
+    - Implemented `handlePageDragEnter`, `handlePageDragLeave`, `handlePageDragOver` handlers
+    - Wrapped entire page content in drag event listeners
+    - Fixed z-index layering with `fixed inset-0 z-50` positioning
+    - Overlay has `pointer-events-none` to allow drop events to pass through
+  - **UX improvements**:
+    - Users can now drop files anywhere on the page, not just the small drop box
+    - Clear visual feedback when dragging files over the page
+    - More intuitive and forgiving file upload experience
+  - **Impact**: Significantly improved drag-and-drop UX, making file uploads more intuitive
+  - **Files Modified**: src/app/pdf-to-markdown/page.tsx
+  - Build: ✅ | Lint: ✅ | Tests: ✅
+
 ### Changed
+- **Clarified Folder Drop Limitations** (2025-11-14):
+  - **Updated drop zone text**:
+    - Changed "Drop PDF files or folders here" to "Drop PDF files here"
+    - Added descriptive subtext to buttons: "Select individual PDFs" and "Select entire folder"
+  - **Reasoning**: Browser security prevents drag-and-drop of folders - only the file picker with `webkitdirectory` attribute can access folder contents
+  - **Impact**: Clearer messaging, no false expectations about folder drag-and-drop
+  - **Files Modified**: src/app/pdf-to-markdown/page.tsx
+  - Build: ✅ | Lint: ✅ | Tests: ✅
+
 - **PDF to Markdown UI Improvements** (2025-11-14):
   - **Added visual separator** between drop zone text and file browser buttons
     - Cleaner visual hierarchy in file upload area

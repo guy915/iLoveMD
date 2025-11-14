@@ -590,6 +590,34 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Impact**: More cohesive and professional UI with clearer visual hierarchy
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
+
+### 2025-11-14 - Full-Page Drop Zone and Folder Drop Clarification
+- **Added**:
+  - Full-page drop overlay for PDF to Markdown page
+    - Overlay appears when dragging files anywhere on the page
+    - Beautiful blue translucent background with backdrop blur effect
+    - Central white card with dashed border and clear "Drop PDF files here" message
+    - Uses drag counter (`dragCounterRef`) to correctly handle nested drag events
+    - Automatic hide when files dropped or drag leaves page
+  - New drag event handlers: `handlePageDragEnter`, `handlePageDragLeave`, `handlePageDragOver`
+  - State management: `showDropOverlay` for overlay visibility
+  - Wrapped entire page content in drag event listeners
+- **Changed**:
+  - Updated drop zone text from "Drop PDF files or folders here" to "Drop PDF files here"
+  - Added descriptive subtext to buttons:
+    - "Browse Files" → "Select individual PDFs"
+    - "Browse Folders" → "Select entire folder"
+  - Changed button layout to flex-col for better text stacking
+  - Added py-6 padding to buttons for better spacing
+- **Reasoning**: Browser security prevents drag-and-drop of folders from OS - only file input with `webkitdirectory` can access folder contents
+- **Impact**:
+  - Significantly improved drag-and-drop UX - users can drop files anywhere on the page
+  - Clearer messaging about folder selection capabilities
+  - No false expectations about folder drag-and-drop
+- **Testing**: Build ✅ | Lint ✅ | Tests: ✅ (335 passed, 6 skipped)
+- **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-14 - Merge Markdown File Reordering (PR 3)
 - **Added**:
   - Drag-and-drop file reordering in file grid
