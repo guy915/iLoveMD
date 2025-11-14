@@ -11,6 +11,8 @@ interface MarkdownFile {
   content: string
 }
 
+type SortMode = 'none' | 'alphabetical' | 'reverseAlphabetical'
+
 // Helper function to format file sizes dynamically
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -21,12 +23,31 @@ function formatFileSize(bytes: number): string {
 
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
+  const [sortMode, setSortMode] = useState<SortMode>('none')
   const [isDragging, setIsDragging] = useState(false)
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
   const draggedIndexRef = useRef<number | null>(null)
+  const dragStartOrderRef = useRef<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
+
+  // Sort files based on current sort mode
+  const sortFiles = useCallback((filesToSort: MarkdownFile[], mode: SortMode): MarkdownFile[] => {
+    if (mode === 'none') {
+      // No sorting, keep current order
+      return [...filesToSort]
+    } else if (mode === 'alphabetical') {
+      return [...filesToSort].sort((a, b) =>
+        a.file.name.localeCompare(b.file.name, undefined, { sensitivity: 'base' })
+      )
+    } else if (mode === 'reverseAlphabetical') {
+      return [...filesToSort].sort((a, b) =>
+        b.file.name.localeCompare(a.file.name, undefined, { sensitivity: 'base' })
+      )
+    }
+    return filesToSort
+  }, [])
 
   // Process files (shared logic for button upload and drag-drop)
   const processFiles = useCallback(async (fileList: FileList | File[]) => {
@@ -118,7 +139,7 @@ export default function MergeMarkdownPage() {
     }
 
     if (validFiles.length > 0) {
-      setFiles(prev => [...prev, ...validFiles])
+      setFiles(prev => sortFiles([...prev, ...validFiles], sortMode))
       addLog('success', `${validFiles.length} file(s) added successfully`, {
         totalFiles: files.length + validFiles.length,
         totalSize: formatFileSize(cumulativeSize)
@@ -128,7 +149,7 @@ export default function MergeMarkdownPage() {
     if (errors.length > 0) {
       addLog('error', `${errors.length} file(s) failed validation`, { errors })
     }
-  }, [files, addLog])
+  }, [files, addLog, sortFiles, sortMode])
 
   // Handle file selection from button or click on empty canvas
   const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
@@ -176,7 +197,24 @@ export default function MergeMarkdownPage() {
 
     addLog('info', `Cleared all ${files.length} file(s)`)
     setFiles([])
+    setSortMode('none')
   }, [files.length, addLog])
+
+  // Toggle alphabetical sorting
+  const handleToggleAlphabetical = useCallback(() => {
+    let newMode: SortMode
+    if (sortMode === 'none') {
+      newMode = 'alphabetical'
+    } else if (sortMode === 'alphabetical') {
+      newMode = 'reverseAlphabetical'
+    } else {
+      newMode = 'alphabetical'
+    }
+
+    setSortMode(newMode)
+    setFiles(prev => sortFiles(prev, newMode))
+    addLog('info', `Sort mode changed to: ${newMode}`)
+  }, [sortMode, sortFiles, addLog])
 
   // Trigger file input click
   const handleUploadClick = useCallback(() => {
@@ -237,6 +275,7 @@ export default function MergeMarkdownPage() {
   const handleFileDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
     const draggedIndex = files.findIndex(f => f.id === fileId)
     draggedIndexRef.current = draggedIndex
+    dragStartOrderRef.current = files.map(f => f.id)
     setDraggedFileId(fileId)
     e.dataTransfer.effectAllowed = 'move'
     // Set a custom data type to differentiate from file upload drags
@@ -312,6 +351,7 @@ export default function MergeMarkdownPage() {
     setDraggedFileId(null)
     setDragOverFileId(null)
     draggedIndexRef.current = null
+    dragStartOrderRef.current = []
   }, [])
 
   return (
@@ -389,9 +429,13 @@ export default function MergeMarkdownPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {files.map((markdownFile) => {
+              {files.map((markdownFile, currentIndex) => {
                 const isDraggedCard = draggedFileId === markdownFile.id
                 const isDropTarget = dragOverFileId === markdownFile.id
+
+                // Check if card has moved from its starting position
+                const startIndex = dragStartOrderRef.current.indexOf(markdownFile.id)
+                const hasMovedPosition = draggedFileId && startIndex !== -1 && startIndex !== currentIndex
 
                 return (
                 <div
@@ -405,9 +449,9 @@ export default function MergeMarkdownPage() {
                   onDragEnd={handleFileDragEnd}
                   className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out aspect-[5/7] flex flex-col ${
                     isDraggedCard
-                      ? 'cursor-grabbing opacity-40 border-primary-400 scale-95 rotate-2'
-                      : isDropTarget
-                      ? 'border-primary-500 border-4 scale-105 shadow-2xl bg-primary-50'
+                      ? 'cursor-grabbing opacity-20 border-primary-400'
+                      : isDropTarget || hasMovedPosition
+                      ? 'border-primary-400 bg-primary-50'
                       : 'cursor-grab border-gray-200'
                   }`}
                 >
@@ -485,12 +529,16 @@ export default function MergeMarkdownPage() {
             </p>
           </div>
 
-          {/* Sorting Section - Placeholder */}
+          {/* Sorting Section */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Sort Files</h2>
-            <div className="text-sm text-gray-500">
-              Coming in next PR
-            </div>
+            <button
+              onClick={handleToggleAlphabetical}
+              aria-pressed={sortMode !== 'none'}
+              className="w-full px-3 py-2 text-sm font-medium rounded transition-colors bg-primary-600 text-white hover:bg-primary-700"
+            >
+              {sortMode === 'reverseAlphabetical' ? 'Z → A' : 'A → Z'}
+            </button>
           </div>
 
           {/* Merge Options - Placeholder */}
