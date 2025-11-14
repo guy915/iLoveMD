@@ -233,7 +233,7 @@ export default function MergeMarkdownPage() {
         }
       `}</style>
 
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
         {/* Canvas Area - Left Side */}
         <div
           className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
