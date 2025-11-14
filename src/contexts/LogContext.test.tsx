@@ -938,9 +938,6 @@ describe('LogContext', () => {
     })
 
     it('should restore original console methods on unmount', () => {
-      const originalError = console.error
-      const originalWarn = console.warn
-
       const { unmount } = renderHook(() => useLogs(), {
         wrapper: createWrapper()
       })
