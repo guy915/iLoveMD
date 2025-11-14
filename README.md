@@ -11,11 +11,8 @@ AI Doc Prep provides simple, single-purpose tools to convert and prepare documen
 ### PDF to Markdown
 Convert PDF files to clean markdown using Marker API with configurable options.
 
-### HTML to Markdown (Coming Soon)
-Convert HTML files or web pages to markdown.
-
-### Merge Markdowns (Coming Soon)
-Merge Markdown files.
+### Merge Markdowns
+Combine multiple markdown files into one with customizable separators and ordering.
 
 ## Getting Started
 
