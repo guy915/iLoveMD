@@ -562,19 +562,19 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Visual feedback: dragged card (scale-95, rotate-2, opacity-40), drop target (scale-105, shadow-2xl, bg tint)
   - Cursor feedback: cursor-grab/cursor-grabbing for better UX
   - Custom data type to differentiate reordering from file uploads
-  - State tracking: draggedFileId, dragOverFileId
+  - State tracking: draggedFileId, dragOverFileId, draggedIndexRef
   - All drag handlers: handleFileDragStart, handleFileDragOver, handleFileDragEnter, handleFileDragLeave, handleFileDrop, handleFileDragEnd
-  - Reordering logic using array splice
-  - Smooth 300ms transitions for all state changes
+  - Real-time reordering: cards shuffle and make room as you drag (not just on drop)
+  - Smooth 300ms transitions with CSS Grid animation
   - Comprehensive logging (drag start, reorder with positions)
 - **Fixed**:
   - Canvas drop zone no longer appears when reordering files
   - Flickering on drag leave (checks relatedTarget)
   - Drop effect not set incorrectly during reordering
   - All Copilot review feedback addressed
-- **Impact**: Users can reorder files by dragging cards with professional, polished UX
+- **Impact**: Users can reorder files with smooth, intuitive drag-and-drop. Cards shuffle in real-time providing professional, satisfying visual feedback
 - **Testing**: Build ✅ | Lint ✅
-- **Commits**: 3 commits (a8fa95e initial, 9e5fc27 docs, 8e153c5 bug fixes)
+- **Commits**: 4 commits (a8fa95e initial, 9e5fc27 docs, 8e153c5 bug fixes, 05252dc smooth shuffle)
 - **Files Modified**: 1 (src/app/merge-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
