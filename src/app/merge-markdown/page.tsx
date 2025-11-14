@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, ChangeEvent, DragEvent, useEffect } from 'react'
+import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
 import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
 import { FILE_SIZE } from '@/lib/constants'
@@ -11,7 +11,7 @@ interface MarkdownFile {
   content: string
 }
 
-type SortMode = 'uploadOrder' | 'alphabetical' | 'reverseAlphabetical'
+type SortMode = 'none' | 'alphabetical' | 'reverseAlphabetical'
 
 // Helper function to format file sizes dynamically
 function formatFileSize(bytes: number): string {
@@ -23,20 +23,19 @@ function formatFileSize(bytes: number): string {
 
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
-  const [sortMode, setSortMode] = useState<SortMode>('uploadOrder')
+  const [sortMode, setSortMode] = useState<SortMode>('none')
   const [isDragging, setIsDragging] = useState(false)
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
   const draggedIndexRef = useRef<number | null>(null)
-  const uploadOrderRef = useRef<MarkdownFile[]>([]) // Store original upload order
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
   // Sort files based on current sort mode
   const sortFiles = useCallback((filesToSort: MarkdownFile[], mode: SortMode): MarkdownFile[] => {
-    if (mode === 'uploadOrder') {
-      // Restore original upload order
-      return [...uploadOrderRef.current]
+    if (mode === 'none') {
+      // No sorting, keep current order
+      return [...filesToSort]
     } else if (mode === 'alphabetical') {
       return [...filesToSort].sort((a, b) =>
         a.file.name.localeCompare(b.file.name, undefined, { sensitivity: 'base' })
@@ -139,13 +138,7 @@ export default function MergeMarkdownPage() {
     }
 
     if (validFiles.length > 0) {
-      setFiles(prev => {
-        const newFiles = [...prev, ...validFiles]
-        // Store upload order
-        uploadOrderRef.current = newFiles
-        // Apply current sort mode
-        return sortFiles(newFiles, sortMode)
-      })
+      setFiles(prev => sortFiles([...prev, ...validFiles], sortMode))
       addLog('success', `${validFiles.length} file(s) added successfully`, {
         totalFiles: files.length + validFiles.length,
         totalSize: formatFileSize(cumulativeSize)
@@ -203,12 +196,19 @@ export default function MergeMarkdownPage() {
 
     addLog('info', `Cleared all ${files.length} file(s)`)
     setFiles([])
-    uploadOrderRef.current = []
+    setSortMode('none')
   }, [files.length, addLog])
 
-  // Handle sort mode change
-  const handleSortChange = useCallback((newMode: SortMode) => {
-    if (newMode === sortMode) return
+  // Toggle alphabetical sorting
+  const handleToggleAlphabetical = useCallback(() => {
+    let newMode: SortMode
+    if (sortMode === 'none') {
+      newMode = 'alphabetical'
+    } else if (sortMode === 'alphabetical') {
+      newMode = 'reverseAlphabetical'
+    } else {
+      newMode = 'alphabetical'
+    }
 
     setSortMode(newMode)
     setFiles(prev => sortFiles(prev, newMode))
@@ -525,38 +525,17 @@ export default function MergeMarkdownPage() {
           {/* Sorting Section */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Sort Files</h2>
-            <div className="space-y-2">
-              <button
-                onClick={() => handleSortChange('uploadOrder')}
-                className={`w-full px-3 py-2 text-sm font-medium rounded transition-colors ${
-                  sortMode === 'uploadOrder'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Upload Order
-              </button>
-              <button
-                onClick={() => handleSortChange('alphabetical')}
-                className={`w-full px-3 py-2 text-sm font-medium rounded transition-colors ${
-                  sortMode === 'alphabetical'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                A → Z
-              </button>
-              <button
-                onClick={() => handleSortChange('reverseAlphabetical')}
-                className={`w-full px-3 py-2 text-sm font-medium rounded transition-colors ${
-                  sortMode === 'reverseAlphabetical'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Z → A
-              </button>
-            </div>
+            <button
+              onClick={handleToggleAlphabetical}
+              aria-pressed={sortMode !== 'none'}
+              className={`w-full px-3 py-2 text-sm font-medium rounded transition-colors ${
+                sortMode !== 'none'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {sortMode === 'reverseAlphabetical' ? 'Z → A' : 'A → Z'}
+            </button>
           </div>
 
           {/* Merge Options - Placeholder */}
