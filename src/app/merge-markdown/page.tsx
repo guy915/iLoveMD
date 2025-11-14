@@ -3,6 +3,9 @@
 import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
 import { FILE_SIZE } from '@/lib/constants'
@@ -541,7 +544,8 @@ export default function MergeMarkdownPage() {
                     <div className="absolute inset-0 overflow-hidden p-2">
                       <div className="text-[0.35rem] leading-tight">
                         <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
                           components={{
                             h1: ({...props}) => <h1 className="text-[0.5rem] font-bold mb-1" {...props} />,
                             h2: ({...props}) => <h2 className="text-[0.45rem] font-bold mb-1" {...props} />,
