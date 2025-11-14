@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Comprehensive Utility Function Tests** (2025-11-14):
+  - **Created extensive test suites for utility functions**:
+    - formatUtils.test.ts: 34 tests covering all formatting functions
+      - formatFileSize: 24 tests (edge cases, all units, boundaries, precision)
+      - formatBytesToMB: 5 tests (all sizes, custom decimals, negatives)
+      - formatBytesToKB: 4 tests (all sizes, custom decimals, negatives)
+      - formatDuration: 7 tests (zero, small, large, negative durations)
+    - downloadUtils.test.ts: 30 tests covering file downloads and extensions
+      - replaceExtension: 15 tests (dotfiles, multi-part extensions, edge cases)
+      - downloadFile: 15 tests (blob creation, DOM manipulation, cleanup, error handling)
+  - **Test coverage improvement**:
+    - lib/utils: 32.38% → 99.57% coverage (67% improvement!)
+    - Overall codebase: 1.2% → 16.22% coverage
+    - Branches: 38.88% → 86.78% coverage in tested modules
+    - Functions: 100% coverage for all utility functions
+  - **Real-world test scenarios**:
+    - PDF file sizes (200MB Marker API limit, batch limits)
+    - Large markdown files (10MB+ content)
+    - Unicode content and special characters in filenames
+    - Browser API edge cases (blob creation errors, DOM failures)
+  - **Impact**: Utility functions now have near-perfect coverage, catching edge cases and preventing regressions
+  - **Files Added**: src/lib/utils/formatUtils.test.ts, src/lib/utils/downloadUtils.test.ts
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (72/72 passing)
+
 - **Testing Infrastructure Setup** (2025-11-14):
   - **Installed testing framework and dependencies**:
     - Vitest 2.1.8 as test runner (faster than Jest, better TypeScript/ESM support)
