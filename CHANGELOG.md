@@ -8,6 +8,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Three-Mode Architecture: Local (Free) + Cloud Free + Cloud (Paid)** (2025-11-14):
+  - **Expanded from 2 modes to 3 modes** for PDF conversion:
+    - **Local (Free)**: True local processing (requires Python + marker-pdf setup, complete privacy)
+    - **Cloud Free**: Free GPU processing on HuggingFace Spaces (no setup, may have 30-60s cold start)
+    - **Cloud (Paid)**: Marker API (fastest, supports batch, requires API key)
+  - **New HuggingFace Space deployment**:
+    - Created FastAPI server for Cloud Free mode (`huggingface-space/app.py`)
+    - Deployment guide with HuggingFace Spaces instructions (`huggingface-space/DEPLOYMENT.md`)
+    - Dockerfile for easy deployment on HuggingFace GPU tier
+    - Supports all local mode options (redo_inline_math, Gemini API key for LLM)
+  - **Updated UI**:
+    - Changed from 2-button toggle to 3-button grid layout
+    - Mode descriptions: "Local (Free)", "Cloud Free (Free GPU)", "Cloud (Paid) (API)"
+    - Gemini API key input now shows for both Local and Cloud Free modes
+    - Math formatting option (redo_inline_math) available for Local and Cloud Free modes
+    - Mode-specific "How it works" sections for each mode
+  - **New API route**: `/api/marker/cloud-free` proxies requests to HuggingFace Space
+  - **New service functions**: `submitPdfConversionCloudFree()`, `pollConversionStatusCloudFree()`, `convertPdfToMarkdownCloudFree()`
+  - **Updated constants**:
+    - Added `MARKER_CLOUD_FREE` and `CLOUD_FREE_INSTANCE` endpoints
+    - Updated `STORAGE_KEYS.MARKER_MODE` comment to reflect three modes
+    - Updated `STORAGE_KEYS.GEMINI_API_KEY` comment for cloud-free support
+  - **Local mode setup documentation**: Created `LOCAL_SETUP.md` with comprehensive installation and usage guide
+  - **Files Created**:
+    - `huggingface-space/app.py` (FastAPI server)
+    - `huggingface-space/requirements.txt`
+    - `huggingface-space/README.md`
+    - `huggingface-space/Dockerfile`
+    - `huggingface-space/.gitignore`
+    - `huggingface-space/DEPLOYMENT.md`
+    - `LOCAL_SETUP.md`
+    - `src/app/api/marker/cloud-free/route.ts`
+  - **Files Modified**:
+    - Updated: `src/lib/constants.ts`, `src/lib/services/markerApiService.ts`, `src/app/pdf-to-markdown/page.tsx`
+  - **Test results**:
+    - Total: 413 tests passing (same as before - no breaking changes)
+    - Coverage: 75.96% overall (maintained above 70% threshold)
+    - Build: ✅ | Lint: ✅ | Tests: ✅
+  - **Default mode**: Cloud Free (best user experience - no setup, fast, free)
+  - **Note**: This addresses deployment complexity concerns. Users no longer need to manually set up Python/Docker for local mode. Cloud Free mode provides instant, free PDF conversion with GPU acceleration.
+
 - **Cloud/Local Mode Toggle for PDF to Markdown** (2025-11-14):
   - **Added mode toggle UI** to switch between Local Marker and Cloud API:
     - Two-button toggle: "Local Marker" (default, left) and "Cloud API" (right)

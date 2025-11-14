@@ -54,16 +54,20 @@ export const TOOL_CARDS: readonly ToolCard[] = [
 export const API_ENDPOINTS = {
   MARKER: '/api/marker',
   MARKER_LOCAL: '/api/marker/local',
+  MARKER_CLOUD_FREE: '/api/marker/cloud-free',
   MARKER_EXTERNAL: 'https://www.datalab.to/api/v1/marker',
-  // Local Marker instance endpoint (Docker default)
+  // Local Marker instance endpoint (requires manual setup)
   LOCAL_MARKER_INSTANCE: 'http://localhost:8000',
+  // Cloud Free endpoint (HuggingFace Spaces with free GPU)
+  // TODO: Replace with your actual HuggingFace Space URL after deployment
+  CLOUD_FREE_INSTANCE: 'https://guy915-marker-pdf-converter.hf.space',
 } as const
 
 // LocalStorage keys
 export const STORAGE_KEYS = {
   MARKER_OPTIONS: 'markerOptions',
-  MARKER_MODE: 'markerMode', // 'cloud' | 'local'
-  GEMINI_API_KEY: 'geminiApiKey', // For local mode with LLM
+  MARKER_MODE: 'markerMode', // 'local' | 'cloud-free' | 'cloud-paid'
+  GEMINI_API_KEY: 'geminiApiKey', // For local mode and cloud-free mode with LLM
 } as const
 
 // Marker API configuration
