@@ -617,6 +617,33 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Dependencies Added**: framer-motion
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
+### 2025-11-14 - Merge Markdown Functionality (PR 5)
+- **Added**:
+  - Core merge functionality to combine multiple markdown files
+  - Download button to save merged file as "merged.md"
+  - Merge options panel with three separator styles (radio buttons):
+    - File Headers (default): "## filename" before each file
+    - Page Breaks: "---" horizontal rule between files
+    - None: Just newlines (minimal separation)
+  - Merge button disabled when no files uploaded
+  - Comprehensive diagnostic logging for merge operations
+- **Technical implementation**:
+  - Added SeparatorStyle type: 'none' | 'page-break' | 'file-header'
+  - mergeMarkdownFiles() function handles merging logic
+  - handleMergeAndDownload() creates blob and triggers download
+  - Preserves current file order (upload/manual/sorted)
+  - Trims content whitespace before merging
+  - All handlers properly memoized
+- **Merge logic**:
+  - First file: header only if file-header style
+  - Subsequent files: separator + content
+  - Content trimmed to avoid excess whitespace
+- **Impact**: Users can merge markdown files with flexible separator options. Merge respects file ordering (upload order, manual reordering, or sorting).
+- **Testing**: Build ✅ | Lint ✅
+- **Commits**: 1 commit (2cc283a)
+- **Files Modified**: 1 (src/app/merge-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ---
 
 ## Project Complete!
