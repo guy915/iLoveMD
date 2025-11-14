@@ -594,14 +594,14 @@ export default function PdfToMarkdownPage() {
                 disabled={processing}
                 className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
                   mode === 'free'
-                    ? 'bg-green-600 text-white'
+                    ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 aria-pressed={mode === 'free'}
               >
                 <div className="flex flex-col items-center">
                   <span className="font-semibold">Free</span>
-                  <span className="text-xs opacity-90">(GPU-powered)</span>
+                  <span className="text-xs opacity-90">(Slow)</span>
                 </div>
               </button>
               <button
@@ -619,14 +619,14 @@ export default function PdfToMarkdownPage() {
               >
                 <div className="flex flex-col items-center">
                   <span className="font-semibold">Paid</span>
-                  <span className="text-xs opacity-90">(Fastest)</span>
+                  <span className="text-xs opacity-90">(Fast)</span>
                 </div>
               </button>
             </div>
             <p className="mt-3 text-sm text-gray-600">
               {mode === 'free'
-                ? '🆓 Free GPU processing via HuggingFace (30-90 seconds per PDF, may have cold start)'
-                : '⚡ Premium Marker API (10-30 seconds per PDF, requires API key)'}
+                ? 'Free GPU processing via HuggingFace. 30 seconds to 2 minutes per PDF, may have cold start.'
+                : 'Premium Marker API. 10-30 seconds per PDF, requires API key.'}
             </p>
           </div>
 
