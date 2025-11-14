@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Storage Service Tests** (2025-11-14):
+  - **Created comprehensive test suite for storageService.ts**:
+    - 39 tests covering all storage operations and error scenarios
+    - getItem/setItem/removeItem: Basic CRUD operations with edge cases
+    - getJSON/setJSON: JSON parsing, stringify, complex nested objects, circular references
+    - clear/hasItem: Storage management and key existence checks
+    - Error handling: Quota exceeded, JSON parse errors, storage exceptions
+    - Special scenarios: Empty strings, unicode, special characters, null values
+  - **Test coverage improvement**:
+    - storageService.ts: 0% → 89.18% coverage (+89%)
+    - lib/services: 0% → 52.8% overall
+    - Overall codebase: 16.22% → 24.61% (+8.4%)
+    - Branches: 86.78% → 89.23% in tested modules
+  - **Real-world test scenarios**:
+    - Marker API key storage workflows
+    - Options persistence (markerOptions object)
+    - Complete user workflow (store, update, remove, clear)
+    - Mock localStorage error scenarios (quota exceeded, exceptions)
+  - **Impact**: Storage abstraction layer now thoroughly tested, preventing data loss and ensuring SSR safety
+  - **Files Added**: src/lib/services/storageService.test.ts
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (111/111 passing)
+
 - **Comprehensive Utility Function Tests** (2025-11-14):
   - **Created extensive test suites for utility functions**:
     - formatUtils.test.ts: 34 tests covering all formatting functions
