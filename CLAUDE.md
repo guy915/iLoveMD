@@ -81,7 +81,7 @@ The project has automated CI/CD workflows in `.github/workflows/`:
 - **Code quality checks** (console.log detection, bundle size)
 - **PR labeling** and automation
 
-When adding features with new dependencies, test commands, or API endpoints, consider updating the CI/CD workflows accordingly.
+When adding features with new dependencies, test commands, or API endpoints, update the CI/CD workflows accordingly.
 
 ---
 
