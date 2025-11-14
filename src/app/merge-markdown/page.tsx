@@ -543,24 +543,32 @@ export default function MergeMarkdownPage() {
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            h1: ({node, ...props}) => <h1 className="text-[0.5rem] font-bold mb-1" {...props} />,
-                            h2: ({node, ...props}) => <h2 className="text-[0.45rem] font-bold mb-1" {...props} />,
-                            h3: ({node, ...props}) => <h3 className="text-[0.4rem] font-bold mb-0.5" {...props} />,
-                            h4: ({node, ...props}) => <h4 className="text-[0.38rem] font-semibold mb-0.5" {...props} />,
-                            h5: ({node, ...props}) => <h5 className="text-[0.36rem] font-semibold mb-0.5" {...props} />,
-                            h6: ({node, ...props}) => <h6 className="text-[0.35rem] font-semibold mb-0.5" {...props} />,
-                            p: ({node, ...props}) => <p className="mb-1" {...props} />,
-                            ul: ({node, ...props}) => <ul className="mb-1 ml-2 list-disc" {...props} />,
-                            ol: ({node, ...props}) => <ol className="mb-1 ml-2 list-decimal" {...props} />,
-                            li: ({node, ...props}) => <li className="mb-0.5" {...props} />,
-                            code: ({node, ...props}) => <code className="bg-gray-100 px-0.5 rounded text-[0.32rem]" {...props} />,
-                            pre: ({node, ...props}) => <pre className="bg-gray-100 p-1 rounded text-[0.32rem] mb-1 overflow-x-auto" {...props} />,
-                            blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
-                            a: ({node, ...props}) => <a className="text-blue-600" {...props} />,
-                            hr: ({node, ...props}) => <hr className="my-1 border-gray-300" {...props} />,
+                            h1: ({...props}) => <h1 className="text-[0.5rem] font-bold mb-1" {...props} />,
+                            h2: ({...props}) => <h2 className="text-[0.45rem] font-bold mb-1" {...props} />,
+                            h3: ({...props}) => <h3 className="text-[0.4rem] font-bold mb-0.5" {...props} />,
+                            h4: ({...props}) => <h4 className="text-[0.38rem] font-semibold mb-0.5" {...props} />,
+                            h5: ({...props}) => <h5 className="text-[0.36rem] font-semibold mb-0.5" {...props} />,
+                            h6: ({...props}) => <h6 className="text-[0.35rem] font-semibold mb-0.5" {...props} />,
+                            p: ({...props}) => <p className="mb-1" {...props} />,
+                            ul: ({...props}) => <ul className="mb-1 ml-2 list-disc" {...props} />,
+                            ol: ({...props}) => <ol className="mb-1 ml-2 list-decimal" {...props} />,
+                            li: ({...props}) => <li className="mb-0.5" {...props} />,
+                            code: ({...props}) => <code className="bg-gray-100 px-0.5 rounded text-[0.32rem]" {...props} />,
+                            pre: ({...props}) => <pre className="bg-gray-100 p-1 rounded text-[0.32rem] mb-1 overflow-x-auto" {...props} />,
+                            blockquote: ({...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
+                            a: ({href, ...props}) => {
+                              // Filter out dangerous URL schemes for security
+                              const isSafe = href && !href.startsWith('javascript:') && !href.startsWith('data:')
+                              return isSafe
+                                ? <a className="text-blue-600" href={href} rel="noopener noreferrer" {...props} />
+                                : <span className="text-blue-600" {...props} />
+                            },
+                            hr: ({...props}) => <hr className="my-1 border-gray-300" {...props} />,
+                            // Don't render images - just show alt text to prevent 404 errors flooding logs
+                            img: ({alt}) => <span className="text-gray-500 text-[0.32rem] italic">[Image: {alt || 'no description'}]</span>,
                           }}
                         >
-                          {markdownFile.content}
+                          {markdownFile.content.substring(0, 500)}
                         </ReactMarkdown>
                       </div>
                     </div>
