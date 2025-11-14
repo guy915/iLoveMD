@@ -750,6 +750,25 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Files Modified**: 1 new file (src/app/merge-markdown/page.test.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
+### 2025-11-14 - Local Marker Support PR 1: Mode Toggle UI
+- **Added**:
+  - Mode toggle UI for Cloud API vs Local Marker (two-button toggle)
+  - Mode state persisted to localStorage (default: cloud)
+  - Conditional API key inputs:
+    - Cloud mode: Marker API key (required)
+    - Local mode: Gemini API key (only shown when use_llm is enabled)
+  - Dynamic validation for Convert button based on mode
+  - Mode-specific "How it works" instructions
+  - Explanatory text for each mode
+- **Technical**:
+  - Added STORAGE_KEYS.MARKER_MODE and STORAGE_KEYS.GEMINI_API_KEY to constants
+  - Updated handleConvert dependencies to include mode and geminiApiKey
+  - All state properly loaded/saved from/to localStorage
+- **Note**: This is PR 1 of 4-part plan for local Marker support. UI only - no backend integration yet.
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 2 (src/app/pdf-to-markdown/page.tsx, src/lib/constants.ts)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ---
 
 ## Project Complete!

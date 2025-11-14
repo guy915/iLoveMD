@@ -65,6 +65,8 @@ export const API_ENDPOINTS = {
 // LocalStorage keys
 export const STORAGE_KEYS = {
   MARKER_OPTIONS: 'markerOptions',
+  MARKER_MODE: 'markerMode', // 'cloud' | 'local'
+  GEMINI_API_KEY: 'geminiApiKey', // For local mode with LLM
 } as const
 
 // Marker API configuration
