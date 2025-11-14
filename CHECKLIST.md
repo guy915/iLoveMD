@@ -21,8 +21,6 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] **TypeScript Migration Cleanup** (2025-11-13) - Converted config files, updated docs
 
 - [x] Install dependencies
-  - [x] `npm install turndown`
-  - [x] `npm install @mozilla/readability`
 
 - [x] Clean up boilerplate
   - [x] Remove default page.module.css
@@ -224,87 +222,13 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ---
 
-## Phase 4: HTML to Markdown Tool
-
-**Goal:** Implement HTML conversion with client-side processing
-
-### 4.1 API Route for URL Fetching
-
-- [ ] Create fetch-url API route
-  - [ ] File: src/app/api/fetch-url/route.ts
-  - [ ] Handle POST requests
-  - [ ] Extract URL from body
-  - [ ] Validate URL
-  - [ ] Fetch HTML content
-  - [ ] Add User-Agent header
-  - [ ] Error handling
-  - [ ] Test with various URLs
-
-### 4.2 HTML Processing Utilities
-
-- [ ] Create HTML processor (client-side)
-  - [ ] File: src/lib/utils/htmlProcessor.ts
-  - [ ] cleanHTML() function (remove scripts, styles, etc.)
-  - [ ] convertToMarkdown() function (using Turndown)
-  - [ ] Configure Turndown options
-  - [ ] Test with sample HTML
-
-### 4.3 HTML Tool Page
-
-- [ ] Create HTML tool page
-  - [ ] File: src/app/html-to-markdown/page.tsx
-  - [ ] 'use client' directive
-  - [ ] State management
-  - [ ] Tab interface (File upload / URL)
-  - [ ] File upload tab
-  - [ ] URL input tab
-  - [ ] Options panel
-  - [ ] Convert button
-  - [ ] Status messages
-  - [ ] Download trigger
-
-- [ ] Implement tab selector
-  - [ ] Inline in page component or create: src/components/common/TabSelector.tsx (optional)
-  - [ ] Switch between file upload and URL input
-  - [ ] Clear state when switching tabs
-
-- [ ] Implement file processing
-  - [ ] Read file with FileReader
-  - [ ] Process HTML client-side
-  - [ ] Convert to markdown
-  - [ ] Trigger download
-
-- [ ] Implement URL processing
-  - [ ] Call /api/fetch-url
-  - [ ] Receive HTML
-  - [ ] Process client-side
-  - [ ] Convert to markdown
-  - [ ] Trigger download
-
-### 4.4 Testing Phase 4
-
-- [ ] Upload simple HTML file
-- [ ] Upload complex HTML file
-- [ ] Test with simple URL
-- [ ] Test with complex website
-- [ ] Test with invalid URL
-- [ ] Test with URL that blocks CORS
-- [ ] Verify markdown output quality
-- [ ] Test preserve images option
-- [ ] Test preserve links option
-- [ ] Check error messages
-
-**Phase 4 Complete:** [ ]
-
----
-
-## Phase 5: Merge Markdown Tool
+## Phase 4: Merge Markdown Tool
 
 **Goal:** Implement markdown merging with client-side processing
 
 **Implementation Note:** All functionality implemented directly in page.tsx (no separate utilities or components needed)
 
-### 5.1 Core Functionality
+### 4.1 Core Functionality
 
 - [x] Create merge tool page
   - [x] File: src/app/merge-markdown/page.tsx
@@ -318,7 +242,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] Merge & download button
   - [x] Download trigger with blob creation
 
-### 5.2 File Upload & Validation
+### 4.2 File Upload & Validation
 
 - [x] Implement multi-file upload
   - [x] Accept multiple files (.md, .markdown)
@@ -331,7 +255,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] Remove individual files
   - [x] Clear all files button
 
-### 5.3 File Ordering
+### 4.3 File Ordering
 
 - [x] Upload order (default)
 - [x] Manual reordering via drag-and-drop
@@ -345,7 +269,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] Preserves manual order until explicit sort
   - [x] Reset to 'none' on clear all
 
-### 5.4 Merge Options
+### 4.4 Merge Options
 
 - [x] Add file headers (checkbox, default: enabled)
   - [x] Uses H1 heading: `# filename`
@@ -364,7 +288,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] Filename: "merged.md"
   - [x] Cleanup (URL.revokeObjectURL)
 
-### 5.5 Diagnostic Logging
+### 4.5 Diagnostic Logging
 
 - [x] File upload events (count, validation, errors)
 - [x] File removal and clear all
@@ -374,7 +298,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [x] Merge operation (files count, options, output size)
 - [x] Download success/failure
 
-### 5.6 Testing Phase 5
+### 4.6 Testing Phase 4
 
 - [x] Upload 2 markdown files
 - [x] Upload multiple files
@@ -387,15 +311,15 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [x] Verify merged output correctness
 - [x] Test error handling
 
-**Phase 5 Complete:** [x]
+**Phase 4 Complete:** [x]
 
 ---
 
-## Phase 6: Polish & Deploy
+## Phase 5: Polish & Deploy
 
 **Goal:** Create help/about pages, final testing, and deploy
 
-### 6.1 Content Pages
+### 5.1 Content Pages
 
 - [x] Create Help page
   - [x] File: src/app/help/page.tsx
@@ -413,7 +337,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - [x] Developer info
   - [x] GitHub link (if public)
 
-### 6.2 Error Handling & Polish
+### 5.2 Error Handling & Polish
 
 - [x] Add error boundaries (React) - ErrorBoundary component exists
 - [x] Improve error messages (user-friendly) - Comprehensive error handling improvements (2025-11-13):
@@ -431,7 +355,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [x] Add file size warnings - File size validation with 200MB limit
 - [x] Add "processing may take a while" messages - Status messages during polling
 
-### 6.3 Responsive Design
+### 5.3 Responsive Design
 
 - [ ] Test on mobile (< 640px)
 - [ ] Test on tablet (640px - 1024px)
@@ -440,7 +364,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] Ensure touch targets are 44x44px minimum
 - [ ] Test hamburger menu on mobile
 
-### 6.4 Cross-Browser Testing
+### 5.4 Cross-Browser Testing
 
 - [ ] Test on Chrome (latest)
 - [ ] Test on Firefox (latest)
@@ -448,7 +372,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] Test on Edge (latest)
 - [ ] Fix any browser-specific issues
 
-### 6.5 Accessibility
+### 5.5 Accessibility
 
 - [ ] Check keyboard navigation (tab through site)
 - [ ] Add aria-labels where needed
@@ -456,7 +380,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] Test with screen reader (optional)
 - [ ] Check color contrast ratios
 
-### 6.6 Performance
+### 5.6 Performance
 
 - [x] **Performance Audit & Optimization Complete** (2025-11-13):
   - [x] Identified 19 performance bottlenecks through systematic analysis
@@ -476,7 +400,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] Check bundle size
 - [ ] Lazy load if needed
 
-### 6.7 Final Testing
+### 5.7 Final Testing
 
 - [ ] All features work end-to-end
 - [ ] localStorage persists correctly
@@ -485,14 +409,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] No broken styles
 - [ ] All forms validate properly
 
-### 6.8 Documentation Updates
+### 5.8 Documentation Updates
 
 - [ ] Update README if needed
 - [ ] Add screenshots (optional)
 - [ ] Update any changed API details
 - [ ] Mark all checklist items
 
-### 6.9 Deployment
+### 5.9 Deployment
 
 - [ ] Commit all changes to git
 - [ ] Push to GitHub
@@ -505,7 +429,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - [ ] Check API routes work on production
 - [ ] Test with real API keys on production
 
-**Phase 6 Complete:** [ ]
+**Phase 5 Complete:** [ ]
 
 ---
 

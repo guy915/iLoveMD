@@ -31,7 +31,6 @@ export const FILE_SIZE = {
 // Navigation links for header
 export const NAV_LINKS: readonly NavLink[] = [
   { href: '/pdf-to-markdown', label: 'PDF to Markdown', shortLabel: 'PDF' },
-  { href: '/html-to-markdown', label: 'HTML to Markdown', shortLabel: 'HTML' },
   { href: '/merge-markdown', label: 'Merge Markdown', shortLabel: 'Markdown' },
   { href: '/help', label: 'Help', shortLabel: 'Help' },
   { href: '/about', label: 'About', shortLabel: 'About' },
@@ -43,11 +42,6 @@ export const TOOL_CARDS: readonly ToolCard[] = [
     title: 'PDF to Markdown',
     description: 'Convert PDF documents to clean, LLM-optimized markdown using Marker AI. Supports complex layouts, tables, equations, and optional OCR for scanned documents.',
     href: '/pdf-to-markdown',
-  },
-  {
-    title: 'HTML to Markdown',
-    description: 'Convert HTML files or web pages to markdown. Upload files or paste URLs for instant conversion, all processed in your browser for privacy.',
-    href: '/html-to-markdown',
   },
   {
     title: 'Merge Markdown',
