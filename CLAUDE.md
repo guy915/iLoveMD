@@ -77,6 +77,7 @@ const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqx
 The project has automated CI/CD workflows in `.github/workflows/`:
 - **Build verification** on Node 18.x and 20.x
 - **Security audits** for dependencies
+- **Test Coverage** for testing
 - **Code quality checks** (console.log detection, bundle size)
 - **PR labeling** and automation
 
