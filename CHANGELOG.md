@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Replaced old navigation links** with new structure:
     - Removed: Help, About pages
     - Changed shortLabel for tool pages: "PDF" → "PDF to Markdown", "Markdown" → "Merge Markdowns"
-    - Added external links: I Love PDF (https://www.ilovepdf.com), I Love Markdown (https://www.ilovemarkdown.com), Tokenizer (https://platform.openai.com/tokenizer)
+    - Added external links: iLovePDF (https://www.ilovepdf.com), iLoveMD (https://www.ilovemarkdown.com), Token Counter (https://platform.openai.com/tokenizer)
   - **Added support for external links in NavLink type**:
     - Added optional `external` boolean field to NavLink interface
     - External links render as anchor tags with target="_blank" and rel="noopener noreferrer"
@@ -24,6 +24,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Files Modified**:
     - Updated: `src/types/index.ts`, `src/lib/constants.ts`, `src/components/layout/Header.tsx`
   - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped) | Coverage: 75.77%
+
+### Fixed
+- **Header Layout Spacing** (2025-11-14):
+  - **Fixed header navigation spacing issue**:
+    - Removed `max-w-7xl mx-auto` constraint from nav element
+    - Header now spans full width of viewport
+    - Navigation elements properly spread from left to right edge
+    - Logo/panel on left, navigation links on right with proper spacing
+  - **Updated navigation labels**:
+    - "I Love PDF" → "iLovePDF"
+    - "I Love Markdown" → "iLoveMD"
+    - "Tokenizer" → "Token Counter"
+  - **Files Modified**:
+    - Updated: `src/lib/constants.ts`, `src/components/layout/Header.tsx`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped)
 
 ### Added
 - **Cloud/Local Mode Toggle for PDF to Markdown** (2025-11-14):

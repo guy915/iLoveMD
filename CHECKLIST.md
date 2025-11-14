@@ -864,6 +864,44 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ---
 
+### 2025-11-14 - Header Layout and Label Fixes
+
+**What Changed**:
+- Fixed header navigation layout spacing issue
+- Updated external link labels to correct branding
+
+**Layout Fix**:
+- Removed `max-w-7xl mx-auto` constraint from nav element
+- Header now spans full viewport width
+- Navigation elements properly distributed across full width
+- Logo and diagnostic panel on left edge
+- Navigation links on right edge
+- No more excessive center clustering
+
+**Label Updates**:
+- "I Love PDF" → "iLovePDF" (correct branding)
+- "I Love Markdown" → "iLoveMD" (correct branding)
+- "Tokenizer" → "Token Counter" (more descriptive)
+
+**Why This Change**:
+- User feedback: navigation elements too close to center, weird spacing
+- Correct external site branding (iLovePDF, iLoveMD)
+- More descriptive label for token counter tool
+
+**Technical Changes**:
+- Removed width constraint from header nav container
+- Updated shortLabel values in NAV_LINKS constant
+- Navigation now uses full viewport width with justify-between
+
+**Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
+
+**Files Modified**: 2
+- Updated: src/lib/constants.ts, src/components/layout/Header.tsx
+
+**Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+---
+
 ## Project Complete!
 
 - [ ] All phases completed
