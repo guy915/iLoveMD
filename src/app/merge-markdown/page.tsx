@@ -444,7 +444,7 @@ export default function MergeMarkdownPage() {
                     isDraggedCard
                       ? 'cursor-grabbing opacity-20 border-primary-400'
                       : isDropTarget
-                      ? 'border-primary-500 border-4 scale-105 shadow-2xl bg-primary-50'
+                      ? 'border-primary-400 bg-primary-50'
                       : 'cursor-grab border-gray-200'
                   }`}
                 >
