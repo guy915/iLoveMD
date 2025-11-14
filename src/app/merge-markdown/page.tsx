@@ -225,15 +225,23 @@ export default function MergeMarkdownPage() {
   }, [processFiles, addLog])
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Canvas Area - Left Side */}
-      <div
-        className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
+    <>
+      {/* Hide footer on this page only */}
+      <style jsx global>{`
+        footer {
+          display: none;
+        }
+      `}</style>
+
+      <div className="flex h-screen overflow-hidden">
+        {/* Canvas Area - Left Side */}
+        <div
+          className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
         {/* Drag overlay */}
         {isDragging && (
           <div
@@ -271,7 +279,7 @@ export default function MergeMarkdownPage() {
           {/* File Grid */}
           {files.length === 0 ? (
             <div
-              className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
               onClick={handleEmptyCanvasClick}
               role="button"
               tabIndex={0}
@@ -409,5 +417,6 @@ export default function MergeMarkdownPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
