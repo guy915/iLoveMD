@@ -591,16 +591,23 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
 
-### 2025-11-14 - Full-Page Drop Zone Bug Fix
-- **Fixed**:
-  - Overlay inner white card was blocking drop events
-    - Problem: Only outer overlay div had `pointer-events-none`, inner card captured events
-    - Solution: Added `pointer-events-none` to inner card so events pass through to drop zone
-    - Result: Full-page drop now works correctly anywhere on the page
-  - Restored folder text to "Drop PDF files or folders here"
-    - User confirmed folder drag-and-drop works in practice
-    - Removed incorrect assumption about browser limitations
-- **Impact**: Full-page drag-and-drop now works as intended - users can drop files/folders anywhere
+### 2025-11-14 - Full-Page Drop Zone Real Fix (Third Attempt)
+- **Root cause finally identified**:
+  - Drop handlers were on `max-w-4xl mx-auto` div (only 896px wide, centered)
+  - NOT the full page width, despite overlay being full screen
+  - Users could only drop in narrow centered column, not anywhere on page
+- **Solution**:
+  - Created fixed `inset-0` wrapper div that covers entire viewport
+  - All drag handlers moved to this full-width wrapper
+  - Dynamically enable pointer-events only when dragging (showDropOverlay)
+  - Content stays in centered 4xl container for layout
+  - z-index layering: drop zone (z-10), overlay (z-50), content (normal)
+- **Folder drag-and-drop clarification**:
+  - Browser drag-and-drop from OS file explorer doesn't expose folder contents
+  - Only "Browse Folders" button (with webkitdirectory attribute) can access folders
+  - Updated overlay: "Note: Use 'Browse Folders' button for folders"
+  - Drop zone text changed to just "Drop PDF files here"
+- **Impact**: Drop zone NOW TRULY covers entire page - users can drop files anywhere
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
