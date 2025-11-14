@@ -8,6 +8,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Marker API Service Tests** (2025-11-14):
+  - **Created comprehensive test suite for markerApiService.ts**:
+    - 35 tests covering validation, API calls, and conversion workflows
+    - **Validation functions** (7 tests):
+      - validateApiKey: Length validation, whitespace trimming, edge cases
+      - validatePdfFile: File type checking, size limits (200MB), error messages
+    - **API submission** (7 tests):
+      - submitPdfConversion: Successful submission, FormData validation, error handling
+      - Mock fetch for network simulation
+      - Error scenarios: Invalid API key, file too large, network errors
+    - **Status polling** (5 tests):
+      - pollConversionStatus: All status types (pending, processing, complete, error)
+      - URL encoding, API key headers, response parsing
+    - **Complete conversion workflow** (16 tests):
+      - convertPdfToMarkdown: End-to-end flow with automatic polling
+      - Multi-attempt polling simulation (pending → processing → complete)
+      - Progress callbacks with elapsed time tracking
+      - Cancellation via AbortSignal (before start, during polling)
+      - Timeout handling after max attempts
+      - Error handling: Missing check URL, missing markdown, server errors
+      - Network error propagation
+  - **Test coverage improvement**:
+    - markerApiService.ts: 0% → 98.05% coverage (+98%)
+    - lib/services: 52.8% → 79.58% (+26.8%)
+    - Overall codebase: 24.61% → 34.97% (+10.4%)
+    - Branches: 89.23% → 92.12%
+    - Functions: 47.36% → 73.61%
+  - **Advanced testing techniques**:
+    - Mock fetch responses for API simulation
+    - Fake timers (vi.useFakeTimers) for polling simulation
+    - AbortController for cancellation testing
+    - Progress callback spies for event tracking
+    - File size mocking without memory overhead
+  - **Impact**: Core PDF conversion service now fully tested, ensuring reliable API interactions and error handling
+  - **Files Added**: src/lib/services/markerApiService.test.ts
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (146/146 passing)
+
 - **Storage Service Tests** (2025-11-14):
   - **Created comprehensive test suite for storageService.ts**:
     - 39 tests covering all storage operations and error scenarios
