@@ -575,50 +575,52 @@ export default function PdfToMarkdownPage() {
         </p>
       </div>
 
-      {/* Mode Toggle Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => {
-              setMode('local')
-              addLog('info', 'Switched to Local Marker mode')
-            }}
-            disabled={processing}
-            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
-              mode === 'local'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            aria-pressed={mode === 'local'}
-          >
-            Local Marker
-          </button>
-          <button
-            onClick={() => {
-              setMode('cloud')
-              addLog('info', 'Switched to Cloud API mode')
-            }}
-            disabled={processing}
-            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
-              mode === 'cloud'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            aria-pressed={mode === 'cloud'}
-          >
-            Cloud API
-          </button>
-        </div>
-        <p className="mt-3 text-sm text-gray-600">
-          {mode === 'local'
-            ? 'Use local Marker instance (requires Docker, more options available)'
-            : 'Use Marker cloud API (requires API key, easier setup)'}
-        </p>
-      </div>
+      {/* Mode Toggle Section - Only show after mounted to prevent flicker */}
+      {mounted && (
+        <>
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  setMode('local')
+                  addLog('info', 'Switched to Local Marker mode')
+                }}
+                disabled={processing}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+                  mode === 'local'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                aria-pressed={mode === 'local'}
+              >
+                Local Marker
+              </button>
+              <button
+                onClick={() => {
+                  setMode('cloud')
+                  addLog('info', 'Switched to Cloud API mode')
+                }}
+                disabled={processing}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+                  mode === 'cloud'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                aria-pressed={mode === 'cloud'}
+              >
+                Cloud API
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">
+              {mode === 'local'
+                ? 'Use local Marker instance (requires Docker, more options available)'
+                : 'Use Marker cloud API (requires API key, easier setup)'}
+            </p>
+          </div>
 
-      {/* API Key Section - Cloud Mode */}
-      {mode === 'cloud' && (
+          {/* API Key Section - Cloud Mode */}
+          {mode === 'cloud' && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <label htmlFor="api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
             Marker API Key
@@ -682,6 +684,8 @@ export default function PdfToMarkdownPage() {
             )}
           </p>
         </div>
+      )}
+        </>
       )}
 
       {/* File Upload Section */}
