@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, ChangeEvent } from 'react'
+import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
 import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
 import { FILE_SIZE } from '@/lib/constants'
@@ -21,14 +21,15 @@ function formatFileSize(bytes: number): string {
 
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
-  // Handle file selection from button or click on empty canvas
-  const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files
-    if (!selectedFiles || selectedFiles.length === 0) {
-      addLog('info', 'File selection cancelled')
+  // Process files (shared logic for button upload and drag-drop)
+  const processFiles = useCallback(async (fileList: FileList | File[]) => {
+    const selectedFiles = Array.from(fileList)
+
+    if (selectedFiles.length === 0) {
       return
     }
 
@@ -42,7 +43,7 @@ export default function MergeMarkdownPage() {
     const currentTotalSize = files.reduce((sum, f) => sum + f.file.size, 0)
 
     // Process files in parallel
-    const filePromises = Array.from(selectedFiles).map(async (file, i) => {
+    const filePromises = selectedFiles.map(async (file, i) => {
       // Check total file count first
       if (i >= remainingSlots) {
         return { error: null } // Skip silently, will report total skipped later
@@ -124,12 +125,23 @@ export default function MergeMarkdownPage() {
     if (errors.length > 0) {
       addLog('error', `${errors.length} file(s) failed validation`, { errors })
     }
+  }, [files, addLog])
+
+  // Handle file selection from button or click on empty canvas
+  const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files
+    if (!selectedFiles || selectedFiles.length === 0) {
+      addLog('info', 'File selection cancelled')
+      return
+    }
+
+    await processFiles(selectedFiles)
 
     // Reset input to allow re-selecting same files
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
-  }, [files, addLog])
+  }, [processFiles, addLog])
 
   // Read file as text
   const readFileAsText = (file: File): Promise<string> => {
@@ -175,11 +187,90 @@ export default function MergeMarkdownPage() {
     fileInputRef.current?.click()
   }, [addLog])
 
+  // Drag and drop handlers
+  const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isDragging) {
+      setIsDragging(true)
+      addLog('info', 'Files dragged over canvas')
+    }
+  }, [isDragging, addLog])
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
+  }, [])
+
+  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Check if we're leaving the canvas container entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback(async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const droppedFiles = e.dataTransfer.files
+    if (droppedFiles && droppedFiles.length > 0) {
+      addLog('info', `${droppedFiles.length} file(s) dropped on canvas`)
+      await processFiles(droppedFiles)
+    }
+  }, [processFiles, addLog])
+
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Canvas Area - Left Side */}
-      <div className="flex-1 bg-gray-50 overflow-y-auto p-8">
-        <div className="max-w-6xl mx-auto">
+    <>
+      {/* Hide footer on this page only */}
+      <style jsx global>{`
+        footer {
+          display: none;
+        }
+      `}</style>
+
+      <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
+        {/* Canvas Area - Left Side */}
+        <div
+          className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+        {/* Drag overlay */}
+        {isDragging && (
+          <div
+            className="absolute inset-0 bg-primary-500 bg-opacity-10 border-4 border-primary-500 border-dashed z-50 flex items-center justify-center pointer-events-none"
+            role="status"
+            aria-live="polite"
+            aria-label="Drop zone active. Drop files here."
+          >
+            <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+              <svg
+                className="w-16 h-16 mx-auto mb-4 text-primary-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <p className="text-xl font-semibold text-gray-900">Drop files here</p>
+              <p className="text-sm text-gray-500 mt-2">Upload your markdown files</p>
+            </div>
+          </div>
+        )}
+
+        <div className="max-w-6xl mx-auto h-full flex flex-col">
           <h1 className="text-3xl font-bold mb-2">Merge Markdown Files</h1>
           <p className="text-gray-600 mb-8">
             Combine multiple markdown files into one document
@@ -188,7 +279,7 @@ export default function MergeMarkdownPage() {
           {/* File Grid */}
           {files.length === 0 ? (
             <div
-              className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center flex-1 min-h-[550px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
               onClick={handleEmptyCanvasClick}
               role="button"
               tabIndex={0}
@@ -202,7 +293,7 @@ export default function MergeMarkdownPage() {
               <div className="text-center">
                 <p className="text-gray-500 text-lg mb-2">No files uploaded</p>
                 <p className="text-gray-400 text-sm">
-                  Click here or &quot;Upload Files&quot; to get started
+                  Click here, drag files, or &quot;Upload Files&quot; to get started
                 </p>
               </div>
             </div>
@@ -211,7 +302,7 @@ export default function MergeMarkdownPage() {
               {files.map((markdownFile) => (
                 <div
                   key={markdownFile.id}
-                  className="relative bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                  className="relative bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow aspect-[5/7] flex flex-col"
                 >
                   {/* Remove button */}
                   <button
@@ -225,7 +316,7 @@ export default function MergeMarkdownPage() {
                   </button>
 
                   {/* File preview placeholder */}
-                  <div className="aspect-[4/5] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
+                  <div className="flex-1 bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4 rounded-t-lg">
                     <div className="text-center">
                       <svg
                         className="w-16 h-16 mx-auto mb-2 text-gray-400"
@@ -244,8 +335,8 @@ export default function MergeMarkdownPage() {
                     </div>
                   </div>
 
-                  {/* Filename */}
-                  <div className="p-3">
+                  {/* Filename - Fixed height footer */}
+                  <div className="p-3 flex-shrink-0">
                     <p className="text-sm font-medium text-gray-900 truncate" title={markdownFile.file.name}>
                       {markdownFile.file.name}
                     </p>
@@ -261,8 +352,8 @@ export default function MergeMarkdownPage() {
       </div>
 
       {/* Control Panel - Right Side */}
-      <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto p-6 flex flex-col">
-        <div className="space-y-6 flex-1">
+      <div className="w-80 bg-white border-l border-gray-200 p-6 flex flex-col">
+        <div className="space-y-6 flex-1 overflow-y-auto">
           {/* Upload Section */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Upload Files</h2>
@@ -326,5 +417,6 @@ export default function MergeMarkdownPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
