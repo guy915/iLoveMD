@@ -11,12 +11,20 @@ interface MarkdownFile {
   content: string
 }
 
+// Helper function to format file sizes dynamically
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < FILE_SIZE.BYTES_PER_MB) return `${(bytes / FILE_SIZE.BYTES_PER_KB).toFixed(1)} KB`
+  if (bytes < FILE_SIZE.BYTES_PER_GB) return `${(bytes / FILE_SIZE.BYTES_PER_MB).toFixed(1)} MB`
+  return `${(bytes / FILE_SIZE.BYTES_PER_GB).toFixed(2)} GB`
+}
+
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
-  // Handle file selection from button
+  // Handle file selection from button or click on empty canvas
   const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files
     if (!selectedFiles || selectedFiles.length === 0) {
@@ -29,43 +37,88 @@ export default function MergeMarkdownPage() {
     const validFiles: MarkdownFile[] = []
     const errors: string[] = []
 
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i]
+    // Calculate remaining slots and current total size
+    const remainingSlots = FILE_SIZE.MAX_MERGE_FILES - files.length
+    const currentTotalSize = files.reduce((sum, f) => sum + f.file.size, 0)
 
-      // Validate file type
-      if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
-        errors.push(`${file.name}: Not a markdown file`)
-        continue
+    // Process files in parallel
+    const filePromises = Array.from(selectedFiles).map(async (file, i) => {
+      // Check total file count first
+      if (i >= remainingSlots) {
+        return { error: null } // Skip silently, will report total skipped later
       }
 
-      // Validate file size
-      if (file.size > FILE_SIZE.MAX_FILE_SIZE) {
-        errors.push(`${file.name}: File too large (max 1GB)`)
-        continue
+      // Validate file type (extension)
+      const validExtensions = ['.md', '.markdown']
+      const hasValidExtension = validExtensions.some(ext =>
+        file.name.toLowerCase().endsWith(ext)
+      )
+
+      if (!hasValidExtension) {
+        return { error: `${file.name}: Not a markdown file` }
       }
 
-      // Check total file count
-      if (files.length + validFiles.length >= FILE_SIZE.MAX_MERGE_FILES) {
-        errors.push(`Maximum ${FILE_SIZE.MAX_MERGE_FILES} files allowed`)
-        break
+      // Validate MIME type (if available)
+      const validMimeTypes = ['text/markdown', 'text/plain', 'text/x-markdown', '']
+      if (file.type && !validMimeTypes.includes(file.type)) {
+        return { error: `${file.name}: Invalid file type` }
+      }
+
+      // Validate individual file size
+      if (file.size > FILE_SIZE.MAX_MERGE_FILE_SIZE) {
+        return { error: `${file.name}: File too large (max ${formatFileSize(FILE_SIZE.MAX_MERGE_FILE_SIZE)})` }
       }
 
       // Read file content
       try {
         const content = await readFileAsText(file)
-        validFiles.push({
-          id: `${file.name}-${Date.now()}-${i}`,
-          file,
-          content
-        })
+        return {
+          fileData: {
+            id: typeof crypto !== 'undefined' && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `${file.name}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            file,
+            content
+          }
+        }
       } catch (err) {
-        errors.push(`${file.name}: Failed to read file`)
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+        addLog('error', `${file.name}: Failed to read file - ${errorMessage}`)
+        return { error: `${file.name}: Failed to read file` }
       }
+    })
+
+    const results = await Promise.all(filePromises)
+
+    // Collect valid files and errors
+    let cumulativeSize = currentTotalSize
+    for (const result of results) {
+      if (result.fileData) {
+        // Check if adding this file would exceed total size limit
+        if (cumulativeSize + result.fileData.file.size > FILE_SIZE.MAX_TOTAL_MERGE_SIZE) {
+          errors.push(`${result.fileData.file.name}: Would exceed total size limit of ${formatFileSize(FILE_SIZE.MAX_TOTAL_MERGE_SIZE)}`)
+          continue
+        }
+
+        validFiles.push(result.fileData)
+        cumulativeSize += result.fileData.file.size
+      } else if (result.error) {
+        errors.push(result.error)
+      }
+    }
+
+    // Add skipped files message if any
+    const skippedCount = selectedFiles.length - remainingSlots
+    if (skippedCount > 0) {
+      errors.push(`Maximum ${FILE_SIZE.MAX_MERGE_FILES} files allowed. ${skippedCount} file(s) skipped.`)
     }
 
     if (validFiles.length > 0) {
       setFiles(prev => [...prev, ...validFiles])
-      addLog('success', `${validFiles.length} file(s) added successfully`)
+      addLog('success', `${validFiles.length} file(s) added successfully`, {
+        totalFiles: files.length + validFiles.length,
+        totalSize: formatFileSize(cumulativeSize)
+      })
     }
 
     if (errors.length > 0) {
@@ -76,7 +129,7 @@ export default function MergeMarkdownPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
-  }, [files.length, addLog])
+  }, [files, addLog])
 
   // Read file as text
   const readFileAsText = (file: File): Promise<string> => {
@@ -116,6 +169,15 @@ export default function MergeMarkdownPage() {
     fileInputRef.current?.click()
   }, [addLog])
 
+  // Handle click on empty canvas area
+  const handleEmptyCanvasClick = useCallback(() => {
+    addLog('info', 'Empty canvas area clicked - opening file browser')
+    fileInputRef.current?.click()
+  }, [addLog])
+
+  // Calculate total size
+  const totalSize = files.reduce((sum, f) => sum + f.file.size, 0)
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Canvas Area - Left Side */}
@@ -128,11 +190,22 @@ export default function MergeMarkdownPage() {
 
           {/* File Grid */}
           {files.length === 0 ? (
-            <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded-lg">
+            <div
+              className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
+              onClick={handleEmptyCanvasClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleEmptyCanvasClick()
+                }
+              }}
+            >
               <div className="text-center">
                 <p className="text-gray-500 text-lg mb-2">No files uploaded</p>
                 <p className="text-gray-400 text-sm">
-                  Click &quot;Upload Files&quot; to get started
+                  Click here or &quot;Upload Files&quot; to get started
                 </p>
               </div>
             </div>
@@ -146,17 +219,19 @@ export default function MergeMarkdownPage() {
                   {/* Remove button */}
                   <button
                     onClick={() => handleRemoveFile(markdownFile.id)}
-                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors z-10"
-                    aria-label="Remove file"
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors z-10"
+                    aria-label={`Remove ${markdownFile.file.name}`}
                   >
-                    ×
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
 
-                  {/* File preview placeholder (A4 ratio: 1:1.414) */}
-                  <div className="aspect-[1/1.414] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
+                  {/* File preview placeholder (A4 ratio: 210/297) */}
+                  <div className="aspect-[210/297] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
                     <div className="text-center">
                       <svg
-                        className="w-12 h-12 mx-auto mb-2 text-gray-400"
+                        className="w-8 h-8 mx-auto mb-2 text-gray-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -168,7 +243,7 @@ export default function MergeMarkdownPage() {
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      <p className="text-xs text-gray-500">Markdown File</p>
+                      <p className="text-xs text-gray-500">Markdown</p>
                     </div>
                   </div>
 
@@ -178,7 +253,7 @@ export default function MergeMarkdownPage() {
                       {markdownFile.file.name}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {(markdownFile.file.size / 1024).toFixed(1)} KB
+                      {formatFileSize(markdownFile.file.size)}
                     </p>
                   </div>
                 </div>
@@ -209,9 +284,14 @@ export default function MergeMarkdownPage() {
             >
               Upload Files
             </Button>
-            <p className="text-xs text-gray-500 mt-2">
-              {files.length} / {FILE_SIZE.MAX_MERGE_FILES} files
-            </p>
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-gray-500">
+                Files: {files.length} / {FILE_SIZE.MAX_MERGE_FILES}
+              </p>
+              <p className="text-xs text-gray-500">
+                Total: {formatFileSize(totalSize)} / {formatFileSize(FILE_SIZE.MAX_TOTAL_MERGE_SIZE)}
+              </p>
+            </div>
           </div>
 
           {/* Sorting Section - Placeholder */}
@@ -235,7 +315,6 @@ export default function MergeMarkdownPage() {
         <div className="space-y-3 pt-6 border-t border-gray-200">
           {/* Merge Button - Placeholder */}
           <Button
-            onClick={() => {}}
             variant="primary"
             disabled={true}
             className="w-full"
