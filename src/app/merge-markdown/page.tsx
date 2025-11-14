@@ -270,7 +270,7 @@ export default function MergeMarkdownPage() {
           </div>
         )}
 
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto h-full flex flex-col">
           <h1 className="text-3xl font-bold mb-2">Merge Markdown Files</h1>
           <p className="text-gray-600 mb-8">
             Combine multiple markdown files into one document
@@ -279,7 +279,7 @@ export default function MergeMarkdownPage() {
           {/* File Grid */}
           {files.length === 0 ? (
             <div
-              className="flex items-center justify-center min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center flex-1 min-h-[550px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
               onClick={handleEmptyCanvasClick}
               role="button"
               tabIndex={0}
