@@ -26,37 +26,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Implemented core merge functionality**:
     - Merge multiple markdown files into a single document
     - Download merged file as "merged.md"
-    - Three separator style options with radio button controls:
-      - **File Headers** (default): Adds "## filename" before each file's content
-      - **Page Breaks**: Adds "---" horizontal rule between files
-      - **None**: Just newlines between files (minimal separation)
+    - **Headers option** (checkbox, enabled by default):
+      - Adds `# filename` (H1 heading) before each file's content
+      - Independent of separator selection
+      - Can be toggled on/off
+    - **Separator option** (radio toggle between two styles):
+      - **Newlines only** (default): Double newlines between files
+      - **Page Breaks**: `---` horizontal rule between files
     - Merge button disabled when no files uploaded
     - Button label: "Merge & Download" for clear action indication
   - **Technical implementation**:
-    - Added SeparatorStyle type: 'none' | 'page-break' | 'file-header'
+    - Added SeparatorStyle type: 'newline' | 'page-break'
+    - Added addHeaders state (boolean, default true)
     - mergeMarkdownFiles() function handles content merging logic
     - handleMergeAndDownload() creates blob and triggers browser download
     - Preserves current file order (respects manual reordering and sorting)
     - Trims whitespace from file contents before merging
     - All merge options properly memoized with useCallback
   - **UX improvements**:
-    - Radio buttons for intuitive separator selection
-    - Clear labels explaining each separator style
+    - Checkbox for headers is more intuitive than radio buttons
+    - Clear separation between headers and separators
+    - Radio buttons for separator selection
+    - Clear labels explaining each option
     - Comprehensive diagnostic logging:
-      - Log when separator style changes
-      - Log merge operation start (files count + separator type)
+      - Log when headers toggled (enabled/disabled)
+      - Log when separator changed (newlines/page breaks)
+      - Log merge operation start (files count, separator, headers)
       - Log successful merge (total files + output size)
       - Log successful download (filename)
       - Log errors with detailed messages
     - File size formatting in logs (B, KB, MB, GB)
   - **Merge logic**:
-    - First file gets header only if using file-header style
-    - Subsequent files get appropriate separator before content
-    - Page breaks: "\n\n---\n\n"
-    - File headers: "\n\n## filename\n\n"
-    - None: "\n\n" (double newline)
+    - Headers (if enabled): `# filename\n\n` before each file's content
+    - Separators between files (except first):
+      - Newlines: `\n\n`
+      - Page breaks: `\n\n---\n\n`
     - Content trimmed before joining to avoid excess whitespace
-  - **Impact**: Users can now merge multiple markdown files with flexible separator options and download the result. The merge functionality respects file ordering (upload order, manual reordering, or alphabetical sorting), providing complete control over the final output.
+  - **Impact**: Users can now merge multiple markdown files with flexible header and separator options. The merge functionality respects file ordering (upload order, manual reordering, or alphabetical sorting), providing complete control over the final output.
   - **Files Modified**: src/app/merge-markdown/page.tsx
   - Build: ✅ | Lint: ✅
 - **Context and Diagnostic Logging Tests** (2025-11-14):
