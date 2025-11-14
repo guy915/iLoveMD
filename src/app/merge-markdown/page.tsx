@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
+import { useState, useRef, useCallback, ChangeEvent, DragEvent, useEffect } from 'react'
 import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
 import { FILE_SIZE } from '@/lib/constants'
@@ -10,6 +10,8 @@ interface MarkdownFile {
   file: File
   content: string
 }
+
+type SortMode = 'uploadOrder' | 'alphabetical' | 'reverseAlphabetical'
 
 // Helper function to format file sizes dynamically
 function formatFileSize(bytes: number): string {
@@ -21,12 +23,31 @@ function formatFileSize(bytes: number): string {
 
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
+  const [sortMode, setSortMode] = useState<SortMode>('uploadOrder')
   const [isDragging, setIsDragging] = useState(false)
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
   const draggedIndexRef = useRef<number | null>(null)
+  const uploadOrderRef = useRef<MarkdownFile[]>([]) // Store original upload order
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
+
+  // Sort files based on current sort mode
+  const sortFiles = useCallback((filesToSort: MarkdownFile[], mode: SortMode): MarkdownFile[] => {
+    if (mode === 'uploadOrder') {
+      // Restore original upload order
+      return [...uploadOrderRef.current]
+    } else if (mode === 'alphabetical') {
+      return [...filesToSort].sort((a, b) =>
+        a.file.name.localeCompare(b.file.name, undefined, { sensitivity: 'base' })
+      )
+    } else if (mode === 'reverseAlphabetical') {
+      return [...filesToSort].sort((a, b) =>
+        b.file.name.localeCompare(a.file.name, undefined, { sensitivity: 'base' })
+      )
+    }
+    return filesToSort
+  }, [])
 
   // Process files (shared logic for button upload and drag-drop)
   const processFiles = useCallback(async (fileList: FileList | File[]) => {
@@ -118,7 +139,13 @@ export default function MergeMarkdownPage() {
     }
 
     if (validFiles.length > 0) {
-      setFiles(prev => [...prev, ...validFiles])
+      setFiles(prev => {
+        const newFiles = [...prev, ...validFiles]
+        // Store upload order
+        uploadOrderRef.current = newFiles
+        // Apply current sort mode
+        return sortFiles(newFiles, sortMode)
+      })
       addLog('success', `${validFiles.length} file(s) added successfully`, {
         totalFiles: files.length + validFiles.length,
         totalSize: formatFileSize(cumulativeSize)
@@ -128,7 +155,7 @@ export default function MergeMarkdownPage() {
     if (errors.length > 0) {
       addLog('error', `${errors.length} file(s) failed validation`, { errors })
     }
-  }, [files, addLog])
+  }, [files, addLog, sortFiles, sortMode])
 
   // Handle file selection from button or click on empty canvas
   const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
@@ -176,7 +203,17 @@ export default function MergeMarkdownPage() {
 
     addLog('info', `Cleared all ${files.length} file(s)`)
     setFiles([])
+    uploadOrderRef.current = []
   }, [files.length, addLog])
+
+  // Handle sort mode change
+  const handleSortChange = useCallback((newMode: SortMode) => {
+    if (newMode === sortMode) return
+
+    setSortMode(newMode)
+    setFiles(prev => sortFiles(prev, newMode))
+    addLog('info', `Sort mode changed to: ${newMode}`)
+  }, [sortMode, sortFiles, addLog])
 
   // Trigger file input click
   const handleUploadClick = useCallback(() => {
@@ -485,11 +522,40 @@ export default function MergeMarkdownPage() {
             </p>
           </div>
 
-          {/* Sorting Section - Placeholder */}
+          {/* Sorting Section */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Sort Files</h2>
-            <div className="text-sm text-gray-500">
-              Coming in next PR
+            <div className="space-y-2">
+              <button
+                onClick={() => handleSortChange('uploadOrder')}
+                className={`w-full px-3 py-2 text-sm font-medium rounded transition-colors ${
+                  sortMode === 'uploadOrder'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Upload Order
+              </button>
+              <button
+                onClick={() => handleSortChange('alphabetical')}
+                className={`w-full px-3 py-2 text-sm font-medium rounded transition-colors ${
+                  sortMode === 'alphabetical'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                A → Z
+              </button>
+              <button
+                onClick={() => handleSortChange('reverseAlphabetical')}
+                className={`w-full px-3 py-2 text-sm font-medium rounded transition-colors ${
+                  sortMode === 'reverseAlphabetical'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Z → A
+              </button>
             </div>
           </div>
 
