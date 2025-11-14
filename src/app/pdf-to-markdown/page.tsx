@@ -476,8 +476,8 @@ export default function PdfToMarkdownPage() {
       {/* Full-page drop overlay */}
       {showDropOverlay && (
         <div className="fixed inset-0 z-50 bg-blue-500 bg-opacity-20 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-          <div className="bg-white rounded-2xl shadow-2xl p-12 border-4 border-dashed border-blue-500">
-            <p className="text-3xl font-bold text-blue-600 mb-2">Drop PDF files here</p>
+          <div className="bg-white rounded-2xl shadow-2xl p-12 border-4 border-dashed border-blue-500 pointer-events-none">
+            <p className="text-3xl font-bold text-blue-600 mb-2">Drop files or folders here</p>
             <p className="text-lg text-gray-600">Release to upload</p>
           </div>
         </div>
@@ -530,7 +530,7 @@ export default function PdfToMarkdownPage() {
           onDrop={handleDrop}
         >
           <p className="text-lg py-4 font-medium text-gray-700 text-center">
-            Drop PDF files here
+            Drop PDF files or folders here
           </p>
 
           <div className="flex items-stretch gap-0 min-h-[180px] border-t border-gray-300">
