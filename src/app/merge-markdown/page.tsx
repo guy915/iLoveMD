@@ -11,11 +11,20 @@ interface MarkdownFile {
   content: string
 }
 
+// Helper function to format file sizes dynamically
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < FILE_SIZE.BYTES_PER_MB) return `${(bytes / FILE_SIZE.BYTES_PER_KB).toFixed(1)} KB`
+  if (bytes < FILE_SIZE.BYTES_PER_GB) return `${(bytes / FILE_SIZE.BYTES_PER_MB).toFixed(1)} MB`
+  return `${(bytes / FILE_SIZE.BYTES_PER_GB).toFixed(2)} GB`
+}
+
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
+  const draggedIndexRef = useRef<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
@@ -32,51 +41,96 @@ export default function MergeMarkdownPage() {
     const validFiles: MarkdownFile[] = []
     const errors: string[] = []
 
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i]
+    // Calculate remaining slots and current total size
+    const remainingSlots = FILE_SIZE.MAX_MERGE_FILES - files.length
+    const currentTotalSize = files.reduce((sum, f) => sum + f.file.size, 0)
 
-      // Validate file type
-      if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
-        errors.push(`${file.name}: Not a markdown file`)
-        continue
+    // Process files in parallel
+    const filePromises = selectedFiles.map(async (file, i) => {
+      // Check total file count first
+      if (i >= remainingSlots) {
+        return { error: null } // Skip silently, will report total skipped later
       }
 
-      // Validate file size
-      if (file.size > FILE_SIZE.MAX_FILE_SIZE) {
-        errors.push(`${file.name}: File too large (max 1GB)`)
-        continue
+      // Validate file type (extension)
+      const validExtensions = ['.md', '.markdown']
+      const hasValidExtension = validExtensions.some(ext =>
+        file.name.toLowerCase().endsWith(ext)
+      )
+
+      if (!hasValidExtension) {
+        return { error: `${file.name}: Not a markdown file` }
       }
 
-      // Check total file count
-      if (files.length + validFiles.length >= FILE_SIZE.MAX_MERGE_FILES) {
-        errors.push(`Maximum ${FILE_SIZE.MAX_MERGE_FILES} files allowed`)
-        break
+      // Validate MIME type (if available)
+      const validMimeTypes = ['text/markdown', 'text/plain', 'text/x-markdown', '']
+      if (file.type && !validMimeTypes.includes(file.type)) {
+        return { error: `${file.name}: Invalid file type` }
+      }
+
+      // Validate individual file size
+      if (file.size > FILE_SIZE.MAX_MERGE_FILE_SIZE) {
+        return { error: `${file.name}: File too large (max ${formatFileSize(FILE_SIZE.MAX_MERGE_FILE_SIZE)})` }
       }
 
       // Read file content
       try {
         const content = await readFileAsText(file)
-        validFiles.push({
-          id: `${file.name}-${Date.now()}-${i}`,
-          file,
-          content
-        })
+        return {
+          fileData: {
+            id: typeof crypto !== 'undefined' && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `${file.name}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            file,
+            content
+          }
+        }
       } catch (err) {
-        errors.push(`${file.name}: Failed to read file`)
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+        addLog('error', `${file.name}: Failed to read file - ${errorMessage}`)
+        return { error: `${file.name}: Failed to read file` }
       }
+    })
+
+    const results = await Promise.all(filePromises)
+
+    // Collect valid files and errors
+    let cumulativeSize = currentTotalSize
+    for (const result of results) {
+      if (result.fileData) {
+        // Check if adding this file would exceed total size limit
+        if (cumulativeSize + result.fileData.file.size > FILE_SIZE.MAX_TOTAL_MERGE_SIZE) {
+          errors.push(`${result.fileData.file.name}: Would exceed total size limit of ${formatFileSize(FILE_SIZE.MAX_TOTAL_MERGE_SIZE)}`)
+          continue
+        }
+
+        validFiles.push(result.fileData)
+        cumulativeSize += result.fileData.file.size
+      } else if (result.error) {
+        errors.push(result.error)
+      }
+    }
+
+    // Add skipped files message if any
+    const skippedCount = selectedFiles.length - remainingSlots
+    if (skippedCount > 0) {
+      errors.push(`Maximum ${FILE_SIZE.MAX_MERGE_FILES} files allowed. ${skippedCount} file(s) skipped.`)
     }
 
     if (validFiles.length > 0) {
       setFiles(prev => [...prev, ...validFiles])
-      addLog('success', `${validFiles.length} file(s) added successfully`)
+      addLog('success', `${validFiles.length} file(s) added successfully`, {
+        totalFiles: files.length + validFiles.length,
+        totalSize: formatFileSize(cumulativeSize)
+      })
     }
 
     if (errors.length > 0) {
       addLog('error', `${errors.length} file(s) failed validation`, { errors })
     }
-  }, [files.length, addLog])
+  }, [files, addLog])
 
-  // Handle file selection from button
+  // Handle file selection from button or click on empty canvas
   const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files
     if (!selectedFiles || selectedFiles.length === 0) {
@@ -130,24 +184,39 @@ export default function MergeMarkdownPage() {
     fileInputRef.current?.click()
   }, [addLog])
 
+  // Handle click on empty canvas area
+  const handleEmptyCanvasClick = useCallback(() => {
+    addLog('info', 'Empty canvas area clicked - opening file browser')
+    fileInputRef.current?.click()
+  }, [addLog])
+
   // Drag and drop handlers
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDragging(true)
-    addLog('info', 'Files dragged over canvas')
-  }, [addLog])
+    // Only show drop zone if we're uploading files, not reordering
+    if (!e.dataTransfer.types.includes('application/x-file-reorder')) {
+      if (!isDragging) {
+        setIsDragging(true)
+        addLog('info', 'Files dragged over canvas')
+      }
+    }
+  }, [isDragging, addLog])
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
+    // Only set dropEffect if we're uploading files
+    if (!e.dataTransfer.types.includes('application/x-file-reorder')) {
+      e.dataTransfer.dropEffect = 'copy'
+    }
   }, [])
 
   const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    // Only set isDragging to false if we're leaving the canvas entirely
-    if (e.currentTarget === e.target) {
+    // Check if we're leaving the canvas container entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragging(false)
     }
   }, [])
@@ -164,83 +233,113 @@ export default function MergeMarkdownPage() {
     }
   }, [processFiles, addLog])
 
-  // File card drag handlers (for reordering)
-  const handleFileCardDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+  // File reordering drag handlers
+  const handleFileDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    const draggedIndex = files.findIndex(f => f.id === fileId)
+    draggedIndexRef.current = draggedIndex
     setDraggedFileId(fileId)
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', fileId)
-
-    const file = files.find(f => f.id === fileId)
-    if (file) {
-      addLog('info', `Started dragging file: ${file.file.name}`)
-    }
+    // Set a custom data type to differentiate from file upload drags
+    e.dataTransfer.setData('application/x-file-reorder', fileId)
+    addLog('info', 'Started dragging file for reordering', {
+      fileName: files[draggedIndex]?.file.name
+    })
   }, [files, addLog])
 
-  const handleFileCardDragOver = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleFileDragOver = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    // Only allow drop if we're reordering (not uploading files)
+    if (e.dataTransfer.types.includes('application/x-file-reorder')) {
+      e.preventDefault()
+      e.stopPropagation()
 
-    if (draggedFileId && draggedFileId !== fileId) {
-      e.dataTransfer.dropEffect = 'move'
-      setDragOverFileId(fileId)
-    }
-  }, [draggedFileId])
+      if (!draggedFileId || draggedFileId === fileId) return
 
-  const handleFileCardDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragOverFileId(null)
-  }, [])
+      // Reorder in real-time for smooth shuffling animation
+      const draggedIndex = files.findIndex(f => f.id === draggedFileId)
+      const targetIndex = files.findIndex(f => f.id === fileId)
 
-  const handleFileCardDrop = useCallback((e: DragEvent<HTMLDivElement>, targetFileId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
+      if (draggedIndex === -1 || targetIndex === -1) return
+      if (draggedIndex === targetIndex) return
 
-    if (!draggedFileId || draggedFileId === targetFileId) {
-      setDraggedFileId(null)
-      setDragOverFileId(null)
-      return
-    }
-
-    setFiles(prev => {
-      const draggedIndex = prev.findIndex(f => f.id === draggedFileId)
-      const targetIndex = prev.findIndex(f => f.id === targetFileId)
-
-      if (draggedIndex === -1 || targetIndex === -1) return prev
-
-      const newFiles = [...prev]
+      // Only reorder if we're moving to a new position
+      const newFiles = [...files]
       const [draggedFile] = newFiles.splice(draggedIndex, 1)
       newFiles.splice(targetIndex, 0, draggedFile)
 
-      const draggedFileName = draggedFile.file.name
-      const targetFileName = prev[targetIndex].file.name
-      addLog('info', `Reordered: moved "${draggedFileName}" to position of "${targetFileName}"`)
+      setFiles(newFiles)
+      setDragOverFileId(fileId)
+    }
+  }, [draggedFileId, files])
 
-      return newFiles
-    })
+  const handleFileDragEnter = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    if (e.dataTransfer.types.includes('application/x-file-reorder')) {
+      setDragOverFileId(fileId)
+    }
+  }, [])
 
+  const handleFileDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    // Only clear if we're leaving the card entirely, not moving to a child element
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverFileId(null)
+    }
+  }, [])
+
+  const handleFileDrop = useCallback((e: DragEvent<HTMLDivElement>, dropTargetId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (draggedFileId && draggedIndexRef.current !== null) {
+      const finalIndex = files.findIndex(f => f.id === draggedFileId)
+      const draggedFile = files[finalIndex]
+
+      // Log the final reorder (only if position actually changed)
+      if (draggedIndexRef.current !== finalIndex && draggedFile) {
+        addLog('info', 'Reordered files', {
+          from: draggedFile.file.name,
+          fromPosition: draggedIndexRef.current + 1,
+          toPosition: finalIndex + 1
+        })
+      }
+    }
+
+    // Clean up
     setDraggedFileId(null)
     setDragOverFileId(null)
-  }, [draggedFileId, addLog])
+    draggedIndexRef.current = null
+  }, [draggedFileId, files, addLog])
 
-  const handleFileCardDragEnd = useCallback(() => {
+  const handleFileDragEnd = useCallback(() => {
     setDraggedFileId(null)
     setDragOverFileId(null)
+    draggedIndexRef.current = null
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Canvas Area - Left Side */}
-      <div
-        className="flex-1 bg-gray-50 overflow-y-auto p-8 relative"
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
+    <>
+      {/* Hide footer on this page only */}
+      <style jsx global>{`
+        footer {
+          display: none;
+        }
+      `}</style>
+
+      <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
+        {/* Canvas Area - Left Side */}
+        <div
+          className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
         {/* Drag overlay */}
         {isDragging && (
-          <div className="absolute inset-0 bg-primary-500 bg-opacity-10 border-4 border-primary-500 border-dashed z-50 flex items-center justify-center pointer-events-none">
+          <div
+            className="absolute inset-0 bg-primary-500 bg-opacity-10 border-4 border-primary-500 border-dashed z-50 flex items-center justify-center pointer-events-none"
+            role="status"
+            aria-live="polite"
+            aria-label="Drop zone active. Drop files here."
+          >
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
               <svg
                 className="w-16 h-16 mx-auto mb-4 text-primary-600"
@@ -261,7 +360,7 @@ export default function MergeMarkdownPage() {
           </div>
         )}
 
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto h-full flex flex-col">
           <h1 className="text-3xl font-bold mb-2">Merge Markdown Files</h1>
           <p className="text-gray-600 mb-8">
             Combine multiple markdown files into one document
@@ -269,47 +368,65 @@ export default function MergeMarkdownPage() {
 
           {/* File Grid */}
           {files.length === 0 ? (
-            <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded-lg">
+            <div
+              className="flex items-center justify-center flex-1 min-h-[550px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
+              onClick={handleEmptyCanvasClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleEmptyCanvasClick()
+                }
+              }}
+            >
               <div className="text-center">
                 <p className="text-gray-500 text-lg mb-2">No files uploaded</p>
                 <p className="text-gray-400 text-sm">
-                  Click &quot;Upload Files&quot; or drag files here to get started
+                  Click here, drag files, or &quot;Upload Files&quot; to get started
                 </p>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {files.map((markdownFile) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {files.map((markdownFile) => {
+                const isDraggedCard = draggedFileId === markdownFile.id
+                const isDropTarget = dragOverFileId === markdownFile.id
+
+                return (
                 <div
                   key={markdownFile.id}
                   draggable
-                  onDragStart={(e) => handleFileCardDragStart(e, markdownFile.id)}
-                  onDragOver={(e) => handleFileCardDragOver(e, markdownFile.id)}
-                  onDragLeave={handleFileCardDragLeave}
-                  onDrop={(e) => handleFileCardDrop(e, markdownFile.id)}
-                  onDragEnd={handleFileCardDragEnd}
-                  className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all cursor-move ${
-                    draggedFileId === markdownFile.id
-                      ? 'opacity-50 border-primary-400'
-                      : dragOverFileId === markdownFile.id
-                      ? 'border-primary-500 border-dashed scale-105'
-                      : 'border-gray-200'
+                  onDragStart={(e) => handleFileDragStart(e, markdownFile.id)}
+                  onDragOver={(e) => handleFileDragOver(e, markdownFile.id)}
+                  onDragEnter={(e) => handleFileDragEnter(e, markdownFile.id)}
+                  onDragLeave={(e) => handleFileDragLeave(e)}
+                  onDrop={(e) => handleFileDrop(e, markdownFile.id)}
+                  onDragEnd={handleFileDragEnd}
+                  className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out aspect-[5/7] flex flex-col ${
+                    isDraggedCard
+                      ? 'cursor-grabbing opacity-40 border-primary-400 scale-95 rotate-2'
+                      : isDropTarget
+                      ? 'border-primary-500 border-4 scale-105 shadow-2xl bg-primary-50'
+                      : 'cursor-grab border-gray-200'
                   }`}
                 >
                   {/* Remove button */}
                   <button
                     onClick={() => handleRemoveFile(markdownFile.id)}
-                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors z-10"
-                    aria-label="Remove file"
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors z-10"
+                    aria-label={`Remove ${markdownFile.file.name}`}
                   >
-                    ×
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
 
-                  {/* File preview placeholder (A4 ratio: 1:1.414) */}
-                  <div className="aspect-[1/1.414] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
+                  {/* File preview placeholder */}
+                  <div className="flex-1 bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4 rounded-t-lg">
                     <div className="text-center">
                       <svg
-                        className="w-12 h-12 mx-auto mb-2 text-gray-400"
+                        className="w-16 h-16 mx-auto mb-2 text-gray-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -321,29 +438,30 @@ export default function MergeMarkdownPage() {
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      <p className="text-xs text-gray-500">Markdown File</p>
+                      <p className="text-xs text-gray-500">Markdown</p>
                     </div>
                   </div>
 
-                  {/* Filename */}
-                  <div className="p-3">
+                  {/* Filename - Fixed height footer */}
+                  <div className="p-3 flex-shrink-0">
                     <p className="text-sm font-medium text-gray-900 truncate" title={markdownFile.file.name}>
                       {markdownFile.file.name}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {(markdownFile.file.size / 1024).toFixed(1)} KB
+                      {formatFileSize(markdownFile.file.size)}
                     </p>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
       </div>
 
       {/* Control Panel - Right Side */}
-      <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto p-6 flex flex-col">
-        <div className="space-y-6 flex-1">
+      <div className="w-80 bg-white border-l border-gray-200 p-6 flex flex-col">
+        <div className="space-y-6 flex-1 overflow-y-auto">
           {/* Upload Section */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Upload Files</h2>
@@ -367,28 +485,27 @@ export default function MergeMarkdownPage() {
             </p>
           </div>
 
-          {/* Sorting Section - Coming in PR 4 */}
+          {/* Sorting Section - Placeholder */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Sort Files</h2>
             <div className="text-sm text-gray-500">
-              Coming soon: Alphabetical sorting
+              Coming in next PR
             </div>
           </div>
 
-          {/* Merge Options - Coming in PR 5 */}
+          {/* Merge Options - Placeholder */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Merge Options</h2>
             <div className="text-sm text-gray-500">
-              Coming soon: Separator options
+              Coming in next PR
             </div>
           </div>
         </div>
 
         {/* Bottom Actions */}
         <div className="space-y-3 pt-6 border-t border-gray-200">
-          {/* Merge Button - Coming in PR 5 */}
+          {/* Merge Button - Placeholder */}
           <Button
-            onClick={() => {}}
             variant="primary"
             disabled={true}
             className="w-full"
@@ -408,5 +525,6 @@ export default function MergeMarkdownPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
