@@ -13,14 +13,9 @@ import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // Mode state - 'cloud' uses Marker API, 'local' uses local Marker instance
-  // Read from localStorage immediately to prevent flickering
-  const [mode, setMode] = useState<'cloud' | 'local'>(() => {
-    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'cloud' | 'local' | null
-    if (savedMode === 'cloud' || savedMode === 'local') {
-      return savedMode
-    }
-    return 'local' // Default for first-time users and SSR
-  })
+  // Start with 'local' to match SSR, then load from localStorage after mount
+  const [mode, setMode] = useState<'cloud' | 'local'>('local')
+  const [mounted, setMounted] = useState(false)
 
   // API keys
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (cloud mode)
@@ -78,8 +73,15 @@ export default function PdfToMarkdownPage() {
     }
   }, [])
 
-  // Load API keys from localStorage on mount
+  // Load mode and API keys from localStorage on mount
   useEffect(() => {
+    setMounted(true)
+
+    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'cloud' | 'local' | null
+    if (savedMode === 'cloud' || savedMode === 'local') {
+      setMode(savedMode)
+    }
+
     const savedGeminiKey = storageService.getItem(STORAGE_KEYS.GEMINI_API_KEY)
     if (savedGeminiKey) {
       setGeminiApiKey(savedGeminiKey)
@@ -96,12 +98,12 @@ export default function PdfToMarkdownPage() {
     setHasLoadedOptions(true)
   }, [addLog])
 
-  // Save mode to localStorage whenever it changes
+  // Save mode to localStorage whenever it changes (only after mount)
   useEffect(() => {
-    if (hasLoadedOptions) {
+    if (mounted) {
       storageService.setItem(STORAGE_KEYS.MARKER_MODE, mode)
     }
-  }, [mode, hasLoadedOptions])
+  }, [mode, mounted])
 
   // Save Gemini API key to localStorage whenever it changes
   useEffect(() => {
