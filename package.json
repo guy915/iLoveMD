@@ -20,7 +20,6 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@mozilla/readability": "^0.6.0",
     "jszip": "^3.10.1",
     "katex": "^0.16.25",
     "next": "^14.2.0",
@@ -29,21 +28,15 @@
     "react-markdown": "^10.1.0",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
-    "remark-math": "^6.0.0",
-    "turndown": "^7.2.2"
-  },
-  "comments": {
-    "dependencies": "Note: @mozilla/readability and turndown are currently unused but reserved for the upcoming HTML to Markdown feature (Phase 4)"
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
-    "@types/mozilla__readability": "^0.4.2",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.4",
     "@types/react-dom": "^19.2.3",
-    "@types/turndown": "^5.0.6",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^2.1.8",
     "@vitest/ui": "^2.1.8",

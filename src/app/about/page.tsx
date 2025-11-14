@@ -36,7 +36,7 @@ export default function About() {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Privacy First</h3>
             <p className="text-gray-600">
-              Your documents are your business. We process HTML and markdown files entirely in your browser.
+              Your documents are your business. We process markdown files entirely in your browser.
               For PDFs, we proxy to the Marker API but never store your files on our servers.
             </p>
           </div>
@@ -103,14 +103,6 @@ export default function About() {
                 </li>
                 <li className="flex items-start">
                   <span className="text-primary-600 mr-2">•</span>
-                  <span>Turndown.js for HTML parsing</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-primary-600 mr-2">•</span>
-                  <span>Readability for content extraction</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-primary-600 mr-2">•</span>
                   <span>Browser FileReader API for files</span>
                 </li>
               </ul>
@@ -131,15 +123,9 @@ export default function About() {
               </span>
             </div>
             <div className="flex items-start">
-              <span className="inline-block w-32 text-sm font-semibold text-gray-700">HTML to Markdown:</span>
-              <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
-                Coming Soon
-              </span>
-            </div>
-            <div className="flex items-start">
               <span className="inline-block w-32 text-sm font-semibold text-gray-700">Merge Markdown:</span>
-              <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
-                Coming Soon
+              <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                Available
               </span>
             </div>
           </div>
