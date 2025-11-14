@@ -126,7 +126,12 @@ jobs:
           echo "Checking production dependencies..."
           npm audit --audit-level=moderate --production
           echo "Checking all dependencies (including dev)..."
-          npm audit --audit-level=high || echo "⚠️  Moderate dev dependency vulnerabilities found (non-blocking)"
+          if npm audit --audit-level=high; then
+            echo "✓ No high/critical vulnerabilities in dev dependencies"
+          else
+            echo "❌ High/critical dev dependency vulnerabilities found"
+            exit 1
+          fi
           echo "✓ Security audit passed"
 
       - name: Check for outdated dependencies
@@ -159,8 +164,8 @@ jobs:
           if git grep -n "console\.log" -- "*.js" "*.jsx" "*.ts" "*.tsx" \
             | grep -v "console\.error" \
             | grep -v "console\.warn" \
-            | grep -v "\.test\." \
-            | grep -v "\.spec\."; then
+            | grep -v "\.test\.\(js\|jsx\|ts\|tsx\):" \
+            | grep -v "\.spec\.\(js\|jsx\|ts\|tsx\):"; then
             echo "❌ Found console.log statements in source code (see above)"
             exit 1
           fi
