@@ -22,6 +22,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅
 
 ### Added
+- **Component Tests** (2025-11-14):
+  - **Created comprehensive test suites for core React components**:
+    - 87 tests across 3 components with 99.8% coverage
+    - **Button component** (26 tests):
+      - Rendering: variants (primary/secondary), children, custom classes
+      - Loading state: loading text, custom loading text, disabled during loading
+      - Disabled state: opacity, cursor, interaction blocking
+      - Interactions: onClick, keyboard accessibility, disabled behavior
+      - Memoization: re-render behavior, prop updates
+      - Base styles: padding, rounded corners, transitions
+    - **FileUpload component** (35 tests):
+      - Rendering: labels, file types, max size display, accessibility
+      - File selection: click to browse, file display, input reset, repeat selection
+      - Validation: size limits, error display, error clearing
+      - Drag and drop: drag states, file dropping, validation on drop
+      - Keyboard accessibility: Enter/Space keys, focus management
+      - Edge cases: null files, zero-size files, file updates
+    - **ErrorBoundary component** (26 tests):
+      - Normal rendering: children display, no error UI
+      - Error catching: fallback UI, error logging to diagnostic panel
+      - Error details: collapsible details, error stack display
+      - Action buttons: Try Again, Go Home, correct styling
+      - UI styling: centering, card design, spacing
+      - Nested errors: deep component stacks, component info
+      - Error recovery: reset functionality, state clearing
+      - Edge cases: empty errors, string errors, missing stacks
+  - **Test coverage improvement**:
+    - Button.tsx: 0% → 100% coverage (all metrics)
+    - FileUpload.tsx: 0% → 100% statements, 95.83% branches
+    - ErrorBoundary.tsx: 0% → 100% statements, 85.71% branches
+    - components/common: 0% → 99.8% overall
+    - Overall codebase: 47.91% → 62.79% (+14.88%)
+    - Test suite: 203 → 290 tests (+87)
+  - **Testing patterns demonstrated**:
+    - React Testing Library best practices
+    - User event simulation with @testing-library/user-event
+    - Mock LogContext for isolated component testing
+    - Error boundary testing with intentional component throws
+    - Accessibility testing (aria attributes, keyboard navigation)
+    - Drag and drop event simulation
+    - File input interaction patterns
+  - **Impact**: Core UI components fully tested, ensuring reliable user interactions, error handling, and accessibility
+  - **Files Added**:
+    - src/components/common/Button.test.tsx (155 lines, 26 tests)
+    - src/components/common/FileUpload.test.tsx (430 lines, 35 tests)
+    - src/components/common/ErrorBoundary.test.tsx (410 lines, 26 tests)
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (290/290 passing)
+
 - **API Route Tests** (2025-11-14):
   - **Created comprehensive test suite for /api/marker GET endpoint**:
     - 26 tests covering polling, error handling, and edge cases
