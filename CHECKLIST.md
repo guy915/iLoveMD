@@ -302,67 +302,92 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 **Goal:** Implement markdown merging with client-side processing
 
-### 5.1 Merge Processing Utilities
+**Implementation Note:** All functionality implemented directly in page.tsx (no separate utilities or components needed)
 
-- [ ] Create merge processor (client-side)
-  - [ ] File: src/lib/utils/mergeProcessor.ts
-  - [ ] readFiles() function
-  - [ ] orderFiles() function
-  - [ ] mergeFiles() function
-  - [ ] generateTOC() function (optional)
-  - [ ] Add separators logic
-  - [ ] Test with sample files
+### 5.1 Core Functionality
 
-### 5.2 Merge Tool Components
+- [x] Create merge tool page
+  - [x] File: src/app/merge-markdown/page.tsx
+  - [x] 'use client' directive
+  - [x] State management (files, sortMode, separatorStyle, addHeaders)
+  - [x] Multi-file upload (drag-drop + button)
+  - [x] File grid display with card layout
+  - [x] Drag-and-drop file reordering
+  - [x] Alphabetical sorting (A→Z, Z→A)
+  - [x] Merge options panel
+  - [x] Merge & download button
+  - [x] Download trigger with blob creation
 
-- [ ] Create FileList component
-  - [ ] File: src/components/common/FileList.tsx
-  - [ ] Display uploaded files
-  - [ ] Drag handles for reordering
-  - [ ] Remove file buttons
-  - [ ] File size display
-  - [ ] Drag and drop reordering logic
+### 5.2 File Upload & Validation
 
-### 5.3 Merge Tool Page
+- [x] Implement multi-file upload
+  - [x] Accept multiple files (.md, .markdown)
+  - [x] Limit to 50 files
+  - [x] Limit to 1GB total size
+  - [x] Individual file size limit (100MB)
+  - [x] Validate file types and extensions
+  - [x] Display files in responsive grid
+  - [x] Show file name and size on cards
+  - [x] Remove individual files
+  - [x] Clear all files button
 
-- [ ] Create merge tool page
-  - [ ] File: src/app/merge-markdown/page.tsx
-  - [ ] 'use client' directive
-  - [ ] State management (files, options)
-  - [ ] Multi-file upload
-  - [ ] File list display
-  - [ ] Reordering interface
-  - [ ] Options panel
-  - [ ] Merge button
-  - [ ] Download trigger
+### 5.3 File Ordering
 
-- [ ] Implement multi-file upload
-  - [ ] Accept multiple files
-  - [ ] Limit to 50 files
-  - [ ] Limit to 1GB total
-  - [ ] Validate file types (.md)
-  - [ ] Display file list
+- [x] Upload order (default)
+- [x] Manual reordering via drag-and-drop
+  - [x] Real-time position swapping
+  - [x] Visual feedback (opacity, blue tint)
+  - [x] Smooth CSS transitions
+  - [x] Position tracking for flash effects
+- [x] Alphabetical sorting
+  - [x] Toggle button (A→Z ⟷ Z→A)
+  - [x] Case-insensitive comparison
+  - [x] Preserves manual order until explicit sort
+  - [x] Reset to 'none' on clear all
 
-- [ ] Implement options
-  - [ ] File ordering (upload/alphabetical/custom)
-  - [ ] Separator style (none/page break/file header)
-  - [ ] Generate TOC (checkbox)
-  - [ ] Options stored in localStorage
+### 5.4 Merge Options
 
-### 5.4 Testing Phase 5
+- [x] Add file headers (checkbox, default: enabled)
+  - [x] Uses H1 heading: `# filename`
+  - [x] Independent of separator selection
+- [x] Separator style (radio toggle)
+  - [x] Newlines only (default)
+  - [x] Page breaks (---)
+- [x] Merge functionality
+  - [x] mergeMarkdownFiles() function
+  - [x] Respects current file order
+  - [x] Applies headers if enabled
+  - [x] Applies chosen separator
+  - [x] Trims content whitespace
+- [x] Download merged file
+  - [x] Blob creation
+  - [x] Filename: "merged.md"
+  - [x] Cleanup (URL.revokeObjectURL)
 
-- [ ] Upload 2 markdown files
-- [ ] Upload 10 markdown files
-- [ ] Upload 50 markdown files
-- [ ] Test file size limits
-- [ ] Test reordering files
-- [ ] Test alphabetical ordering
-- [ ] Test different separator styles
-- [ ] Test TOC generation (if implemented)
-- [ ] Verify merged output is correct
-- [ ] Test with large files (500MB)
+### 5.5 Diagnostic Logging
 
-**Phase 5 Complete:** [ ]
+- [x] File upload events (count, validation, errors)
+- [x] File removal and clear all
+- [x] Drag-and-drop reordering
+- [x] Sort mode changes
+- [x] Merge option changes (headers, separator)
+- [x] Merge operation (files count, options, output size)
+- [x] Download success/failure
+
+### 5.6 Testing Phase 5
+
+- [x] Upload 2 markdown files
+- [x] Upload multiple files
+- [x] Upload 50 files (max limit test)
+- [x] Test file size limits (individual + total)
+- [x] Test manual reordering via drag-drop
+- [x] Test alphabetical sorting (A→Z, Z→A)
+- [x] Test separator styles (newlines, page breaks)
+- [x] Test headers on/off
+- [x] Verify merged output correctness
+- [x] Test error handling
+
+**Phase 5 Complete:** [x]
 
 ---
 
