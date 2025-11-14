@@ -53,7 +53,10 @@ export const TOOL_CARDS: readonly ToolCard[] = [
 // API endpoints
 export const API_ENDPOINTS = {
   MARKER: '/api/marker',
+  MARKER_LOCAL: '/api/marker/local',
   MARKER_EXTERNAL: 'https://www.datalab.to/api/v1/marker',
+  // Local Marker instance endpoint (Docker default)
+  LOCAL_MARKER_INSTANCE: 'http://localhost:8000',
 } as const
 
 // LocalStorage keys

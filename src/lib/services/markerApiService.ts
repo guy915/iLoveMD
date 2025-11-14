@@ -215,3 +215,153 @@ export function validatePdfFile(file: File): { valid: boolean; error?: string } 
 
   return { valid: true }
 }
+
+// ============================================================================
+// LOCAL MARKER FUNCTIONS
+// ============================================================================
+
+/**
+ * Submit a PDF file for conversion to local Marker instance
+ *
+ * @param file - The PDF file to convert
+ * @param geminiApiKey - The Gemini API key (required if use_llm is enabled)
+ * @param options - Conversion options
+ * @returns Submit response with request_check_url for polling
+ */
+export async function submitPdfConversionLocal(
+  file: File,
+  geminiApiKey: string | null,
+  options: MarkerOptions
+): Promise<MarkerSubmitResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  if (geminiApiKey) {
+    formData.append('geminiApiKey', geminiApiKey)
+  }
+  formData.append('options', JSON.stringify(options))
+
+  const response = await fetch(API_ENDPOINTS.MARKER_LOCAL, {
+    method: 'POST',
+    body: formData,
+  })
+
+  const data = await response.json() as MarkerSubmitResponse
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Failed to submit file for local conversion')
+  }
+
+  return data
+}
+
+/**
+ * Poll for conversion status from local Marker instance
+ *
+ * @param checkUrl - The status check URL from submit response
+ * @returns Poll response with status and markdown (if complete)
+ */
+export async function pollConversionStatusLocal(
+  checkUrl: string
+): Promise<MarkerPollResponse> {
+  const response = await fetch(
+    `${API_ENDPOINTS.MARKER_LOCAL}?checkUrl=${encodeURIComponent(checkUrl)}`
+  )
+
+  const data = await response.json() as MarkerPollResponse
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Failed to check local conversion status')
+  }
+
+  return data
+}
+
+/**
+ * Convert a PDF file to Markdown using local Marker instance with automatic polling
+ *
+ * This is a high-level function that handles the entire conversion flow:
+ * 1. Submit file
+ * 2. Poll for completion
+ * 3. Return markdown content
+ *
+ * @param file - The PDF file to convert
+ * @param geminiApiKey - The Gemini API key (required if use_llm is enabled)
+ * @param options - Conversion options
+ * @param onProgress - Optional callback for progress updates
+ * @param signal - Optional AbortSignal for cancellation
+ * @returns The converted markdown content
+ */
+export async function convertPdfToMarkdownLocal(
+  file: File,
+  geminiApiKey: string | null,
+  options: MarkerOptions,
+  onProgress?: ProgressCallback,
+  signal?: AbortSignal
+): Promise<ConversionResult> {
+  try {
+    // Check if already cancelled
+    if (signal?.aborted) {
+      return { success: false, error: 'Conversion cancelled' }
+    }
+
+    // Submit file
+    const submitResponse = await submitPdfConversionLocal(file, geminiApiKey, options)
+
+    if (!submitResponse.request_check_url) {
+      return { success: false, error: 'No status check URL returned from local Marker' }
+    }
+
+    // Poll for results
+    const checkUrl = submitResponse.request_check_url
+    const pollInterval = MARKER_CONFIG.POLLING.INTERVAL_MS
+    const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
+    const startTime = Date.now()
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      // Check if cancelled
+      if (signal?.aborted) {
+        return { success: false, error: 'Conversion cancelled' }
+      }
+
+      const elapsedSeconds = (Date.now() - startTime) / 1000
+
+      // Poll status
+      const pollResponse = await pollConversionStatusLocal(checkUrl)
+
+      // Notify progress
+      if (onProgress && pollResponse.status) {
+        onProgress(pollResponse.status, attempt, elapsedSeconds)
+      }
+
+      // Check if complete
+      if (pollResponse.status === 'complete') {
+        if (!pollResponse.markdown) {
+          return { success: false, error: 'No content received from local Marker' }
+        }
+        return { success: true, markdown: pollResponse.markdown }
+      }
+
+      // Check if error
+      if (pollResponse.status === 'error') {
+        return { success: false, error: 'Conversion failed on local Marker' }
+      }
+
+      // Wait before next poll (unless this is the last attempt)
+      if (attempt < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval))
+
+        // Check if cancelled during the wait
+        if (signal?.aborted) {
+          return { success: false, error: 'Conversion cancelled' }
+        }
+      }
+    }
+
+    // Timeout
+    return { success: false, error: 'Conversion timeout. Please try again.' }
+
+  } catch (error) {
+    const err = error as Error
+    return { success: false, error: err.message || 'An error occurred during local conversion' }
+  }
+}
