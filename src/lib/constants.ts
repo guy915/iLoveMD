@@ -54,11 +54,12 @@ export const TOOL_CARDS: readonly ToolCard[] = [
 // API endpoints
 export const API_ENDPOINTS = {
   MARKER: '/api/marker',
-  MARKER_LOCAL: '/api/marker/local', // Proxies to free HuggingFace Space
+  MARKER_LOCAL: '/api/marker/local', // Proxies to free Modal serverless function
   MARKER_EXTERNAL: 'https://www.datalab.to/api/v1/marker',
-  // Free Marker instance (HuggingFace Space with free GPU)
-  // TODO: Replace with your HuggingFace Space URL after deployment
-  LOCAL_MARKER_INSTANCE: 'https://YOUR-USERNAME-marker-pdf-converter.hf.space',
+  // Free Marker instance (Modal.com with free GPU - $30/month credits)
+  // TODO: Replace with your Modal endpoint URL after deployment
+  // Get this from: modal deploy modal_app.py
+  LOCAL_MARKER_INSTANCE: 'https://YOUR-USERNAME--marker-pdf-converter-marker-endpoint.modal.run',
 } as const
 
 // LocalStorage keys

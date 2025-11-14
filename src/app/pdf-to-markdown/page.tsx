@@ -12,7 +12,7 @@ import { filterPdfFiles, filterImmediateFolderFiles, getFolderName, type BatchPr
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
-  // Mode state - 'paid' uses Marker API, 'free' uses HuggingFace Space (free GPU)
+  // Mode state - 'paid' uses Marker API, 'free' uses Modal serverless GPU
   // Start with 'free' to match SSR, then load from localStorage after mount
   const [mode, setMode] = useState<'free' | 'paid'>('free')
   const [mounted, setMounted] = useState(false)
@@ -589,7 +589,7 @@ export default function PdfToMarkdownPage() {
               <button
                 onClick={() => {
                   setMode('free')
-                  addLog('info', 'Switched to Free mode (HuggingFace GPU)')
+                  addLog('info', 'Switched to Free mode (Modal GPU)')
                 }}
                 disabled={processing}
                 className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
@@ -980,7 +980,7 @@ export default function PdfToMarkdownPage() {
         ) : (
           <>
             <ul className="space-y-2 text-gray-600">
-              <li>1. Select &quot;Free&quot; mode (GPU-powered via HuggingFace)</li>
+              <li>1. Select &quot;Free&quot; mode (GPU-powered via Modal)</li>
               <li>2. If using LLM enhancement, enter your Gemini API key</li>
               <li>3. Upload PDF file(s)</li>
               <li>4. Configure conversion options</li>
@@ -989,9 +989,9 @@ export default function PdfToMarkdownPage() {
               <li>7. Click &quot;Download&quot; to save your file</li>
             </ul>
             <p className="mt-4 text-sm text-gray-500">
-              <strong>Free Mode:</strong> Uses HuggingFace Space with FREE GPU (NVIDIA T4).
-              Processing takes 30-90 seconds per PDF. May have a 30-60 second &quot;cold start&quot; if the service was idle.
-              100% free, no API key required!
+              <strong>Free Mode:</strong> Uses Modal.com serverless GPU (NVIDIA T4) with $30/month in free credits.
+              Processing takes 30-90 seconds per PDF. May have a 20-30 second &quot;cold start&quot; if the service was idle.
+              Free tier covers ~100-200 PDFs/month, no API key required!
             </p>
             <p className="mt-2 text-sm text-gray-500">
               <strong>Note:</strong> Batch conversion is not yet supported in free mode. Please convert files individually or switch to Paid mode for batch processing.
