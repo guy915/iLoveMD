@@ -22,6 +22,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅
 
 ### Added
+- **Merge Markdown Functionality (PR 5)** (2025-11-14):
+  - **Implemented core merge functionality**:
+    - Merge multiple markdown files into a single document
+    - Download merged file as "merged.md"
+    - Three separator style options with radio button controls:
+      - **File Headers** (default): Adds "## filename" before each file's content
+      - **Page Breaks**: Adds "---" horizontal rule between files
+      - **None**: Just newlines between files (minimal separation)
+    - Merge button disabled when no files uploaded
+    - Button label: "Merge & Download" for clear action indication
+  - **Technical implementation**:
+    - Added SeparatorStyle type: 'none' | 'page-break' | 'file-header'
+    - mergeMarkdownFiles() function handles content merging logic
+    - handleMergeAndDownload() creates blob and triggers browser download
+    - Preserves current file order (respects manual reordering and sorting)
+    - Trims whitespace from file contents before merging
+    - All merge options properly memoized with useCallback
+  - **UX improvements**:
+    - Radio buttons for intuitive separator selection
+    - Clear labels explaining each separator style
+    - Comprehensive diagnostic logging:
+      - Log when separator style changes
+      - Log merge operation start (files count + separator type)
+      - Log successful merge (total files + output size)
+      - Log successful download (filename)
+      - Log errors with detailed messages
+    - File size formatting in logs (B, KB, MB, GB)
+  - **Merge logic**:
+    - First file gets header only if using file-header style
+    - Subsequent files get appropriate separator before content
+    - Page breaks: "\n\n---\n\n"
+    - File headers: "\n\n## filename\n\n"
+    - None: "\n\n" (double newline)
+    - Content trimmed before joining to avoid excess whitespace
+  - **Impact**: Users can now merge multiple markdown files with flexible separator options and download the result. The merge functionality respects file ordering (upload order, manual reordering, or alphabetical sorting), providing complete control over the final output.
+  - **Files Modified**: src/app/merge-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
 - **Context and Diagnostic Logging Tests** (2025-11-14):
   - **Created comprehensive test suite for LogContext.tsx**:
     - 51 tests (45 passing, 6 skipped) covering logging, storage, error handling, and network interception
