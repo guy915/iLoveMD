@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **PDF to Markdown UI Improvements** (2025-11-14):
+  - **Added visual separator** between drop zone text and file browser buttons
+    - Cleaner visual hierarchy in file upload area
+    - Better distinction between drop zone and action buttons
+  - **Updated status message design** for consistency with UI
+    - Changed from blue background (`bg-blue-50 border-blue-200`) to white card design
+    - Now uses `bg-white shadow-md` to match other page sections
+    - Improved visual consistency across all page elements
+    - Applied to both single file and batch conversion status messages
+  - **Impact**: More cohesive and professional UI, clearer visual hierarchy
+  - **Files Modified**: src/app/pdf-to-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
+
 ### Added
 - **Batch Conversion Service Tests** (2025-11-14):
   - **Created comprehensive test suite for batchConversionService.ts**:
