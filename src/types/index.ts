@@ -114,6 +114,8 @@ export interface NavLink {
   label: string
   /** Abbreviated label for mobile */
   shortLabel: string
+  /** Whether the link is external (opens in new tab) */
+  external?: boolean
 }
 
 /**

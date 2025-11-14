@@ -58,14 +58,27 @@ export default function Header() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="hover:text-primary-600"
-                onClick={() => handleNavClick(link.shortLabel, link.href)}
-              >
-                {link.shortLabel}
-              </Link>
+              link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="hover:text-primary-600"
+                  onClick={() => handleNavClick(link.shortLabel, link.href)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {link.shortLabel}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="hover:text-primary-600"
+                  onClick={() => handleNavClick(link.shortLabel, link.href)}
+                >
+                  {link.shortLabel}
+                </Link>
+              )
             ))}
           </div>
 
@@ -85,17 +98,33 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 space-y-2">
             {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block py-2"
-                onClick={() => {
-                  handleNavClick(link.shortLabel, link.href)
-                  closeMobileMenu()
-                }}
-              >
-                {link.shortLabel}
-              </Link>
+              link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="block py-2"
+                  onClick={() => {
+                    handleNavClick(link.shortLabel, link.href)
+                    closeMobileMenu()
+                  }}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {link.shortLabel}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block py-2"
+                  onClick={() => {
+                    handleNavClick(link.shortLabel, link.href)
+                    closeMobileMenu()
+                  }}
+                >
+                  {link.shortLabel}
+                </Link>
+              )
             ))}
           </div>
         )}
