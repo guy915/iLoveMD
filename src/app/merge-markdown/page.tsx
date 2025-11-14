@@ -24,6 +24,7 @@ export default function MergeMarkdownPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
+  const draggedIndexRef = useRef<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
@@ -234,12 +235,14 @@ export default function MergeMarkdownPage() {
 
   // File reordering drag handlers
   const handleFileDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    const draggedIndex = files.findIndex(f => f.id === fileId)
+    draggedIndexRef.current = draggedIndex
     setDraggedFileId(fileId)
     e.dataTransfer.effectAllowed = 'move'
     // Set a custom data type to differentiate from file upload drags
     e.dataTransfer.setData('application/x-file-reorder', fileId)
     addLog('info', 'Started dragging file for reordering', {
-      fileName: files.find(f => f.id === fileId)?.file.name
+      fileName: files[draggedIndex]?.file.name
     })
   }, [files, addLog])
 
@@ -248,9 +251,25 @@ export default function MergeMarkdownPage() {
     if (e.dataTransfer.types.includes('application/x-file-reorder')) {
       e.preventDefault()
       e.stopPropagation()
+
+      if (!draggedFileId || draggedFileId === fileId) return
+
+      // Reorder in real-time for smooth shuffling animation
+      const draggedIndex = files.findIndex(f => f.id === draggedFileId)
+      const targetIndex = files.findIndex(f => f.id === fileId)
+
+      if (draggedIndex === -1 || targetIndex === -1) return
+      if (draggedIndex === targetIndex) return
+
+      // Only reorder if we're moving to a new position
+      const newFiles = [...files]
+      const [draggedFile] = newFiles.splice(draggedIndex, 1)
+      newFiles.splice(targetIndex, 0, draggedFile)
+
+      setFiles(newFiles)
       setDragOverFileId(fileId)
     }
-  }, [])
+  }, [draggedFileId, files])
 
   const handleFileDragEnter = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
     if (e.dataTransfer.types.includes('application/x-file-reorder')) {
@@ -269,40 +288,30 @@ export default function MergeMarkdownPage() {
     e.preventDefault()
     e.stopPropagation()
 
-    if (!draggedFileId || draggedFileId === dropTargetId) {
-      setDraggedFileId(null)
-      setDragOverFileId(null)
-      return
+    if (draggedFileId && draggedIndexRef.current !== null) {
+      const finalIndex = files.findIndex(f => f.id === draggedFileId)
+      const draggedFile = files[finalIndex]
+
+      // Log the final reorder (only if position actually changed)
+      if (draggedIndexRef.current !== finalIndex && draggedFile) {
+        addLog('info', 'Reordered files', {
+          from: draggedFile.file.name,
+          fromPosition: draggedIndexRef.current + 1,
+          toPosition: finalIndex + 1
+        })
+      }
     }
 
-    // Reorder files
-    const draggedIndex = files.findIndex(f => f.id === draggedFileId)
-    const targetIndex = files.findIndex(f => f.id === dropTargetId)
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedFileId(null)
-      setDragOverFileId(null)
-      return
-    }
-
-    const newFiles = [...files]
-    const [draggedFile] = newFiles.splice(draggedIndex, 1)
-    newFiles.splice(targetIndex, 0, draggedFile)
-
-    setFiles(newFiles)
-    addLog('info', 'Reordered files', {
-      from: draggedFile.file.name,
-      fromPosition: draggedIndex + 1,
-      toPosition: targetIndex + 1
-    })
-
+    // Clean up
     setDraggedFileId(null)
     setDragOverFileId(null)
+    draggedIndexRef.current = null
   }, [draggedFileId, files, addLog])
 
   const handleFileDragEnd = useCallback(() => {
     setDraggedFileId(null)
     setDragOverFileId(null)
+    draggedIndexRef.current = null
   }, [])
 
   return (
