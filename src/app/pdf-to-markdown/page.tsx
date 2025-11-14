@@ -625,8 +625,8 @@ export default function PdfToMarkdownPage() {
             </div>
             <p className="mt-3 text-sm text-gray-600">
               {mode === 'free'
-                ? 'Free GPU processing via HuggingFace. 30 seconds to 2 minutes per PDF, may have cold start.'
-                : 'Premium Marker API. 10-30 seconds per PDF, requires API key.'}
+                ? 'Free GPU processing via HuggingFace (30-90 seconds per PDF, may have cold start)'
+                : 'Premium Marker API (10-30 seconds per PDF, requires API key)'}
             </p>
           </div>
 
