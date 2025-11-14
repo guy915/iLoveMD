@@ -25,6 +25,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Note**: This is PR 1 of 4 for local Marker support. UI only - no actual local API integration yet.
   - **Files Modified**: src/app/pdf-to-markdown/page.tsx, src/lib/constants.ts
   - Build: ✅ | Lint: ✅
+### Removed
+- **HTML to Markdown Feature** (2025-11-14):
+  - **Removed all traces of HTML to Markdown feature**:
+    - Deleted `/html-to-markdown` page (placeholder)
+    - Removed navigation link from header
+    - Removed tool card from homepage
+    - Removed from About page (Tech Stack, Current Status)
+    - Removed from README.md features list
+    - Removed Phase 4 section from CHECKLIST.md (renumbered Phase 5→4, Phase 6→5)
+    - Removed extensive documentation from ARCHITECTURE.md (flows, API routes, processing pipelines)
+    - Removed dependencies: `turndown`, `@mozilla/readability` and their TypeScript type packages
+  - **Rationale**: Feature was not being implemented and dependencies were unused
+  - **Impact**: Reduced bundle size, cleaner codebase, clearer project scope (2 tools: PDF + Merge)
+  - **Files Modified**:
+    - Deleted: `src/app/html-to-markdown/page.tsx`
+    - Updated: `src/lib/constants.ts`, `src/app/about/page.tsx`, `README.md`, `ARCHITECTURE.md`, `CHECKLIST.md`, `package.json`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (390 passed, 6 skipped)
 
 ### Fixed
 - **Full-Page Drop Zone FINALLY Works** (2025-11-14):
