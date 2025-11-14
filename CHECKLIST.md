@@ -696,6 +696,46 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Files Modified**: 2 (src/app/pdf-to-markdown/page.tsx, src/lib/constants.ts)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
+### 2025-11-14 - Local Marker Support PR 2: Backend Integration
+- **Added**:
+  - New API route `/api/marker/local` for local Marker instance communication
+  - Local service functions in markerApiService.ts:
+    - `submitPdfConversionLocal()` - submit PDF to local Marker
+    - `pollConversionStatusLocal()` - poll local Marker status (no auth needed)
+    - `convertPdfToMarkdownLocal()` - complete flow with polling
+  - Mode-based conversion logic in handleConvert():
+    - Cloud mode: calls `convertPdfToMarkdown()` with Marker API key
+    - Local mode: calls `convertPdfToMarkdownLocal()` with Gemini API key (if use_llm enabled)
+  - Mode-based validation:
+    - Cloud mode: validates Marker API key
+    - Local mode: validates Gemini API key (only when use_llm is enabled)
+  - Status messages reflect mode: "Submitting to Marker API..." vs "Submitting to local Marker..."
+  - Added geminiApiKey back to handleConvert dependencies
+- **Configuration**:
+  - Added API_ENDPOINTS.MARKER_LOCAL ('/api/marker/local')
+  - Added API_ENDPOINTS.LOCAL_MARKER_INSTANCE ('http://localhost:8000')
+  - Local API route proxies to localhost:8000 (Docker default)
+  - Gemini API key passed as 'api_key' parameter when use_llm is enabled
+- **Limitations**:
+  - Batch mode not supported in local mode (shows error: "Batch conversion is not yet supported in local mode. Please switch to Cloud API mode or convert files individually.")
+  - Single file conversion fully functional
+- **Error Handling**:
+  - Enhanced network error messages for local mode
+  - Connection refused → "Unable to connect to local Marker instance. Please ensure Docker is running and Marker is started on http://localhost:8000"
+  - Timeout errors, DNS errors, generic network errors all handled with user-friendly messages
+- **Updated**:
+  - "How it works" section: Updated local mode note to mention Docker setup and batch limitation
+- **Technical**:
+  - Removed guard that blocked local mode
+  - Local API route structure mirrors cloud route but without Marker API key auth
+  - All validation, error handling, and response parsing consistent with cloud route
+- **Note**: This is PR 2 of 4-part plan for local Marker support. Full single-file local conversion now functional. PR 3 will add local-specific options (redo_inline_math).
+- **Testing**: Build ✅ | Lint ✅ (no warnings)
+- **Files Modified**: 4
+  - Added: src/app/api/marker/local/route.ts (461 lines)
+  - Updated: src/lib/constants.ts, src/lib/services/markerApiService.ts, src/app/pdf-to-markdown/page.tsx
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ---
 
 ## Project Complete!
