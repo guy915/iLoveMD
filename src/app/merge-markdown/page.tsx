@@ -191,20 +191,23 @@ export default function MergeMarkdownPage() {
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDragging(true)
-    addLog('info', 'Files dragged over canvas')
-  }, [addLog])
+    if (!isDragging) {
+      setIsDragging(true)
+      addLog('info', 'Files dragged over canvas')
+    }
+  }, [isDragging, addLog])
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
   }, [])
 
   const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    // Only set isDragging to false if leaving the canvas entirely
-    if (e.currentTarget === e.target) {
+    // Check if we're leaving the canvas container entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragging(false)
     }
   }, [])
@@ -225,7 +228,7 @@ export default function MergeMarkdownPage() {
     <div className="flex h-screen overflow-hidden">
       {/* Canvas Area - Left Side */}
       <div
-        className="flex-1 bg-gray-50 overflow-y-auto p-8 relative"
+        className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -233,7 +236,12 @@ export default function MergeMarkdownPage() {
       >
         {/* Drag overlay */}
         {isDragging && (
-          <div className="absolute inset-0 bg-primary-500 bg-opacity-10 border-4 border-primary-500 border-dashed z-50 flex items-center justify-center pointer-events-none">
+          <div
+            className="absolute inset-0 bg-primary-500 bg-opacity-10 border-4 border-primary-500 border-dashed z-50 flex items-center justify-center pointer-events-none"
+            role="status"
+            aria-live="polite"
+            aria-label="Drop zone active. Drop files here."
+          >
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
               <svg
                 className="w-16 h-16 mx-auto mb-4 text-primary-600"
@@ -299,8 +307,8 @@ export default function MergeMarkdownPage() {
                     </svg>
                   </button>
 
-                  {/* File preview placeholder */}
-                  <div className="aspect-[4/5] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
+                  {/* File preview placeholder (Poker card ratio: 5/7) */}
+                  <div className="aspect-[5/7] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
                     <div className="text-center">
                       <svg
                         className="w-16 h-16 mx-auto mb-2 text-gray-400"
@@ -336,7 +344,7 @@ export default function MergeMarkdownPage() {
       </div>
 
       {/* Control Panel - Right Side */}
-      <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto p-6 flex flex-col">
+      <div className="w-80 bg-white border-l border-gray-200 p-6 flex flex-col overflow-y-auto">
         <div className="space-y-6 flex-1">
           {/* Upload Section */}
           <div>
