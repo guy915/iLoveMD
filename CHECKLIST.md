@@ -556,6 +556,20 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Files Modified**: 1 (src/app/merge-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
+### 2025-11-14 - Merge Markdown File Reordering (PR 3)
+- **Added**:
+  - Drag-and-drop file reordering in file grid
+  - Visual feedback (opacity, border, scale, cursor) during drag operations
+  - Custom data type to differentiate reordering from file uploads
+  - State tracking: draggedFileId, dragOverFileId
+  - All drag handlers: handleFileDragStart, handleFileDragOver, handleFileDragEnter, handleFileDragLeave, handleFileDrop, handleFileDragEnd
+  - Reordering logic using array splice
+  - Comprehensive logging (drag start, reorder with positions)
+- **Impact**: Users can reorder files by dragging cards to desired positions
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 1 (src/app/merge-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ---
 
 ## Project Complete!
