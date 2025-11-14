@@ -175,9 +175,6 @@ export default function MergeMarkdownPage() {
     fileInputRef.current?.click()
   }, [addLog])
 
-  // Calculate total size
-  const totalSize = files.reduce((sum, f) => sum + f.file.size, 0)
-
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Canvas Area - Left Side */}
@@ -231,7 +228,7 @@ export default function MergeMarkdownPage() {
                   <div className="aspect-[210/297] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
                     <div className="text-center">
                       <svg
-                        className="w-8 h-8 mx-auto mb-2 text-gray-400"
+                        className="w-12 h-12 mx-auto mb-2 text-gray-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -284,14 +281,9 @@ export default function MergeMarkdownPage() {
             >
               Upload Files
             </Button>
-            <div className="mt-2 space-y-1">
-              <p className="text-xs text-gray-500">
-                Files: {files.length} / {FILE_SIZE.MAX_MERGE_FILES}
-              </p>
-              <p className="text-xs text-gray-500">
-                Total: {formatFileSize(totalSize)} / {formatFileSize(FILE_SIZE.MAX_TOTAL_MERGE_SIZE)}
-              </p>
-            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {files.length} / {FILE_SIZE.MAX_MERGE_FILES} files
+            </p>
           </div>
 
           {/* Sorting Section - Placeholder */}
