@@ -12,7 +12,7 @@ interface MarkdownFile {
 }
 
 type SortMode = 'none' | 'alphabetical' | 'reverseAlphabetical'
-type SeparatorStyle = 'none' | 'page-break' | 'file-header'
+type SeparatorStyle = 'newline' | 'page-break'
 
 // Helper function to format file sizes dynamically
 function formatFileSize(bytes: number): string {
@@ -25,7 +25,8 @@ function formatFileSize(bytes: number): string {
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
   const [sortMode, setSortMode] = useState<SortMode>('none')
-  const [separatorStyle, setSeparatorStyle] = useState<SeparatorStyle>('file-header')
+  const [separatorStyle, setSeparatorStyle] = useState<SeparatorStyle>('newline')
+  const [addHeaders, setAddHeaders] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
@@ -222,7 +223,10 @@ export default function MergeMarkdownPage() {
   const mergeMarkdownFiles = useCallback((): string => {
     if (files.length === 0) return ''
 
-    addLog('info', `Merging ${files.length} file(s) with separator: ${separatorStyle}`)
+    addLog('info', `Merging ${files.length} file(s)`, {
+      separator: separatorStyle,
+      headers: addHeaders
+    })
 
     const parts: string[] = []
 
@@ -231,14 +235,14 @@ export default function MergeMarkdownPage() {
       if (index > 0) {
         if (separatorStyle === 'page-break') {
           parts.push('\n\n---\n\n')
-        } else if (separatorStyle === 'file-header') {
-          parts.push(`\n\n## ${markdownFile.file.name}\n\n`)
-        } else if (separatorStyle === 'none') {
+        } else {
           parts.push('\n\n')
         }
-      } else if (separatorStyle === 'file-header') {
-        // Add header for first file too
-        parts.push(`## ${markdownFile.file.name}\n\n`)
+      }
+
+      // Add header if enabled
+      if (addHeaders) {
+        parts.push(`# ${markdownFile.file.name}\n\n`)
       }
 
       // Add file content
@@ -252,7 +256,7 @@ export default function MergeMarkdownPage() {
     })
 
     return merged
-  }, [files, separatorStyle, addLog])
+  }, [files, separatorStyle, addHeaders, addLog])
 
   // Download merged markdown
   const handleMergeAndDownload = useCallback(() => {
@@ -608,55 +612,58 @@ export default function MergeMarkdownPage() {
           {/* Merge Options */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Merge Options</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 block mb-2">
-                Separator Style
-              </label>
-
+            <div className="space-y-4">
+              {/* Add Headers Checkbox */}
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
-                  type="radio"
-                  name="separator"
-                  value="file-header"
-                  checked={separatorStyle === 'file-header'}
+                  type="checkbox"
+                  checked={addHeaders}
                   onChange={(e) => {
-                    setSeparatorStyle(e.target.value as SeparatorStyle)
-                    addLog('info', 'Separator style changed to: file-header')
+                    setAddHeaders(e.target.checked)
+                    addLog('info', `File headers ${e.target.checked ? 'enabled' : 'disabled'}`)
                   }}
-                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
                 />
-                <span className="text-sm text-gray-700">File Headers (## filename)</span>
+                <span className="text-sm text-gray-700">Add file headers (# filename)</span>
               </label>
 
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="separator"
-                  value="page-break"
-                  checked={separatorStyle === 'page-break'}
-                  onChange={(e) => {
-                    setSeparatorStyle(e.target.value as SeparatorStyle)
-                    addLog('info', 'Separator style changed to: page-break')
-                  }}
-                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Page Breaks (---)</span>
-              </label>
+              {/* Separator Style */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Separator
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="separator"
+                      value="newline"
+                      checked={separatorStyle === 'newline'}
+                      onChange={(e) => {
+                        setSeparatorStyle(e.target.value as SeparatorStyle)
+                        addLog('info', 'Separator changed to: newlines')
+                      }}
+                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">Newlines only</span>
+                  </label>
 
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="separator"
-                  value="none"
-                  checked={separatorStyle === 'none'}
-                  onChange={(e) => {
-                    setSeparatorStyle(e.target.value as SeparatorStyle)
-                    addLog('info', 'Separator style changed to: none')
-                  }}
-                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">None (just newlines)</span>
-              </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="separator"
+                      value="page-break"
+                      checked={separatorStyle === 'page-break'}
+                      onChange={(e) => {
+                        setSeparatorStyle(e.target.value as SeparatorStyle)
+                        addLog('info', 'Separator changed to: page breaks')
+                      }}
+                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">Page breaks (---)</span>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         </div>
