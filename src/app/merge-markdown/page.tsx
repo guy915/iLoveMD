@@ -225,15 +225,16 @@ export default function MergeMarkdownPage() {
   }, [processFiles, addLog])
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Canvas Area - Left Side */}
-      <div
-        className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
+    <div className="flex flex-col h-screen overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Canvas Area - Left Side */}
+        <div
+          className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
         {/* Drag overlay */}
         {isDragging && (
           <div
@@ -271,7 +272,7 @@ export default function MergeMarkdownPage() {
           {/* File Grid */}
           {files.length === 0 ? (
             <div
-              className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center h-full min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
               onClick={handleEmptyCanvasClick}
               role="button"
               tabIndex={0}
@@ -294,7 +295,7 @@ export default function MergeMarkdownPage() {
               {files.map((markdownFile) => (
                 <div
                   key={markdownFile.id}
-                  className="relative bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                  className="relative bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow aspect-[5/7] flex flex-col"
                 >
                   {/* Remove button */}
                   <button
@@ -307,8 +308,8 @@ export default function MergeMarkdownPage() {
                     </svg>
                   </button>
 
-                  {/* File preview placeholder (Poker card ratio: 5/7) */}
-                  <div className="aspect-[5/7] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
+                  {/* File preview placeholder */}
+                  <div className="flex-1 bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4 rounded-t-lg">
                     <div className="text-center">
                       <svg
                         className="w-16 h-16 mx-auto mb-2 text-gray-400"
@@ -327,8 +328,8 @@ export default function MergeMarkdownPage() {
                     </div>
                   </div>
 
-                  {/* Filename */}
-                  <div className="p-3">
+                  {/* Filename - Fixed height footer */}
+                  <div className="p-3 flex-shrink-0">
                     <p className="text-sm font-medium text-gray-900 truncate" title={markdownFile.file.name}>
                       {markdownFile.file.name}
                     </p>
@@ -344,8 +345,8 @@ export default function MergeMarkdownPage() {
       </div>
 
       {/* Control Panel - Right Side */}
-      <div className="w-80 bg-white border-l border-gray-200 p-6 flex flex-col overflow-y-auto">
-        <div className="space-y-6 flex-1">
+      <div className="w-80 bg-white border-l border-gray-200 p-6 flex flex-col">
+        <div className="space-y-6 flex-1 overflow-y-auto">
           {/* Upload Section */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Upload Files</h2>
@@ -409,5 +410,13 @@ export default function MergeMarkdownPage() {
         </div>
       </div>
     </div>
+
+    {/* Footer */}
+    <footer className="bg-white border-t border-gray-200 py-3 px-4 text-center flex-shrink-0">
+      <p className="text-xs text-gray-500">
+        © 2025 AI Doc Prep. Free tool for preparing documents for LLMs.
+      </p>
+    </footer>
+  </div>
   )
 }
