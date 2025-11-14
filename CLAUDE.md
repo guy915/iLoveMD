@@ -31,8 +31,10 @@ These steps should be your first to-do (a session will begin with a system promp
 ### Session Conclusion
 
 1. **Test Before Committing**
+   - Run `npm test` - All tests must pass
    - Run `npm run build` - Must pass without errors
    - Run `npm run lint` - Must pass without errors
+   - Run `npm test -- --coverage` - Verify coverage remains above 70%
    - Manual testing - Test the feature in browser (happy path + edge cases)
    - API testing (if applicable) - Test API routes work correctly
 
@@ -75,10 +77,222 @@ const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqx
 The project has automated CI/CD workflows in `.github/workflows/`:
 - **Build verification** on Node 18.x and 20.x
 - **Security audits** for dependencies
+- **Test Coverage** for testing
 - **Code quality checks** (console.log detection, bundle size)
 - **PR labeling** and automation
 
-When adding features with new dependencies, test commands, or API endpoints, consider updating the CI/CD workflows accordingly.
+When adding features with new dependencies, test commands, or API endpoints, update the CI/CD workflows accordingly.
+
+---
+
+## Testing
+
+### Test Infrastructure
+
+The project uses a comprehensive testing setup with high coverage standards:
+
+**Testing Stack:**
+- **Vitest 2.1.9** - Fast test runner with ESM support
+- **React Testing Library 16.1.0** - Component testing with user-centric queries
+- **@testing-library/user-event** - Realistic user interaction simulation
+- **@testing-library/jest-dom** - DOM assertion matchers
+- **jsdom 25.0.1** - Browser environment simulation
+
+**Current Test Coverage: 71.47%** (exceeds 70% threshold)
+- **335 tests total** (329 passing + 6 skipped)
+- **Statements**: 71.47%
+- **Branches**: 92.64%
+- **Functions**: 88.07%
+
+### Running Tests
+
+**Run all tests:**
+```bash
+npm test
+```
+
+**Run tests with coverage report:**
+```bash
+npm test -- --coverage
+```
+
+**Run specific test file:**
+```bash
+npm test -- src/components/common/Button.test.tsx
+```
+
+**Run tests in watch mode (auto-rerun on changes):**
+```bash
+npm test -- --watch
+```
+
+**Run tests in CI mode (single run, no watch):**
+```bash
+npm test -- --run
+```
+
+### Test Coverage by Category
+
+**Components (99.8% coverage):**
+- `src/components/common/Button.test.tsx` - Button variants, loading states, interactions
+- `src/components/common/FileUpload.test.tsx` - File upload, drag-drop, validation
+- `src/components/common/ErrorBoundary.test.tsx` - Error catching, fallback UI, recovery
+
+**Services (98.09% coverage):**
+- `src/lib/services/batchConversionService.test.ts` - Batch processing, retry logic, concurrency
+- `src/lib/services/markerApiService.test.ts` - API calls, polling, validation
+- `src/lib/services/storageService.test.ts` - localStorage operations
+
+**Utilities (99.57% coverage):**
+- `src/lib/utils/downloadUtils.test.ts` - File downloads, blob creation
+- `src/lib/utils/formatUtils.test.ts` - String formatting, size calculations
+- `src/lib/utils/classNames.test.ts` - CSS class utilities
+
+**API Routes (74.69% coverage):**
+- `src/app/api/marker/route.test.ts` - GET endpoint polling, error handling
+
+**Contexts (94.25% coverage):**
+- `src/contexts/LogContext.test.tsx` - Logging system, storage, error handlers, network interception
+
+### Testing Patterns and Conventions
+
+**Test File Naming:**
+- Test files use `.test.ts` or `.test.tsx` extension
+- Place test files alongside the code they test (e.g., `Button.tsx` → `Button.test.tsx`)
+
+**Test Structure:**
+```typescript
+describe('ComponentName', () => {
+  describe('specific functionality', () => {
+    it('should do something specific', () => {
+      // Arrange
+      const { result } = renderHook(() => useMyHook())
+
+      // Act
+      act(() => {
+        result.current.doSomething()
+      })
+
+      // Assert
+      expect(result.current.value).toBe(expected)
+    })
+  })
+})
+```
+
+**Common Testing Techniques:**
+
+**Component Testing:**
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+it('should handle user interaction', async () => {
+  render(<MyComponent onSubmit={mockFn} />)
+
+  const button = screen.getByRole('button')
+  await userEvent.click(button)
+
+  expect(mockFn).toHaveBeenCalled()
+})
+```
+
+**Hook Testing:**
+```typescript
+import { renderHook, act } from '@testing-library/react'
+
+it('should update state', () => {
+  const { result } = renderHook(() => useMyHook())
+
+  act(() => {
+    result.current.updateValue('new value')
+  })
+
+  expect(result.current.value).toBe('new value')
+})
+```
+
+**Async Testing:**
+```typescript
+import { waitFor } from '@testing-library/react'
+
+it('should handle async operation', async () => {
+  render(<AsyncComponent />)
+
+  await waitFor(() => {
+    expect(screen.getByText('Loaded')).toBeInTheDocument()
+  })
+})
+```
+
+**Mocking:**
+```typescript
+// Mock external dependencies
+vi.mock('@/contexts/LogContext', () => ({
+  useLogs: () => ({ addLog: vi.fn() })
+}))
+
+// Mock fetch
+global.fetch = vi.fn().mockResolvedValue(new Response('{}'))
+```
+
+### Testing Checklist for New Features
+
+When adding a new feature, ensure you write tests that cover:
+
+**Component Tests:**
+- [ ] Rendering with default props
+- [ ] Rendering with all prop variations
+- [ ] User interactions (clicks, inputs, submissions)
+- [ ] State changes and updates
+- [ ] Error states and edge cases
+- [ ] Accessibility (keyboard navigation, ARIA attributes)
+- [ ] Loading and disabled states
+
+**Service/Utility Tests:**
+- [ ] Happy path (expected inputs and outputs)
+- [ ] Error handling (invalid inputs, network errors)
+- [ ] Edge cases (null, undefined, empty values, boundary conditions)
+- [ ] Async operations (promises, timeouts, retries)
+- [ ] Side effects (localStorage, API calls)
+
+**API Route Tests:**
+- [ ] Request validation (missing params, invalid types)
+- [ ] Successful responses (200, 201)
+- [ ] Error responses (400, 401, 404, 500)
+- [ ] Network errors (timeout, connection refused)
+- [ ] Request/response data structure
+
+**Coverage Standards:**
+- Maintain **70%+ overall coverage**
+- Aim for **95%+ coverage** on new code
+- All critical paths must be tested
+- Complex logic requires comprehensive test cases
+
+### Skipped Tests
+
+Some tests are intentionally skipped due to test environment limitations:
+
+**LogContext.test.tsx (6 skipped tests):**
+- Counter restoration from sessionStorage (global module state)
+- Storage quota exceeded handling (complex test environment interaction)
+- Storage unavailable handling (module state persistence)
+- Promise rejection events (PromiseRejectionEvent not in jsdom)
+- Fetch header redaction (fetch wrapping complexity with mocks)
+- Fetch timing information (fetch wrapping complexity with mocks)
+
+**All skipped tests include:**
+- Clear rationale comments
+- Implementation line references
+- Verification method (manual testing, integration testing, browser testing)
+
+### What NOT to Test
+
+- **Third-party libraries** - Trust that React, Next.js, Vitest work correctly
+- **Implementation details** - Test behavior, not internal state
+- **Trivial code** - Constants, simple getters, obvious logic
+- **Browser APIs** - Trust that fetch, localStorage, etc. work correctly
+- **Next.js framework code** - Trust the framework
 
 ---
 
