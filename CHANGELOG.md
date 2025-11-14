@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Cloud/Local Mode Toggle for PDF to Markdown** (2025-11-14):
+  - **Added mode toggle UI** to switch between Local Marker and Cloud API:
+    - Two-button toggle: "Local Marker" (default, left) and "Cloud API" (right)
+    - Mode preference persisted to localStorage
+    - Default mode: Local Marker
+  - **Conditional API key inputs**:
+    - Cloud mode: Shows Marker API key input (required)
+    - Local mode: Shows Gemini API key input (always visible, disabled when "Use LLM enhancement" is not enabled)
+    - Both keys persisted to localStorage
+  - **Dynamic UI based on mode**:
+    - Convert button validates correct API key based on mode
+    - "How it works" section shows mode-specific instructions
+    - Explanatory text for each mode
+  - **Guard for local mode**: Added early return in handleConvert to prevent calling cloud API when local mode is selected (shows clear error message directing user to switch to Cloud API or wait for PR 2)
+  - **Note**: This is PR 1 of 4 for local Marker support. UI only - no actual local API integration yet.
+  - **Files Modified**: src/app/pdf-to-markdown/page.tsx, src/lib/constants.ts
+  - Build: ✅ | Lint: ✅
 ### Removed
 - **HTML to Markdown Feature** (2025-11-14):
   - **Removed all traces of HTML to Markdown feature**:
