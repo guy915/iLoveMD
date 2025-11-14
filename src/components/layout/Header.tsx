@@ -3,8 +3,49 @@
 import Link from 'next/link'
 import { useState, useCallback, useEffect } from 'react'
 import { NAV_LINKS } from '@/lib/constants'
+import type { NavLink } from '@/types'
 import { useLogs } from '@/contexts/LogContext'
 import GlobalDiagnosticPanel from './GlobalDiagnosticPanel'
+
+/**
+ * Navigation link component that handles both internal and external links
+ */
+function NavLinkItem({
+  link,
+  onClick,
+  className
+}: {
+  link: NavLink
+  onClick: () => void
+  className: string
+}) {
+  if (link.external) {
+    return (
+      <a
+        key={link.href}
+        href={link.href}
+        className={className}
+        onClick={onClick}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${link.shortLabel} (opens in new tab)`}
+      >
+        {link.shortLabel}
+      </a>
+    )
+  }
+
+  return (
+    <Link
+      key={link.href}
+      href={link.href}
+      className={className}
+      onClick={onClick}
+    >
+      {link.shortLabel}
+    </Link>
+  )
+}
 
 /**
  * Header component with navigation menu
@@ -58,27 +99,12 @@ export default function Header() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((link) => (
-              link.external ? (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="hover:text-primary-600"
-                  onClick={() => handleNavClick(link.shortLabel, link.href)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {link.shortLabel}
-                </a>
-              ) : (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="hover:text-primary-600"
-                  onClick={() => handleNavClick(link.shortLabel, link.href)}
-                >
-                  {link.shortLabel}
-                </Link>
-              )
+              <NavLinkItem
+                key={link.href}
+                link={link}
+                onClick={() => handleNavClick(link.shortLabel, link.href)}
+                className="hover:text-primary-600"
+              />
             ))}
           </div>
 
@@ -98,33 +124,15 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 space-y-2">
             {NAV_LINKS.map((link) => (
-              link.external ? (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="block py-2"
-                  onClick={() => {
-                    handleNavClick(link.shortLabel, link.href)
-                    closeMobileMenu()
-                  }}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {link.shortLabel}
-                </a>
-              ) : (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="block py-2"
-                  onClick={() => {
-                    handleNavClick(link.shortLabel, link.href)
-                    closeMobileMenu()
-                  }}
-                >
-                  {link.shortLabel}
-                </Link>
-              )
+              <NavLinkItem
+                key={link.href}
+                link={link}
+                onClick={() => {
+                  handleNavClick(link.shortLabel, link.href)
+                  closeMobileMenu()
+                }}
+                className="block py-2"
+              />
             ))}
           </div>
         )}
