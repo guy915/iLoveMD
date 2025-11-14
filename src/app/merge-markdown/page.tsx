@@ -1,73 +1,257 @@
-import Link from 'next/link'
+'use client'
 
-/**
- * Merge Markdown files page (placeholder)
- * Coming soon: Combine multiple markdown files into one
- */
-export default function MergeMarkdown() {
+import { useState, useRef, useCallback, ChangeEvent } from 'react'
+import Button from '@/components/common/Button'
+import { useLogs } from '@/contexts/LogContext'
+import { FILE_SIZE } from '@/lib/constants'
+
+interface MarkdownFile {
+  id: string
+  file: File
+  content: string
+}
+
+export default function MergeMarkdownPage() {
+  const [files, setFiles] = useState<MarkdownFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { addLog } = useLogs()
+
+  // Handle file selection from button
+  const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files
+    if (!selectedFiles || selectedFiles.length === 0) {
+      addLog('info', 'File selection cancelled')
+      return
+    }
+
+    addLog('info', `${selectedFiles.length} file(s) selected for upload`)
+
+    const validFiles: MarkdownFile[] = []
+    const errors: string[] = []
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i]
+
+      // Validate file type
+      if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
+        errors.push(`${file.name}: Not a markdown file`)
+        continue
+      }
+
+      // Validate file size
+      if (file.size > FILE_SIZE.MAX_FILE_SIZE) {
+        errors.push(`${file.name}: File too large (max 1GB)`)
+        continue
+      }
+
+      // Check total file count
+      if (files.length + validFiles.length >= FILE_SIZE.MAX_MERGE_FILES) {
+        errors.push(`Maximum ${FILE_SIZE.MAX_MERGE_FILES} files allowed`)
+        break
+      }
+
+      // Read file content
+      try {
+        const content = await readFileAsText(file)
+        validFiles.push({
+          id: `${file.name}-${Date.now()}-${i}`,
+          file,
+          content
+        })
+      } catch (err) {
+        errors.push(`${file.name}: Failed to read file`)
+      }
+    }
+
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles])
+      addLog('success', `${validFiles.length} file(s) added successfully`)
+    }
+
+    if (errors.length > 0) {
+      addLog('error', `${errors.length} file(s) failed validation`, { errors })
+    }
+
+    // Reset input to allow re-selecting same files
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }, [files.length, addLog])
+
+  // Read file as text
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const content = e.target?.result as string
+        resolve(content || '')
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsText(file)
+    })
+  }
+
+  // Remove individual file
+  const handleRemoveFile = useCallback((id: string) => {
+    setFiles(prev => {
+      const file = prev.find(f => f.id === id)
+      if (file) {
+        addLog('info', `Removed file: ${file.file.name}`)
+      }
+      return prev.filter(f => f.id !== id)
+    })
+  }, [addLog])
+
+  // Clear all files
+  const handleClearAll = useCallback(() => {
+    if (files.length === 0) return
+
+    addLog('info', `Cleared all ${files.length} file(s)`)
+    setFiles([])
+  }, [files.length, addLog])
+
+  // Trigger file input click
+  const handleUploadClick = useCallback(() => {
+    addLog('info', 'Upload Files button clicked')
+    fileInputRef.current?.click()
+  }, [addLog])
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        <div className="mb-6">
-          <div className="inline-block p-4 bg-primary-100 rounded-full mb-4">
-            <svg className="w-16 h-16 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+    <div className="flex h-screen overflow-hidden">
+      {/* Canvas Area - Left Side */}
+      <div className="flex-1 bg-gray-50 overflow-y-auto p-8">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-2">Merge Markdown Files</h1>
+          <p className="text-gray-600 mb-8">
+            Combine multiple markdown files into one document
+          </p>
+
+          {/* File Grid */}
+          {files.length === 0 ? (
+            <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded-lg">
+              <div className="text-center">
+                <p className="text-gray-500 text-lg mb-2">No files uploaded</p>
+                <p className="text-gray-400 text-sm">
+                  Click &quot;Upload Files&quot; to get started
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {files.map((markdownFile) => (
+                <div
+                  key={markdownFile.id}
+                  className="relative bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                >
+                  {/* Remove button */}
+                  <button
+                    onClick={() => handleRemoveFile(markdownFile.id)}
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors z-10"
+                    aria-label="Remove file"
+                  >
+                    ×
+                  </button>
+
+                  {/* File preview placeholder (A4 ratio: 1:1.414) */}
+                  <div className="aspect-[1/1.414] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
+                    <div className="text-center">
+                      <svg
+                        className="w-12 h-12 mx-auto mb-2 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <p className="text-xs text-gray-500">Markdown File</p>
+                    </div>
+                  </div>
+
+                  {/* Filename */}
+                  <div className="p-3">
+                    <p className="text-sm font-medium text-gray-900 truncate" title={markdownFile.file.name}>
+                      {markdownFile.file.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {(markdownFile.file.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Control Panel - Right Side */}
+      <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto p-6 flex flex-col">
+        <div className="space-y-6 flex-1">
+          {/* Upload Section */}
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Upload Files</h2>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".md,.markdown"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <Button
+              onClick={handleUploadClick}
+              variant="primary"
+              className="w-full"
+            >
+              Upload Files
+            </Button>
+            <p className="text-xs text-gray-500 mt-2">
+              {files.length} / {FILE_SIZE.MAX_MERGE_FILES} files
+            </p>
+          </div>
+
+          {/* Sorting Section - Placeholder */}
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Sort Files</h2>
+            <div className="text-sm text-gray-500">
+              Coming in next PR
+            </div>
+          </div>
+
+          {/* Merge Options - Placeholder */}
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Merge Options</h2>
+            <div className="text-sm text-gray-500">
+              Coming in next PR
+            </div>
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Merge Markdown Files
-        </h1>
-
-        <div className="inline-block px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold mb-6">
-          Coming Soon
-        </div>
-
-        <p className="text-gray-600 mb-8">
-          This tool will allow you to combine multiple markdown files into a single document,
-          perfect for preparing comprehensive documentation for LLMs.
-        </p>
-
-        <div className="bg-gray-50 rounded-lg p-6 mb-8 text-left">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Planned Features:</h2>
-          <ul className="space-y-2 text-gray-600">
-            <li className="flex items-start">
-              <span className="text-primary-600 mr-2">•</span>
-              <span>Upload multiple markdown files at once</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-primary-600 mr-2">•</span>
-              <span>Drag and drop to reorder files</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-primary-600 mr-2">•</span>
-              <span>Customizable separators between files</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-primary-600 mr-2">•</span>
-              <span>Optional table of contents generation</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-primary-600 mr-2">•</span>
-              <span>Client-side processing (no uploads)</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            href="/"
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+        {/* Bottom Actions */}
+        <div className="space-y-3 pt-6 border-t border-gray-200">
+          {/* Merge Button - Placeholder */}
+          <Button
+            onClick={() => {}}
+            variant="primary"
+            disabled={true}
+            className="w-full"
           >
-            Back to Home
-          </Link>
-          <Link
-            href="/pdf-to-markdown"
-            className="px-6 py-3 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            Merge Files
+          </Button>
+
+          {/* Clear All Button */}
+          <Button
+            onClick={handleClearAll}
+            variant="secondary"
+            disabled={files.length === 0}
+            className="w-full"
           >
-            Try PDF to Markdown
-          </Link>
+            Clear All Files
+          </Button>
         </div>
       </div>
     </div>
