@@ -13,7 +13,7 @@ export default function Home() {
       </div>
 
       {/* Tool Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {TOOL_CARDS.map((tool) => (
           <ToolTile
             key={tool.href}
