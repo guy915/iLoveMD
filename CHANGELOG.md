@@ -64,6 +64,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅
   - **Note**: This is PR 3 of 4 for local Marker support. Local mode now has feature parity with cloud mode plus additional local-specific options. PR 4 will add testing, documentation, and polish.
 
+- **Local Marker Testing and Polish** (2025-11-14):
+  - **Added comprehensive test coverage for local mode** (PR 4 of 4):
+    - Added 27 new tests for local Marker service functions
+    - Test coverage for `submitPdfConversionLocal()`: Gemini API key handling, redo_inline_math option, error scenarios
+    - Test coverage for `pollConversionStatusLocal()`: Polling without API key requirement, URL encoding, error handling
+    - Test coverage for `convertPdfToMarkdownLocal()`: Full conversion workflow, polling, progress callbacks, cancellation, Gemini key validation
+    - Updated defaultOptions in tests to include redo_inline_math field
+    - All local mode tests mirror cloud mode test structure for consistency
+  - **Test results**:
+    - Total: 413 tests passing (58 in markerApiService.test.ts, including 27 new local mode tests)
+    - Coverage: 75.96% overall (above 70% threshold)
+    - Build: ✅ | Lint: ✅ | Tests: ✅
+  - **Files Modified**:
+    - Updated: `src/lib/services/markerApiService.test.ts`
+  - **Note**: This is PR 4 of 4 for local Marker support. Testing complete. Local Marker mode is now fully functional with comprehensive test coverage.
+
 ### Removed
 - **HTML to Markdown Feature** (2025-11-14):
   - **Removed all traces of HTML to Markdown feature**:
