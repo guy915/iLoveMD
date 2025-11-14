@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, ChangeEvent } from 'react'
+import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
 import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
 import { FILE_SIZE } from '@/lib/constants'
@@ -13,14 +13,15 @@ interface MarkdownFile {
 
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
-  // Handle file selection from button
-  const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files
-    if (!selectedFiles || selectedFiles.length === 0) {
-      addLog('info', 'File selection cancelled')
+  // Process files (shared logic for button upload and drag-drop)
+  const processFiles = useCallback(async (fileList: FileList | File[]) => {
+    const selectedFiles = Array.from(fileList)
+
+    if (selectedFiles.length === 0) {
       return
     }
 
@@ -71,12 +72,23 @@ export default function MergeMarkdownPage() {
     if (errors.length > 0) {
       addLog('error', `${errors.length} file(s) failed validation`, { errors })
     }
+  }, [files.length, addLog])
+
+  // Handle file selection from button
+  const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files
+    if (!selectedFiles || selectedFiles.length === 0) {
+      addLog('info', 'File selection cancelled')
+      return
+    }
+
+    await processFiles(selectedFiles)
 
     // Reset input to allow re-selecting same files
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
-  }, [files.length, addLog])
+  }, [processFiles, addLog])
 
   // Read file as text
   const readFileAsText = (file: File): Promise<string> => {
@@ -116,10 +128,73 @@ export default function MergeMarkdownPage() {
     fileInputRef.current?.click()
   }, [addLog])
 
+  // Drag and drop handlers
+  const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+    addLog('info', 'Files dragged over canvas')
+  }, [addLog])
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
+
+  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set isDragging to false if we're leaving the canvas entirely
+    if (e.currentTarget === e.target) {
+      setIsDragging(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback(async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const droppedFiles = e.dataTransfer.files
+    if (droppedFiles && droppedFiles.length > 0) {
+      addLog('info', `${droppedFiles.length} file(s) dropped on canvas`)
+      await processFiles(droppedFiles)
+    }
+  }, [processFiles, addLog])
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Canvas Area - Left Side */}
-      <div className="flex-1 bg-gray-50 overflow-y-auto p-8">
+      <div
+        className="flex-1 bg-gray-50 overflow-y-auto p-8 relative"
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* Drag overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 bg-primary-500 bg-opacity-10 border-4 border-primary-500 border-dashed z-50 flex items-center justify-center pointer-events-none">
+            <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+              <svg
+                className="w-16 h-16 mx-auto mb-4 text-primary-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <p className="text-xl font-semibold text-gray-900">Drop files here</p>
+              <p className="text-sm text-gray-500 mt-2">Upload your markdown files</p>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Merge Markdown Files</h1>
           <p className="text-gray-600 mb-8">
@@ -132,7 +207,7 @@ export default function MergeMarkdownPage() {
               <div className="text-center">
                 <p className="text-gray-500 text-lg mb-2">No files uploaded</p>
                 <p className="text-gray-400 text-sm">
-                  Click &quot;Upload Files&quot; to get started
+                  Click &quot;Upload Files&quot; or drag files here to get started
                 </p>
               </div>
             </div>
