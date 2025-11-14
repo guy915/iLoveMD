@@ -542,14 +542,17 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Files Modified**: 4 (constants.ts, GlobalDiagnosticPanel.tsx, pdf-to-markdown/page.tsx, CLAUDE.md)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md, CLAUDE.md
 
-### 2025-11-14 - Merge Markdown Page Layout Fixes (PR 2)
+### 2025-11-14 - Merge Markdown Page Layout and Sizing (PR 2)
 - **Fixed**:
   - Page layout structure to prevent unwanted page scrolling
   - Removed incorrectly added footer element (global footer already exists)
   - Reverted page structure from flex-col wrapper to simple flex layout
-  - Reduced empty state drop area height from h-full min-h-[600px] to h-96
-- **Impact**: Page no longer scrolls (only canvas scrolls), proper layout hierarchy, no duplicate footers
+  - Added scoped CSS to hide global footer on merge-markdown page only
+  - Changed page height from h-screen to calc(100vh - 64px) to fit viewport perfectly
+  - Made drop box dynamically resize using flex-1 layout with min-h-[550px]
+- **Impact**: Page fits perfectly to screen with no scrolling, footer hidden only on this page, drop box resizes responsively with window size
 - **Testing**: Build ✅ | Lint ✅
+- **Commits**: 5 commits (d74ca02, bbb7b67, c841898, 24827bf, 74076f9)
 - **Files Modified**: 1 (src/app/merge-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
