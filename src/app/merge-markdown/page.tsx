@@ -28,6 +28,7 @@ export default function MergeMarkdownPage() {
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
   const draggedIndexRef = useRef<number | null>(null)
+  const dragStartOrderRef = useRef<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
@@ -274,6 +275,7 @@ export default function MergeMarkdownPage() {
   const handleFileDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
     const draggedIndex = files.findIndex(f => f.id === fileId)
     draggedIndexRef.current = draggedIndex
+    dragStartOrderRef.current = files.map(f => f.id)
     setDraggedFileId(fileId)
     e.dataTransfer.effectAllowed = 'move'
     // Set a custom data type to differentiate from file upload drags
@@ -349,6 +351,7 @@ export default function MergeMarkdownPage() {
     setDraggedFileId(null)
     setDragOverFileId(null)
     draggedIndexRef.current = null
+    dragStartOrderRef.current = []
   }, [])
 
   return (
@@ -426,9 +429,13 @@ export default function MergeMarkdownPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {files.map((markdownFile) => {
+              {files.map((markdownFile, currentIndex) => {
                 const isDraggedCard = draggedFileId === markdownFile.id
                 const isDropTarget = dragOverFileId === markdownFile.id
+
+                // Check if card has moved from its starting position
+                const startIndex = dragStartOrderRef.current.indexOf(markdownFile.id)
+                const hasMovedPosition = draggedFileId && startIndex !== -1 && startIndex !== currentIndex
 
                 return (
                 <div
@@ -443,7 +450,7 @@ export default function MergeMarkdownPage() {
                   className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out aspect-[5/7] flex flex-col ${
                     isDraggedCard
                       ? 'cursor-grabbing opacity-20 border-primary-400'
-                      : isDropTarget
+                      : isDropTarget || hasMovedPosition
                       ? 'border-primary-400 bg-primary-50'
                       : 'cursor-grab border-gray-200'
                   }`}
