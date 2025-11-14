@@ -211,6 +211,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     markerFormData.append('use_llm', String(options.use_llm))
     markerFormData.append('disable_image_extraction', String(options.disable_image_extraction))
 
+    // Add local-specific options
+    if (options.redo_inline_math !== undefined) {
+      markerFormData.append('redo_inline_math', String(options.redo_inline_math))
+    }
+
     // Add Gemini API key if use_llm is enabled
     if (options.use_llm && geminiApiKey) {
       markerFormData.append('api_key', geminiApiKey.trim())
