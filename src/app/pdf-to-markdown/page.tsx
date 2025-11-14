@@ -13,8 +13,16 @@ import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // Mode state - 'local' uses true local setup, 'cloud-free' uses HuggingFace GPU, 'cloud-paid' uses Marker API
-  // Always start with 'local' to match SSR, then update from localStorage in useEffect
-  const [mode, setMode] = useState<'local' | 'cloud-free' | 'cloud-paid'>('local')
+  // Read from localStorage immediately during initial state to prevent flickering
+  const [mode, setMode] = useState<'local' | 'cloud-free' | 'cloud-paid'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'local' | 'cloud-free' | 'cloud-paid' | null
+      if (savedMode === 'local' || savedMode === 'cloud-free' || savedMode === 'cloud-paid') {
+        return savedMode
+      }
+    }
+    return 'local' // Default for first-time users and SSR
+  })
 
   // API keys
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (cloud mode)
@@ -56,15 +64,6 @@ export default function PdfToMarkdownPage() {
 
   // Local setup UI state
   const [showManualSetup, setShowManualSetup] = useState(false)
-
-  // Load mode from localStorage immediately after mount (before any rendering)
-  // This prevents hydration mismatch by always starting with 'local' on both server and client
-  useEffect(() => {
-    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'local' | 'cloud-free' | 'cloud-paid' | null
-    if (savedMode === 'local' || savedMode === 'cloud-free' || savedMode === 'cloud-paid') {
-      setMode(savedMode)
-    }
-  }, [])
 
   // Cleanup on unmount to prevent memory leaks
   useEffect(() => {
@@ -597,9 +596,9 @@ export default function PdfToMarkdownPage() {
       </div>
 
       {/* Mode Toggle Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6" suppressHydrationWarning>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3" suppressHydrationWarning>
           <button
             onClick={() => {
               setMode('local')
@@ -752,13 +751,13 @@ export default function PdfToMarkdownPage() {
                 </a>
 
                 <a
-                  href="/scripts/setup-mac.sh"
-                  download="setup-mac.sh"
+                  href="/scripts/setup-mac.command"
+                  download="setup-mac.command"
                   className="flex flex-col items-center justify-center px-4 py-6 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
                 >
                   <span className="text-3xl mb-2">🍎</span>
                   <span className="text-sm font-semibold text-gray-900">macOS</span>
-                  <span className="text-xs text-gray-600 mt-1">setup.sh</span>
+                  <span className="text-xs text-gray-600 mt-1">setup.command</span>
                 </a>
 
                 <a
@@ -775,7 +774,10 @@ export default function PdfToMarkdownPage() {
               <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
                 <p className="text-sm font-medium text-gray-900 mb-2">After downloading:</p>
                 <ol className="text-sm text-gray-700 space-y-1 ml-4">
-                  <li>1. Double-click the downloaded file (or run in terminal)</li>
+                  <li>1. Double-click the downloaded file to run it</li>
+                  <li className="text-xs text-gray-600 ml-3">• macOS: Double-click the .command file</li>
+                  <li className="text-xs text-gray-600 ml-3">• Windows: Double-click the .bat file</li>
+                  <li className="text-xs text-gray-600 ml-3">• Linux: Right-click → Run or use terminal</li>
                   <li>2. Wait for installation to complete (~2-5 minutes)</li>
                   <li>3. The server will start automatically</li>
                   <li>4. Return here and click &quot;Convert to Markdown&quot;</li>

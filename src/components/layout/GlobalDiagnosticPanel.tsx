@@ -169,17 +169,17 @@ Log Format: #ID [timestamp] TYPE: message
 
               const isScrollingDown = e.deltaY > 0
               const isScrollingUp = e.deltaY < 0
-              const isAtBottom = container.scrollHeight - container.scrollTop === container.clientHeight
-              const isAtTop = container.scrollTop === 0
+              const isAtBottom = Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 1
+              const isAtTop = container.scrollTop < 1
 
               // Only allow page scroll when we're at an edge AND scrolling past it
               // At top scrolling up -> allow page scroll
               // At bottom scrolling down -> allow page scroll
-              // All other cases -> stop propagation (scroll panel only)
+              // All other cases -> prevent default (scroll panel only, don't scroll page)
               const shouldScrollPage = (isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)
 
               if (!shouldScrollPage) {
-                e.stopPropagation()
+                e.preventDefault()
               }
             }}
           >
