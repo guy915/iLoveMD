@@ -206,32 +206,53 @@ export default function PdfToMarkdownPage() {
     }
   }, [handleFilesSelect, addLog])
 
-  // Full-page drag handlers
-  const handlePageDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    dragCounterRef.current++
-    if (dragCounterRef.current === 1) {
-      setShowDropOverlay(true)
-      addLog('info', 'Files dragged over page - showing drop overlay')
+  // Full-page drag handlers using document-level events
+  useEffect(() => {
+    const handlePageDragEnter = (e: DragEvent) => {
+      e.preventDefault()
+      dragCounterRef.current++
+      if (dragCounterRef.current === 1) {
+        setShowDropOverlay(true)
+        addLog('info', 'Files dragged over page - showing drop overlay')
+      }
     }
-  }, [addLog])
 
-  const handlePageDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
+    const handlePageDragLeave = (e: DragEvent) => {
+      e.preventDefault()
+      dragCounterRef.current--
+      if (dragCounterRef.current === 0) {
+        setShowDropOverlay(false)
+      }
+    }
 
-    dragCounterRef.current--
-    if (dragCounterRef.current === 0) {
+    const handlePageDragOver = (e: DragEvent) => {
+      e.preventDefault()
+    }
+
+    const handlePageDrop = (e: DragEvent) => {
+      e.preventDefault()
+      dragCounterRef.current = 0
       setShowDropOverlay(false)
-    }
-  }, [])
 
-  const handlePageDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-  }, [])
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        addLog('info', `${e.dataTransfer.files.length} file(s) dropped on page`)
+        handleFilesSelect(e.dataTransfer.files, false)
+      }
+    }
+
+    // Add document-level listeners
+    document.addEventListener('dragenter', handlePageDragEnter)
+    document.addEventListener('dragleave', handlePageDragLeave)
+    document.addEventListener('dragover', handlePageDragOver)
+    document.addEventListener('drop', handlePageDrop)
+
+    return () => {
+      document.removeEventListener('dragenter', handlePageDragEnter)
+      document.removeEventListener('dragleave', handlePageDragLeave)
+      document.removeEventListener('dragover', handlePageDragOver)
+      document.removeEventListener('drop', handlePageDrop)
+    }
+  }, [addLog, handleFilesSelect])
 
   const handleConvert = useCallback(async () => {
     if (!apiKey.trim()) {
@@ -467,17 +488,7 @@ export default function PdfToMarkdownPage() {
 
   return (
     <>
-      {/* Full-page drop zone wrapper */}
-      <div
-        className="fixed inset-0 z-10"
-        onDragEnter={handlePageDragEnter}
-        onDragLeave={handlePageDragLeave}
-        onDragOver={handlePageDragOver}
-        onDrop={handleDrop}
-        style={{ pointerEvents: showDropOverlay ? 'auto' : 'none' }}
-      />
-
-      {/* Full-page drop overlay */}
+      {/* Full-page drop overlay - drag handlers on document in useEffect */}
       {showDropOverlay && (
         <div className="fixed inset-0 z-50 bg-blue-500 bg-opacity-20 backdrop-blur-sm flex items-center justify-center pointer-events-none">
           <div className="bg-white rounded-2xl shadow-2xl p-12 border-4 border-dashed border-blue-500 pointer-events-none">
