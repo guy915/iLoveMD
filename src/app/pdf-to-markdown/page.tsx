@@ -13,7 +13,16 @@ import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // Mode state - 'cloud' uses Marker API, 'local' uses local Marker instance
-  const [mode, setMode] = useState<'cloud' | 'local'>('local')
+  // Read from localStorage immediately to prevent flickering
+  const [mode, setMode] = useState<'cloud' | 'local'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('marker_mode') as 'cloud' | 'local' | null
+      if (savedMode === 'cloud' || savedMode === 'local') {
+        return savedMode
+      }
+    }
+    return 'local' // Default for first-time users and SSR
+  })
 
   // API keys
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (cloud mode)
@@ -71,14 +80,8 @@ export default function PdfToMarkdownPage() {
     }
   }, [])
 
-  // Load mode and API keys from localStorage on mount
+  // Load API keys from localStorage on mount
   useEffect(() => {
-    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'cloud' | 'local' | null
-    if (savedMode === 'cloud' || savedMode === 'local') {
-      setMode(savedMode)
-      addLog('info', `Loaded saved mode: ${savedMode}`)
-    }
-
     const savedGeminiKey = storageService.getItem(STORAGE_KEYS.GEMINI_API_KEY)
     if (savedGeminiKey) {
       setGeminiApiKey(savedGeminiKey)
@@ -573,9 +576,9 @@ export default function PdfToMarkdownPage() {
       </div>
 
       {/* Mode Toggle Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6" suppressHydrationWarning>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" suppressHydrationWarning>
           <button
             onClick={() => {
               setMode('local')
