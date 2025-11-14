@@ -482,7 +482,7 @@ export default function PdfToMarkdownPage() {
             Drop PDF files or folders here
           </p>
 
-          <div className="flex items-stretch gap-0 min-h-[180px]">
+          <div className="flex items-stretch gap-0 min-h-[180px] border-t border-gray-300">
             {/* Files Button (Left Half) */}
             <label className="flex-1 cursor-pointer flex items-center justify-center hover:bg-gray-50 transition-colors rounded-bl-lg border-r border-gray-200">
               <input
@@ -627,12 +627,12 @@ export default function PdfToMarkdownPage() {
 
       {/* Single File Status - unified for processing and completion */}
       {!isBatch && (processing || status) && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex items-center gap-3">
             {processing && (
               <span className="text-blue-600 animate-spin text-2xl">⟳</span>
             )}
-            <p className="text-base font-semibold text-blue-800">
+            <p className="text-base font-semibold text-gray-900">
               {status || 'Converting PDF to Markdown...'}
             </p>
           </div>
@@ -641,12 +641,12 @@ export default function PdfToMarkdownPage() {
 
       {/* Batch Progress - unified for processing and completion */}
       {isBatch && (processing || status) && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex items-center gap-3">
             {processing && (
               <span className="text-blue-600 animate-spin text-2xl">⟳</span>
             )}
-            <p className="text-base font-semibold text-blue-800">
+            <p className="text-base font-semibold text-gray-900">
               {batchProgress && processing
                 ? `Converting ${batchProgress.completed}/${batchProgress.total} files`
                 : status}
