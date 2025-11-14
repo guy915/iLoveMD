@@ -1,3 +1,15 @@
+---
+title: Marker PDF Converter
+emoji: 📄
+colorFrom: blue
+colorTo: purple
+sdk: docker
+sdk_version: "3.10"
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # Marker PDF Converter
 
 Convert PDF files to clean, LLM-optimized Markdown using [Marker AI](https://github.com/VikParuchuri/marker).
