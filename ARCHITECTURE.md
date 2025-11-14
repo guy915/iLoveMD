@@ -14,7 +14,6 @@ AI Doc Prep is a client-heavy web application built with Next.js that processes 
 | Hosting | Vercel |
 | State | Component-level + localStorage + React Context |
 | PDF Conversion | Marker API |
-| HTML Processing | Turndown.js + Readability |
 
 ## Draft Project Structure
 
@@ -55,7 +54,7 @@ ai-doc-prep/
 │  │         React Components (Next.js)            │  │
 │  │  - File uploads                               │  │
 │  │  - User interactions                          │  │
-│  │  - Client-side processing (HTML, Merge)      │  │
+│  │  - Client-side processing (Merge)            │  │
 │  └──────────────┬───────────────────────────────┘  │
 │                 │                                    │
 │  ┌──────────────▼───────────────────────────────┐  │
@@ -65,22 +64,19 @@ ai-doc-prep/
 │  └──────────────────────────────────────────────┘  │
 └─────────────────┬───────────────────────────────────┘
                   │
-                  │ (Only for PDF & URL fetching)
+                  │ (Only for PDF)
                   │
 ┌─────────────────▼───────────────────────────────────┐
 │            Next.js API Routes (Server)              │
 │  ┌──────────────────────────────────────────────┐  │
 │  │  /api/marker     - Proxy to Marker API       │  │
-│  │  /api/fetch-url  - Fetch URLs (CORS bypass)  │  │
 │  └──────────────┬───────────────────────────────┘  │
 └─────────────────┼───────────────────────────────────┘
                   │
-        ┌─────────┴──────────┐
-        │                    │
-┌───────▼────────┐  ┌────────▼─────────┐
-│  Marker API    │  │  External URLs   │
-│  (Datalab.to)  │  │  (Web scraping)  │
-└────────────────┘  └──────────────────┘
+┌─────────────────▼───────────────────────────────────┐
+│                   Marker API                        │
+│                  (Datalab.to)                       │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Processing Flows
@@ -109,42 +105,6 @@ ai-doc-prep/
    └─ Client receives result
       ├─ Display success message
       └─ Trigger file download
-```
-
-### HTML to Markdown Flow (File Upload)
-
-```
-1. User uploads HTML file
-   └─ File read into memory (FileReader API)
-
-2. Client-side preprocessing
-   ├─ Remove scripts, styles, nav, ads
-   ├─ Extract main content (Readability.js)
-   └─ Normalize whitespace
-
-3. Client-side conversion
-   ├─ Convert HTML → Markdown (Turndown.js)
-   └─ Configure tables, code blocks, lists
-
-4. Download result
-   └─ No server involved - entirely client-side
-```
-
-### HTML to Markdown Flow (URL)
-
-```
-1. User pastes URL
-   └─ Validate URL format
-
-2. Fetch HTML content
-   ├─ POST to /api/fetch-url (CORS bypass)
-   ├─ API Route fetches URL
-   └─ Returns HTML to client
-
-3. Same as file upload flow
-   ├─ Client-side preprocessing
-   ├─ Client-side conversion
-   └─ Download result
 ```
 
 ### Merge Markdowns Flow
@@ -215,11 +175,6 @@ Each tool page manages its own state independently:
     "outputFormat": "markdown"
   },
 
-  "htmlOptions": {
-    "preserveImages": true,
-    "preserveLinks": true
-  },
-
   "mergeOptions": {
     "separatorStyle": "pageBreak",
     "generateTOC": false,
@@ -241,7 +196,6 @@ RootLayout
 │   ├── Logo (link to home)
 │   ├── Navigation
 │   │   ├── NavLink (PDF to MD)
-│   │   ├── NavLink (HTML to MD)
 │   │   ├── NavLink (Merge MD)
 │   │   ├── NavLink (Help)
 │   │   └── NavLink (About)
@@ -322,60 +276,7 @@ FormData {
 - Marker API error → 502
 - Timeout → 504
 
-### /api/fetch-url
-
-**Purpose:** Fetch HTML content from URL (bypass CORS)
-
-**Method:** POST
-
-**Input:**
-```javascript
-{
-  url: string
-}
-```
-
-**Processing:**
-1. Validate URL
-2. Fetch content with User-Agent header
-3. Return HTML
-
-**Output:**
-```javascript
-{
-  success: boolean,
-  html?: string,
-  error?: string
-}
-```
-
-**Error Handling:**
-- Invalid URL → 400
-- Fetch failed → 502
-- Timeout → 504
-
 ## Client-Side Processing
-
-### HTML Processing Pipeline
-
-```javascript
-// 1. Clean HTML
-cleanHTML(html)
-├─ Remove <script>, <style>
-├─ Remove navigation, footer, ads
-├─ Extract main content (Readability)
-└─ Normalize whitespace
-
-// 2. Convert to Markdown
-convertToMarkdown(cleanedHTML, options)
-├─ Use Turndown.js
-├─ Configure: tables, codeBlocks, lists
-├─ Preserve images (optional)
-└─ Preserve links (optional)
-
-// 3. Download
-downloadFile(markdown, filename)
-```
 
 ### Merge Processing Pipeline
 
@@ -629,10 +530,6 @@ Deployed Application
 - `next` - Framework
 - `react`, `react-dom` - UI library
 - `tailwindcss` - Styling
-
-### Processing
-- `turndown` - HTML → Markdown
-- `@mozilla/readability` - Content extraction
 
 ### Utilities
 - (Add as needed during implementation)
