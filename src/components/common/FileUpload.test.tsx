@@ -33,40 +33,40 @@ describe('FileUpload', () => {
 
   describe('rendering', () => {
     it('should render with default label', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       expect(screen.getByText('Drop file here or click to browse')).toBeInTheDocument()
     })
 
     it('should render with custom label', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" label="Upload your PDF" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" label="Upload your PDF" />)
       expect(screen.getByText('Upload your PDF')).toBeInTheDocument()
     })
 
     it('should display supported file types', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf,.md" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf,.md" />)
       expect(screen.getByText(/Supported: \.pdf,\.md/)).toBeInTheDocument()
     })
 
     it('should display max file size', () => {
       const maxSize = 10 * FILE_SIZE.BYTES_PER_MB // 10MB
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" maxSize={maxSize} />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" maxSize={maxSize} />)
       expect(screen.getByText(/up to 10MB/)).toBeInTheDocument()
     })
 
     it('should use default max size if not provided', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const defaultMaxSizeMB = Math.round(FILE_SIZE.MAX_FILE_SIZE / FILE_SIZE.BYTES_PER_MB)
       expect(screen.getByText(new RegExp(`up to ${defaultMaxSizeMB}MB`))).toBeInTheDocument()
     })
 
     it('should have role="button" and tabindex for accessibility', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const dropZone = screen.getByRole('button')
       expect(dropZone).toHaveAttribute('tabindex', '0')
     })
 
     it('should have aria-label for accessibility', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" label="Upload file" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" label="Upload file" />)
       expect(screen.getByRole('button')).toHaveAttribute('aria-label', 'Upload file')
     })
   })
@@ -194,7 +194,7 @@ describe('FileUpload', () => {
 
   describe('drag and drop', () => {
     it('should activate drag state on drag enter', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const dropZone = screen.getByRole('button')
 
       fireEvent.dragEnter(dropZone, {
@@ -206,7 +206,7 @@ describe('FileUpload', () => {
     })
 
     it('should deactivate drag state on drag leave', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const dropZone = screen.getByRole('button')
 
       fireEvent.dragEnter(dropZone, {
@@ -223,7 +223,7 @@ describe('FileUpload', () => {
     })
 
     it('should maintain drag state on drag over', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const dropZone = screen.getByRole('button')
 
       fireEvent.dragEnter(dropZone, {
@@ -238,7 +238,7 @@ describe('FileUpload', () => {
     })
 
     it('should call onFileSelect when file is dropped', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const dropZone = screen.getByRole('button')
 
       const file = createMockFile('dropped.pdf', 1000, 'application/pdf')
@@ -251,7 +251,7 @@ describe('FileUpload', () => {
     })
 
     it('should deactivate drag state after drop', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const dropZone = screen.getByRole('button')
 
       fireEvent.dragEnter(dropZone, {
@@ -269,7 +269,7 @@ describe('FileUpload', () => {
 
     it('should validate file size on drop', () => {
       const maxSize = 5 * FILE_SIZE.BYTES_PER_MB
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" maxSize={maxSize} />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" maxSize={maxSize} />)
       const dropZone = screen.getByRole('button')
 
       const file = createMockFile('large.pdf', 10 * FILE_SIZE.BYTES_PER_MB, 'application/pdf')
@@ -283,7 +283,7 @@ describe('FileUpload', () => {
     })
 
     it('should prevent default on drag events', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const dropZone = screen.getByRole('button')
 
       const dragEvent = new Event('dragenter', { bubbles: true, cancelable: true })
@@ -336,7 +336,7 @@ describe('FileUpload', () => {
     })
 
     it('should be focusable via keyboard', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       const dropZone = screen.getByRole('button')
 
       expect(dropZone).toHaveAttribute('tabindex', '0')
@@ -373,7 +373,7 @@ describe('FileUpload', () => {
 
   describe('error display', () => {
     it('should not show error initially', () => {
-      const { container } = render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
+      render(<FileUpload onFileSelect={onFileSelect} accept=".pdf" />)
       expect(screen.queryByText(/File too large/)).not.toBeInTheDocument()
     })
 
