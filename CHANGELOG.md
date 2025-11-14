@@ -22,6 +22,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅
 
 ### Added
+- **Batch Conversion Service Tests** (2025-11-14):
+  - **Created comprehensive test suite for batchConversionService.ts**:
+    - 31 tests covering filtering, validation, retry logic, and batch processing
+    - **File filtering functions** (8 tests):
+      - filterPdfFiles: MIME type and extension filtering (case insensitive)
+      - filterImmediateFolderFiles: webkitRelativePath depth detection
+      - getFolderName: Folder name extraction from paths
+      - Edge cases: Empty arrays, mixed file types, nested folders
+    - **Batch validation** (10 tests):
+      - validateBatchFiles: Empty arrays, file count limits (10,000 max)
+      - PDF detection: Non-PDF filtering, no PDF files scenario
+      - Size limits: Individual file (200MB), total batch (100GB)
+      - Oversized file reporting: List up to 3 files with "and X more"
+      - Valid batch acceptance with mixed file types
+    - **Batch conversion workflow** (13 tests):
+      - convertBatchPdfToMarkdown: Single/multiple file conversions
+      - Retry logic with exponential backoff (1s, 2s, 4s delays)
+      - Concurrency control: Respects maxConcurrent limit
+      - Progress callbacks: Real-time updates with completion tracking
+      - Cancellation: AbortSignal support for graceful shutdown
+      - Error handling: Conversion failures, retry exhaustion, unexpected errors
+      - Duration tracking: startTime, endTime, and elapsed time
+      - ZIP generation: Successful batch results (mocked)
+      - Early return: All conversions failed scenario
+  - **Test coverage improvement**:
+    - batchConversionService.ts: 0% → 94.19% coverage (+94%)
+    - lib/services: 79.58% → 97.52% (+17.9%)
+    - Overall codebase: 34.97% → 45.92% (+10.95%)
+    - Test suite: 146 → 177 tests (+31)
+  - **Advanced testing techniques**:
+    - Mock convertPdfToMarkdown for service isolation
+    - Fake timers for async delay and retry simulation
+    - Concurrency monitoring: Track max concurrent operations
+    - Object.defineProperty for large file simulation without memory overhead
+    - webkitRelativePath property mocking for folder upload testing
+    - AbortController integration for cancellation scenarios
+  - **Impact**: Batch PDF processing fully tested, ensuring reliable concurrency control, retry logic, and error handling for large-scale conversions
+  - **Files Added**: src/lib/services/batchConversionService.test.ts (644 lines, 31 tests)
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (177/177 passing)
+
+- **Merge Markdown File Reordering (PR 3)** (2025-11-14):
+  - **Implemented drag-and-drop file reordering in file grid**:
+    - Added drag-and-drop functionality to reorder uploaded markdown files
+    - Files can be dragged and dropped to change their order in the grid
+    - Visual feedback during drag: dragged card scales down, rotates, becomes semi-transparent
+    - Drop target prominently highlighted with shadow, primary background tint, and scale effect
+    - Cursor feedback: cursor-grab when hovering, cursor-grabbing when actively dragging
+  - **Technical implementation**:
+    - Added draggedFileId and dragOverFileId state tracking
+    - Added draggedIndexRef to track original position for logging
+    - Implemented custom data type 'application/x-file-reorder' to differentiate from file upload drags
+    - Drag handlers: handleFileDragStart, handleFileDragOver, handleFileDragEnter, handleFileDragLeave, handleFileDrop, handleFileDragEnd
+    - Real-time reordering: array is reordered on dragOver (not just on drop)
+    - CSS Grid with transitions smoothly animates cards to new positions
+    - Cards shuffle and make room as you drag over them
+    - All drag events properly memoized with useCallback
+  - **Bug fixes and improvements**:
+    - Fixed canvas drop zone appearing during file reordering (checks for custom data type)
+    - Fixed flickering on drag leave (checks relatedTarget to avoid child element triggers)
+    - Fixed dropEffect being incorrectly set during reordering
+    - Smooth 300ms transitions for all state changes (ease-in-out)
+    - Addressed all Copilot review feedback (cursor improvements, flickering fix)
+  - **Logging and UX**:
+    - Logs when file drag starts (includes filename)
+    - Logs when files are reordered (includes from/to positions and filename)
+    - Professional, polished drag-and-drop experience
+  - **Impact**: Users can now reorder files with smooth, intuitive drag-and-drop. Cards shuffle in real-time to make room as you drag, providing professional, satisfying visual feedback
+  - **Files Modified**: src/app/merge-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
 - **Marker API Service Tests** (2025-11-14):
   - **Created comprehensive test suite for markerApiService.ts**:
     - 35 tests covering validation, API calls, and conversion workflows
