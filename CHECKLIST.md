@@ -591,29 +591,38 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
 
-### 2025-11-14 - Full-Page Drop Zone and Folder Drop Clarification
+### 2025-11-14 - Full-Page Drop Zone Bug Fix
+- **Fixed**:
+  - Overlay inner white card was blocking drop events
+    - Problem: Only outer overlay div had `pointer-events-none`, inner card captured events
+    - Solution: Added `pointer-events-none` to inner card so events pass through to drop zone
+    - Result: Full-page drop now works correctly anywhere on the page
+  - Restored folder text to "Drop PDF files or folders here"
+    - User confirmed folder drag-and-drop works in practice
+    - Removed incorrect assumption about browser limitations
+- **Impact**: Full-page drag-and-drop now works as intended - users can drop files/folders anywhere
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+### 2025-11-14 - Full-Page Drop Zone Implementation (Initial)
 - **Added**:
   - Full-page drop overlay for PDF to Markdown page
     - Overlay appears when dragging files anywhere on the page
     - Beautiful blue translucent background with backdrop blur effect
-    - Central white card with dashed border and clear "Drop PDF files here" message
+    - Central white card with dashed border and clear drop message
     - Uses drag counter (`dragCounterRef`) to correctly handle nested drag events
     - Automatic hide when files dropped or drag leaves page
   - New drag event handlers: `handlePageDragEnter`, `handlePageDragLeave`, `handlePageDragOver`
   - State management: `showDropOverlay` for overlay visibility
   - Wrapped entire page content in drag event listeners
 - **Changed**:
-  - Updated drop zone text from "Drop PDF files or folders here" to "Drop PDF files here"
   - Added descriptive subtext to buttons:
     - "Browse Files" → "Select individual PDFs"
     - "Browse Folders" → "Select entire folder"
   - Changed button layout to flex-col for better text stacking
   - Added py-6 padding to buttons for better spacing
-- **Reasoning**: Browser security prevents drag-and-drop of folders from OS - only file input with `webkitdirectory` can access folder contents
-- **Impact**:
-  - Significantly improved drag-and-drop UX - users can drop files anywhere on the page
-  - Clearer messaging about folder selection capabilities
-  - No false expectations about folder drag-and-drop
+- **Note**: Initial implementation had a bug where inner overlay card blocked drops (fixed in subsequent session)
 - **Testing**: Build ✅ | Lint ✅ | Tests: ✅ (335 passed, 6 skipped)
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
