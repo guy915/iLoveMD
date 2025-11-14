@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
 import { FILE_SIZE } from '@/lib/constants'
@@ -534,23 +536,33 @@ export default function MergeMarkdownPage() {
                     </svg>
                   </button>
 
-                  {/* File preview placeholder */}
-                  <div className="flex-1 bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4 rounded-t-lg">
-                    <div className="text-center">
-                      <svg
-                        className="w-16 h-16 mx-auto mb-2 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                      <p className="text-xs text-gray-500">Markdown</p>
+                  {/* Markdown preview */}
+                  <div className="flex-1 bg-white border-b-2 border-gray-200 overflow-hidden rounded-t-lg relative">
+                    <div className="absolute inset-0 overflow-hidden p-2">
+                      <div className="text-[0.35rem] leading-tight">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({node, ...props}) => <h1 className="text-[0.5rem] font-bold mb-1" {...props} />,
+                            h2: ({node, ...props}) => <h2 className="text-[0.45rem] font-bold mb-1" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-[0.4rem] font-bold mb-0.5" {...props} />,
+                            h4: ({node, ...props}) => <h4 className="text-[0.38rem] font-semibold mb-0.5" {...props} />,
+                            h5: ({node, ...props}) => <h5 className="text-[0.36rem] font-semibold mb-0.5" {...props} />,
+                            h6: ({node, ...props}) => <h6 className="text-[0.35rem] font-semibold mb-0.5" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-1" {...props} />,
+                            ul: ({node, ...props}) => <ul className="mb-1 ml-2 list-disc" {...props} />,
+                            ol: ({node, ...props}) => <ol className="mb-1 ml-2 list-decimal" {...props} />,
+                            li: ({node, ...props}) => <li className="mb-0.5" {...props} />,
+                            code: ({node, ...props}) => <code className="bg-gray-100 px-0.5 rounded text-[0.32rem]" {...props} />,
+                            pre: ({node, ...props}) => <pre className="bg-gray-100 p-1 rounded text-[0.32rem] mb-1 overflow-x-auto" {...props} />,
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
+                            a: ({node, ...props}) => <a className="text-blue-600" {...props} />,
+                            hr: ({node, ...props}) => <hr className="my-1 border-gray-300" {...props} />,
+                          }}
+                        >
+                          {markdownFile.content}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </div>
 
