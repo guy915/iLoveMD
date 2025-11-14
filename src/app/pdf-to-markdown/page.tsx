@@ -7,7 +7,7 @@ import { formatBytesToMB, formatBytesToKB, formatDuration } from '@/lib/utils/fo
 import type { MarkerOptions } from '@/types'
 import { MARKER_CONFIG, STORAGE_KEYS, FILE_SIZE } from '@/lib/constants'
 import * as storageService from '@/lib/services/storageService'
-import { convertPdfToMarkdown } from '@/lib/services/markerApiService'
+import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from '@/lib/services/markerApiService'
 import { filterPdfFiles, filterImmediateFolderFiles, getFolderName, type BatchProgress } from '@/lib/services/batchConversionService'
 import { useLogs } from '@/contexts/LogContext'
 
@@ -285,18 +285,21 @@ export default function PdfToMarkdownPage() {
   }, [addLog, handleFilesSelect])
 
   const handleConvert = useCallback(async () => {
-    // Guard: Local mode not yet implemented (PR 2)
-    if (mode === 'local') {
-      setError('Local Marker mode is not yet implemented. Please switch to Cloud API mode or wait for PR 2.')
-      addLog('error', 'Conversion blocked: Local mode not implemented yet (coming in PR 2)')
-      return
-    }
-
-    // Validate API key for cloud mode
-    if (!apiKey.trim()) {
-      setError('Please enter your Marker API key')
-      addLog('error', 'Conversion blocked: No Marker API key provided')
-      return
+    // Mode-based validation
+    if (mode === 'cloud') {
+      // Validate Marker API key for cloud mode
+      if (!apiKey.trim()) {
+        setError('Please enter your Marker API key')
+        addLog('error', 'Conversion blocked: No Marker API key provided')
+        return
+      }
+    } else if (mode === 'local') {
+      // Validate Gemini API key for local mode with LLM
+      if (options.use_llm && !geminiApiKey.trim()) {
+        setError('Please enter your Gemini API key to use LLM enhancement in local mode')
+        addLog('error', 'Conversion blocked: No Gemini API key provided for local LLM mode')
+        return
+      }
     }
 
     if (files.length === 0) {
@@ -324,6 +327,11 @@ export default function PdfToMarkdownPage() {
 
       if (isBatch) {
         // Batch conversion
+        // NOTE: Batch mode only supports cloud API for now (local batch will be added in future PR if needed)
+        if (mode === 'local') {
+          throw new Error('Batch conversion is not yet supported in local mode. Please switch to Cloud API mode or convert files individually.')
+        }
+
         setStatus('Processing batch...')
 
         // Dynamically import batch service
@@ -366,7 +374,7 @@ export default function PdfToMarkdownPage() {
       } else {
         // Single file conversion
         const file = files[0]
-        setStatus('Submitting to Marker API...')
+        setStatus(mode === 'cloud' ? 'Submitting to Marker API...' : 'Submitting to local Marker...')
 
         const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
           if (!isMountedRef.current) return
@@ -374,13 +382,22 @@ export default function PdfToMarkdownPage() {
           setStatus(`Processing PDF... (${attemptNumber}/${maxAttempts} checks, ${elapsedSeconds.toFixed(0)}s elapsed)`)
         }
 
-        const result = await convertPdfToMarkdown(
-          file,
-          apiKey,
-          options,
-          onProgress,
-          abortControllerRef.current.signal
-        )
+        // Call appropriate conversion function based on mode
+        const result = mode === 'cloud'
+          ? await convertPdfToMarkdown(
+              file,
+              apiKey,
+              options,
+              onProgress,
+              abortControllerRef.current.signal
+            )
+          : await convertPdfToMarkdownLocal(
+              file,
+              options.use_llm ? geminiApiKey : null,
+              options,
+              onProgress,
+              abortControllerRef.current.signal
+            )
 
         if (!result.success || !result.markdown) {
           throw new Error(result.error || 'Conversion failed')
@@ -390,7 +407,8 @@ export default function PdfToMarkdownPage() {
 
         addLog('success', `Conversion complete!`, {
           contentSize: formatBytesToKB(result.markdown.length),
-          filename
+          filename,
+          mode
         })
 
         if (isMountedRef.current) {
@@ -413,8 +431,7 @@ export default function PdfToMarkdownPage() {
     } finally {
       abortControllerRef.current = null
     }
-    // Note: geminiApiKey will be added back to dependencies in PR 2 when local mode is implemented
-  }, [apiKey, files, options, isBatch, folderName, mode, addLog])
+  }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, addLog])
 
   const handleDownload = useCallback(async () => {
     if (!convertedMarkdown || !outputFilename) return
@@ -934,12 +951,12 @@ export default function PdfToMarkdownPage() {
               <li>6. Click &quot;Download&quot; to save your file(s)</li>
             </ul>
             <p className="mt-4 text-sm text-gray-500">
-              <strong>Local Mode:</strong> Requires a local Marker instance running (typically via Docker).
+              <strong>Local Mode:</strong> Requires a local Marker instance running (typically via Docker on http://localhost:8000).
               Provides additional conversion options not available in cloud mode.
               All processing happens locally - no data sent to external servers (except Gemini API if using LLM).
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              <strong>Note:</strong> This feature is currently in preview. Full local mode integration coming in the next update.
+              <strong>Note:</strong> Batch conversion is not yet supported in local mode. Please convert files individually or switch to Cloud API mode for batch processing.
             </p>
           </>
         )}

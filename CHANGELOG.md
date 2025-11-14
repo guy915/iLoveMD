@@ -25,6 +25,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Note**: This is PR 1 of 4 for local Marker support. UI only - no actual local API integration yet.
   - **Files Modified**: src/app/pdf-to-markdown/page.tsx, src/lib/constants.ts
   - Build: ✅ | Lint: ✅
+
+- **Local Marker Backend Integration** (2025-11-14):
+  - **Implemented local Marker support** (PR 2 of 4):
+    - Added new API route `/api/marker/local` for local Marker instance communication
+    - Added local service functions: `submitPdfConversionLocal()`, `pollConversionStatusLocal()`, `convertPdfToMarkdownLocal()`
+    - Updated `handleConvert()` in PDF page to support both cloud and local modes
+    - Mode-based validation: Cloud requires Marker API key, Local requires Gemini API key (when use_llm enabled)
+    - Status messages now reflect mode: "Submitting to Marker API..." vs "Submitting to local Marker..."
+  - **Local Marker configuration**:
+    - Default endpoint: http://localhost:8000 (Docker default)
+    - No Marker API key needed in local mode
+    - Gemini API key passed to local Marker when use_llm option is enabled
+    - All requests proxied through Next.js API route for CORS handling
+  - **Batch mode limitation**: Local mode currently only supports single file conversion (batch shows clear error message)
+  - **Network error handling**: Enhanced error messages for connection failures, timeouts, and Docker not running
+  - **Updated "How it works" section**: Added note about local Marker setup requirements and batch limitation
+  - **Files Modified**:
+    - Added: `src/app/api/marker/local/route.ts`
+    - Updated: `src/lib/constants.ts`, `src/lib/services/markerApiService.ts`, `src/app/pdf-to-markdown/page.tsx`
+  - Build: ✅ | Lint: ✅
+  - **Note**: This is PR 2 of 4 for local Marker support. Full single-file local conversion now functional. PR 3 will add local-specific options (redo_inline_math).
+
 ### Removed
 - **HTML to Markdown Feature** (2025-11-14):
   - **Removed all traces of HTML to Markdown feature**:
