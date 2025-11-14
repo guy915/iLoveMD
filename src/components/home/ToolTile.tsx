@@ -30,11 +30,11 @@ const ToolTile = memo(function ToolTile({ title, description, href }: ToolTilePr
   return (
     <Link
       href={href}
-      className="block p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
+      className="flex flex-col h-full p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
       onClick={handleClick}
     >
       <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      <p className="text-gray-600 flex-1">{description}</p>
     </Link>
   )
 })
