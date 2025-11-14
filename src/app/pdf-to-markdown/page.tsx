@@ -13,7 +13,9 @@ import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // Mode state - 'cloud' uses Marker API, 'local' uses local Marker instance
+  // Start with 'local' to match SSR, then load from localStorage after mount
   const [mode, setMode] = useState<'cloud' | 'local'>('local')
+  const [mounted, setMounted] = useState(false)
 
   // API keys
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (cloud mode)
@@ -73,10 +75,11 @@ export default function PdfToMarkdownPage() {
 
   // Load mode and API keys from localStorage on mount
   useEffect(() => {
+    setMounted(true)
+
     const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'cloud' | 'local' | null
     if (savedMode === 'cloud' || savedMode === 'local') {
       setMode(savedMode)
-      addLog('info', `Loaded saved mode: ${savedMode}`)
     }
 
     const savedGeminiKey = storageService.getItem(STORAGE_KEYS.GEMINI_API_KEY)
@@ -95,12 +98,12 @@ export default function PdfToMarkdownPage() {
     setHasLoadedOptions(true)
   }, [addLog])
 
-  // Save mode to localStorage whenever it changes
+  // Save mode to localStorage whenever it changes (only after mount)
   useEffect(() => {
-    if (hasLoadedOptions) {
+    if (mounted) {
       storageService.setItem(STORAGE_KEYS.MARKER_MODE, mode)
     }
-  }, [mode, hasLoadedOptions])
+  }, [mode, mounted])
 
   // Save Gemini API key to localStorage whenever it changes
   useEffect(() => {
@@ -572,50 +575,52 @@ export default function PdfToMarkdownPage() {
         </p>
       </div>
 
-      {/* Mode Toggle Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => {
-              setMode('local')
-              addLog('info', 'Switched to Local Marker mode')
-            }}
-            disabled={processing}
-            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
-              mode === 'local'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            aria-pressed={mode === 'local'}
-          >
-            Local Marker
-          </button>
-          <button
-            onClick={() => {
-              setMode('cloud')
-              addLog('info', 'Switched to Cloud API mode')
-            }}
-            disabled={processing}
-            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
-              mode === 'cloud'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            aria-pressed={mode === 'cloud'}
-          >
-            Cloud API
-          </button>
-        </div>
-        <p className="mt-3 text-sm text-gray-600">
-          {mode === 'local'
-            ? 'Use local Marker instance (requires Docker, more options available)'
-            : 'Use Marker cloud API (requires API key, easier setup)'}
-        </p>
-      </div>
+      {/* Mode Toggle Section - Only show after mounted to prevent flicker */}
+      {mounted && (
+        <>
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  setMode('local')
+                  addLog('info', 'Switched to Local Marker mode')
+                }}
+                disabled={processing}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+                  mode === 'local'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                aria-pressed={mode === 'local'}
+              >
+                Local Marker
+              </button>
+              <button
+                onClick={() => {
+                  setMode('cloud')
+                  addLog('info', 'Switched to Cloud API mode')
+                }}
+                disabled={processing}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+                  mode === 'cloud'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                aria-pressed={mode === 'cloud'}
+              >
+                Cloud API
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">
+              {mode === 'local'
+                ? 'Use local Marker instance (requires Docker, more options available)'
+                : 'Use Marker cloud API (requires API key, easier setup)'}
+            </p>
+          </div>
 
-      {/* API Key Section - Cloud Mode */}
-      {mode === 'cloud' && (
+          {/* API Key Section - Cloud Mode */}
+          {mode === 'cloud' && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <label htmlFor="api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
             Marker API Key
@@ -679,6 +684,8 @@ export default function PdfToMarkdownPage() {
             )}
           </p>
         </div>
+      )}
+        </>
       )}
 
       {/* File Upload Section */}
