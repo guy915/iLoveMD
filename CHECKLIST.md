@@ -591,23 +591,31 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
 
-### 2025-11-14 - Full-Page Drop Zone Real Fix (Third Attempt)
-- **Root cause finally identified**:
-  - Drop handlers were on `max-w-4xl mx-auto` div (only 896px wide, centered)
-  - NOT the full page width, despite overlay being full screen
-  - Users could only drop in narrow centered column, not anywhere on page
-- **Solution**:
-  - Created fixed `inset-0` wrapper div that covers entire viewport
-  - All drag handlers moved to this full-width wrapper
-  - Dynamically enable pointer-events only when dragging (showDropOverlay)
-  - Content stays in centered 4xl container for layout
-  - z-index layering: drop zone (z-10), overlay (z-50), content (normal)
-- **Folder drag-and-drop clarification**:
-  - Browser drag-and-drop from OS file explorer doesn't expose folder contents
-  - Only "Browse Folders" button (with webkitdirectory attribute) can access folders
-  - Updated overlay: "Note: Use 'Browse Folders' button for folders"
-  - Drop zone text changed to just "Drop PDF files here"
-- **Impact**: Drop zone NOW TRULY covers entire page - users can drop files anywhere
+### 2025-11-14 - Full-Page Drop Zone FINAL Fix (Fourth Attempt)
+- **Root causes (multiple failed attempts)**:
+  1. **First attempt**: Drop handlers on narrow `max-w-4xl mx-auto` div (896px wide)
+     - Not full page width despite overlay being full screen
+  2. **Second attempt**: Fixed `inset-0` div with `pointer-events: 'none'`
+     - Prevented all events including drag - handlers never fired
+  3. **Third attempt**: Fixed div with conditional pointer-events
+     - `pointerEvents: showDropOverlay ? 'auto' : 'none'`
+     - Chicken-and-egg: overlay can't show because drag events don't fire because pointer-events is 'none'
+- **Final solution - document-level events**:
+  - Added drag event listeners directly to `document` in useEffect
+  - No wrapper div - nothing to block clicks or interactions
+  - Drag handlers fire anywhere on entire page
+  - Clean up listeners on component unmount
+  - Same pattern successfully used in merge-markdown page
+- **Technical implementation**:
+  - useEffect with document.addEventListener for dragenter/dragleave/dragover/drop
+  - dragCounterRef tracks nested drag events
+  - showDropOverlay state controls overlay visibility
+  - All handlers in closure with proper dependencies
+- **Folder drag note**:
+  - OS folder drag doesn't work (browser security)
+  - "Browse Folders" button works (webkitdirectory)
+  - Overlay message directs users to button
+- **Impact**: Full-page drop NOW ACTUALLY WORKS - drag anywhere on the page!
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
