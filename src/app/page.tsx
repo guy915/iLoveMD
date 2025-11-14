@@ -15,7 +15,7 @@ export default function Home() {
       {/* Tool Grid */}
       <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
         {TOOL_CARDS.map((tool) => (
-          <div key={tool.href} className="w-full md:w-[calc(33.333%-1rem)]">
+          <div key={tool.href} className="w-full md:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]">
             <ToolTile
               title={tool.title}
               description={tool.description}
