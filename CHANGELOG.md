@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Merge Markdown File Reordering (PR 3)** (2025-11-14):
+  - **Implemented drag-and-drop file reordering in file grid**:
+    - Added drag-and-drop functionality to reorder uploaded markdown files
+    - Files can be dragged and dropped to change their order in the grid
+    - Visual feedback during drag: dragged card scales down, rotates, becomes semi-transparent
+    - Drop target prominently highlighted with shadow, primary background tint, and scale effect
+    - Cursor feedback: cursor-grab when hovering, cursor-grabbing when actively dragging
+  - **Technical implementation**:
+    - Added draggedFileId and dragOverFileId state tracking
+    - Added draggedIndexRef to track original position for logging
+    - Implemented custom data type 'application/x-file-reorder' to differentiate from file upload drags
+    - Drag handlers: handleFileDragStart, handleFileDragOver, handleFileDragEnter, handleFileDragLeave, handleFileDrop, handleFileDragEnd
+    - Real-time reordering: array is reordered on dragOver (not just on drop)
+    - CSS Grid with transitions smoothly animates cards to new positions
+    - Cards shuffle and make room as you drag over them
+    - All drag events properly memoized with useCallback
+  - **Bug fixes and improvements**:
+    - Fixed canvas drop zone appearing during file reordering (checks for custom data type)
+    - Fixed flickering on drag leave (checks relatedTarget to avoid child element triggers)
+    - Fixed dropEffect being incorrectly set during reordering
+    - Smooth 300ms transitions for all state changes (ease-in-out)
+    - Addressed all Copilot review feedback (cursor improvements, flickering fix)
+  - **Logging and UX**:
+    - Logs when file drag starts (includes filename)
+    - Logs when files are reordered (includes from/to positions and filename)
+    - Professional, polished drag-and-drop experience
+  - **Impact**: Users can now reorder files with smooth, intuitive drag-and-drop. Cards shuffle in real-time to make room as you drag, providing professional, satisfying visual feedback
+  - **Files Modified**: src/app/merge-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
 - **Marker API Service Tests** (2025-11-14):
   - **Created comprehensive test suite for markerApiService.ts**:
     - 35 tests covering validation, API calls, and conversion workflows
