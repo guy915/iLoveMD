@@ -823,6 +823,47 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ---
 
+### 2025-11-14 - Header Navigation Update
+
+**What Changed**:
+- Updated header navigation to remove Help and About pages
+- Replaced old navigation links with tool pages and external resources
+- Added support for external links in navigation
+
+**Navigation Changes**:
+- Internal links:
+  - "PDF" → "PDF to Markdown" (full name instead of abbreviation)
+  - "Markdown" → "Merge Markdowns" (full name instead of abbreviation)
+- External links added:
+  - I Love PDF (https://www.ilovepdf.com)
+  - I Love Markdown (https://www.ilovemarkdown.com)
+  - Tokenizer (https://platform.openai.com/tokenizer)
+- Removed:
+  - Help page link
+  - About page link
+
+**Technical Changes**:
+- Added `external` optional field to NavLink type in src/types/index.ts
+- Updated NAV_LINKS constant in src/lib/constants.ts
+- Updated Header component to conditionally render anchor tags for external links
+- External links open in new tab with target="_blank" and rel="noopener noreferrer"
+- Internal links continue using Next.js Link component for SPA navigation
+
+**Why This Change**:
+- Focus header on primary tool access and external resources
+- Help and About pages not essential for navigation bar
+- External resources provide additional value to users
+- Cleaner, more focused navigation experience
+
+**Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped) | Coverage: 75.77%
+
+**Files Modified**: 3
+- Updated: src/types/index.ts, src/lib/constants.ts, src/components/layout/Header.tsx
+
+**Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+---
+
 ## Project Complete!
 
 - [ ] All phases completed
