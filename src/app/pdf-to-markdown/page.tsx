@@ -466,23 +466,30 @@ export default function PdfToMarkdownPage() {
   }, [batchZipBlob, batchZipFilename, addLog])
 
   return (
-    <div
-      className="relative max-w-4xl mx-auto px-4 py-12"
-      onDragEnter={handlePageDragEnter}
-      onDragLeave={handlePageDragLeave}
-      onDragOver={handlePageDragOver}
-      onDrop={handleDrop}
-    >
+    <>
+      {/* Full-page drop zone wrapper */}
+      <div
+        className="fixed inset-0 z-10"
+        onDragEnter={handlePageDragEnter}
+        onDragLeave={handlePageDragLeave}
+        onDragOver={handlePageDragOver}
+        onDrop={handleDrop}
+        style={{ pointerEvents: showDropOverlay ? 'auto' : 'none' }}
+      />
+
       {/* Full-page drop overlay */}
       {showDropOverlay && (
         <div className="fixed inset-0 z-50 bg-blue-500 bg-opacity-20 backdrop-blur-sm flex items-center justify-center pointer-events-none">
           <div className="bg-white rounded-2xl shadow-2xl p-12 border-4 border-dashed border-blue-500 pointer-events-none">
-            <p className="text-3xl font-bold text-blue-600 mb-2">Drop files or folders here</p>
+            <p className="text-3xl font-bold text-blue-600 mb-2">Drop PDF files here</p>
             <p className="text-lg text-gray-600">Release to upload</p>
+            <p className="text-sm text-gray-500 mt-2">Note: Use &quot;Browse Folders&quot; button for folders</p>
           </div>
         </div>
       )}
 
+      {/* Page content */}
+      <div className="relative max-w-4xl mx-auto px-4 py-12">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -530,7 +537,7 @@ export default function PdfToMarkdownPage() {
           onDrop={handleDrop}
         >
           <p className="text-lg py-4 font-medium text-gray-700 text-center">
-            Drop PDF files or folders here
+            Drop PDF files here
           </p>
 
           <div className="flex items-stretch gap-0 min-h-[180px] border-t border-gray-300">
@@ -774,6 +781,7 @@ export default function PdfToMarkdownPage() {
           Batch conversions process up to 200 files concurrently with automatic retry on failure.
         </p>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
