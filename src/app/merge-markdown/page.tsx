@@ -207,7 +207,7 @@ export default function MergeMarkdownPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {files.map((markdownFile) => (
                 <div
                   key={markdownFile.id}
@@ -228,7 +228,7 @@ export default function MergeMarkdownPage() {
                   <div className="aspect-[210/297] bg-gray-100 border-b-2 border-gray-200 flex items-center justify-center p-4">
                     <div className="text-center">
                       <svg
-                        className="w-12 h-12 mx-auto mb-2 text-gray-400"
+                        className="w-16 h-16 mx-auto mb-2 text-gray-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
