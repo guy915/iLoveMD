@@ -8,22 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **Full-Page Drop Zone Actually Works Now** (2025-11-14):
-  - **Root cause identified - drop handlers were on narrow div**:
-    - Bug: Drop handlers were on `max-w-4xl mx-auto` div (only 896px wide, centered)
-    - Not the full page width, despite overlay appearing full screen
-    - Users could only drop in narrow centered column, not anywhere on page
-  - **Solution - true full-page drop zone**:
-    - Created fixed `inset-0` wrapper div with all drag handlers
-    - Dynamically enable pointer-events only when dragging (via showDropOverlay state)
-    - Keeps content in centered 4xl container for layout while drop zone covers full viewport
-    - z-index layering: drop zone (z-10), overlay (z-50), content (normal flow)
-  - **Folder drag-and-drop clarification**:
-    - Browser drag-and-drop from OS doesn't expose folder contents
-    - Only "Browse Folders" button (with webkitdirectory) can access folder contents
-    - Updated overlay text to direct users to button: "Note: Use 'Browse Folders' button for folders"
-    - Changed drop zone text from "files or folders" to just "files"
-  - **Impact**: Drop zone now truly covers entire page - users can drop files anywhere
+- **Full-Page Drop Zone FINALLY Works** (2025-11-14):
+  - **Root causes (multiple attempts to fix)**:
+    1. First: Drop handlers on narrow `max-w-4xl` div (896px wide, not full page)
+    2. Second: Fixed div with conditional `pointer-events` - chicken-and-egg bug!
+       - When not dragging: `pointer-events: 'none'` to avoid blocking clicks
+       - But `pointer-events: 'none'` also blocked drag events from firing
+       - So overlay never showed and drops never worked
+  - **Final solution - document-level event listeners**:
+    - Added drag event listeners directly to `document` in useEffect
+    - No wrapper div needed - nothing blocks clicks or events
+    - Drag events fire anywhere on the entire page
+    - Clean up listeners on component unmount
+    - Same approach used successfully in merge-markdown page
+  - **Folder drag-and-drop note**:
+    - Dragging folders from OS file explorer: Browser security prevents accessing contents
+    - Only "Browse Folders" button works (uses webkitdirectory attribute)
+    - Overlay shows: "Note: Use 'Browse Folders' button for folders"
+  - **Impact**: Drop zone NOW covers entire page - drag anywhere works!
   - **Files Modified**: src/app/pdf-to-markdown/page.tsx
   - Build: ✅ | Lint: ✅
 
