@@ -40,6 +40,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Updated: `src/lib/constants.ts`, `src/components/layout/Header.tsx`
   - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped)
 
+- **Header Accessibility and Code Quality** (2025-11-14):
+  - **Improved accessibility for external links**:
+    - Added aria-label attributes to external navigation links
+    - Screen readers now announce "(opens in new tab)" for external links
+    - Better experience for users with assistive technology
+  - **Refactored navigation code**:
+    - Extracted duplicated link rendering logic into NavLinkItem component
+    - Eliminated code duplication between desktop and mobile menus
+    - Improved maintainability and consistency
+  - **Addressed Copilot review feedback**:
+    - Fixed all 3 accessibility and code quality issues from PR review
+    - Desktop and mobile navigation now use shared component
+  - **Files Modified**:
+    - Updated: `src/components/layout/Header.tsx`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped)
+
 ### Added
 - **Cloud/Local Mode Toggle for PDF to Markdown** (2025-11-14):
   - **Added mode toggle UI** to switch between Local Marker and Cloud API:
