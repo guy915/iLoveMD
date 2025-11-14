@@ -13,7 +13,7 @@ import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // Mode state - 'cloud' uses Marker API, 'local' uses local Marker instance
-  const [mode, setMode] = useState<'cloud' | 'local'>('cloud')
+  const [mode, setMode] = useState<'cloud' | 'local'>('local')
 
   // API keys
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (cloud mode)
@@ -285,17 +285,17 @@ export default function PdfToMarkdownPage() {
   }, [addLog, handleFilesSelect])
 
   const handleConvert = useCallback(async () => {
-    // Validate API key based on mode
-    if (mode === 'cloud' && !apiKey.trim()) {
-      setError('Please enter your Marker API key')
-      addLog('error', 'Conversion blocked: No Marker API key provided')
+    // Guard: Local mode not yet implemented (PR 2)
+    if (mode === 'local') {
+      setError('Local Marker mode is not yet implemented. Please switch to Cloud API mode or wait for PR 2.')
+      addLog('error', 'Conversion blocked: Local mode not implemented yet (coming in PR 2)')
       return
     }
 
-    // In local mode with LLM, Gemini API key is required
-    if (mode === 'local' && options.use_llm && !geminiApiKey.trim()) {
-      setError('Please enter your Gemini API key (required for LLM mode)')
-      addLog('error', 'Conversion blocked: No Gemini API key provided for local LLM mode')
+    // Validate API key for cloud mode
+    if (!apiKey.trim()) {
+      setError('Please enter your Marker API key')
+      addLog('error', 'Conversion blocked: No Marker API key provided')
       return
     }
 
@@ -413,7 +413,8 @@ export default function PdfToMarkdownPage() {
     } finally {
       abortControllerRef.current = null
     }
-  }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, addLog])
+    // Note: geminiApiKey will be added back to dependencies in PR 2 when local mode is implemented
+  }, [apiKey, files, options, isBatch, folderName, mode, addLog])
 
   const handleDownload = useCallback(async () => {
     if (!convertedMarkdown || !outputFilename) return
@@ -476,9 +477,6 @@ export default function PdfToMarkdownPage() {
       setError(`Failed to download file: ${error.message}`)
     }
   }, [convertedMarkdown, outputFilename, addLog])
-
-  // Note: handleConvert now depends on mode and geminiApiKey
-  // Update dependencies when implementing local mode in PR 2
 
   const handleDownloadBatch = useCallback(async () => {
     if (!batchZipBlob || !batchZipFilename) return
@@ -563,21 +561,6 @@ export default function PdfToMarkdownPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => {
-              setMode('cloud')
-              addLog('info', 'Switched to Cloud API mode')
-            }}
-            disabled={processing}
-            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
-              mode === 'cloud'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            aria-pressed={mode === 'cloud'}
-          >
-            Cloud API
-          </button>
-          <button
-            onClick={() => {
               setMode('local')
               addLog('info', 'Switched to Local Marker mode')
             }}
@@ -591,11 +574,26 @@ export default function PdfToMarkdownPage() {
           >
             Local Marker
           </button>
+          <button
+            onClick={() => {
+              setMode('cloud')
+              addLog('info', 'Switched to Cloud API mode')
+            }}
+            disabled={processing}
+            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+              mode === 'cloud'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+            aria-pressed={mode === 'cloud'}
+          >
+            Cloud API
+          </button>
         </div>
         <p className="mt-3 text-sm text-gray-600">
-          {mode === 'cloud'
-            ? 'Use Marker cloud API (requires API key, easier setup)'
-            : 'Use local Marker instance (requires Docker, more options available)'}
+          {mode === 'local'
+            ? 'Use local Marker instance (requires Docker, more options available)'
+            : 'Use Marker cloud API (requires API key, easier setup)'}
         </p>
       </div>
 
