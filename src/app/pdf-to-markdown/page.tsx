@@ -490,7 +490,12 @@ export default function PdfToMarkdownPage() {
     <>
       {/* Full-page drop overlay - drag handlers on document in useEffect */}
       {showDropOverlay && (
-        <div className="fixed inset-0 z-50 bg-blue-500 bg-opacity-20 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+        <div
+          className="fixed inset-0 z-50 bg-blue-500 bg-opacity-20 backdrop-blur-sm flex items-center justify-center pointer-events-none"
+          role="status"
+          aria-live="polite"
+          aria-label="Drop zone active"
+        >
           <div className="bg-white rounded-2xl shadow-2xl p-12 border-4 border-dashed border-blue-500 pointer-events-none">
             <p className="text-3xl font-bold text-blue-600 mb-2">Drop PDF files here</p>
             <p className="text-lg text-gray-600">Release to upload</p>
