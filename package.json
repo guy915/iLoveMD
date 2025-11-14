@@ -22,9 +22,14 @@
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
     "jszip": "^3.10.1",
+    "katex": "^0.16.25",
     "next": "^14.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "turndown": "^7.2.2"
   },
   "comments": {
