@@ -62,6 +62,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅ | Tests: ✅ (8/8 passing)
 
 ### Fixed
+- **Merge Markdown Page Layout and Sizing** (2025-11-14):
+  - **Fixed page layout structure to prevent unwanted page scrolling**:
+    - Removed incorrectly added footer element (global footer already exists)
+    - Reverted page structure from flex-col wrapper to simple flex layout
+    - Added scoped CSS to hide global footer on merge-markdown page only
+  - **Fixed page height to fit viewport perfectly**:
+    - Changed page height from h-screen to calc(100vh - 64px) to account for header
+    - Page now fits exactly in available viewport space
+  - **Optimized drop box sizing for perfect fit**:
+    - Made drop box dynamically resize using flex-1 layout
+    - Set minimum height to 550px for good UX
+    - Drop box now grows/shrinks with window size automatically
+    - All control panel buttons fully visible without scrolling
+  - **Impact**: Page fits perfectly to screen, no scrolling needed, footer hidden only on this page, responsive to window resizing
+  - **Files Modified**: src/app/merge-markdown/page.tsx
+  - Build: ✅ | Lint: ✅
+
 - **Diagnostics Panel Scroll Leak** (2025-11-13):
   - Fixed page scrolling while scrolling within diagnostics panel
   - Corrected boundary detection logic in scroll handler
