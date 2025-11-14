@@ -17,9 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Cursor feedback: cursor-grab when hovering, cursor-grabbing when actively dragging
   - **Technical implementation**:
     - Added draggedFileId and dragOverFileId state tracking
+    - Added draggedIndexRef to track original position for logging
     - Implemented custom data type 'application/x-file-reorder' to differentiate from file upload drags
     - Drag handlers: handleFileDragStart, handleFileDragOver, handleFileDragEnter, handleFileDragLeave, handleFileDrop, handleFileDragEnd
-    - Reordering logic uses array splice to move files to new positions
+    - Real-time reordering: array is reordered on dragOver (not just on drop)
+    - CSS Grid with transitions smoothly animates cards to new positions
+    - Cards shuffle and make room as you drag over them
     - All drag events properly memoized with useCallback
   - **Bug fixes and improvements**:
     - Fixed canvas drop zone appearing during file reordering (checks for custom data type)
@@ -31,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Logs when file drag starts (includes filename)
     - Logs when files are reordered (includes from/to positions and filename)
     - Professional, polished drag-and-drop experience
-  - **Impact**: Users can now reorder files by dragging them to desired positions, improving workflow flexibility
+  - **Impact**: Users can now reorder files with smooth, intuitive drag-and-drop. Cards shuffle in real-time to make room as you drag, providing professional, satisfying visual feedback
   - **Files Modified**: src/app/merge-markdown/page.tsx
   - Build: ✅ | Lint: ✅
 
