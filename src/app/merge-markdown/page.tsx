@@ -22,6 +22,8 @@ function formatFileSize(bytes: number): string {
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
+  const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addLog } = useLogs()
 
@@ -224,6 +226,76 @@ export default function MergeMarkdownPage() {
     }
   }, [processFiles, addLog])
 
+  // File reordering drag handlers
+  const handleFileDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    setDraggedFileId(fileId)
+    e.dataTransfer.effectAllowed = 'move'
+    // Set a custom data type to differentiate from file upload drags
+    e.dataTransfer.setData('application/x-file-reorder', fileId)
+    addLog('info', 'Started dragging file for reordering', {
+      fileName: files.find(f => f.id === fileId)?.file.name
+    })
+  }, [files, addLog])
+
+  const handleFileDragOver = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    // Only allow drop if we're reordering (not uploading files)
+    if (e.dataTransfer.types.includes('application/x-file-reorder')) {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragOverFileId(fileId)
+    }
+  }, [])
+
+  const handleFileDragEnter = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
+    if (e.dataTransfer.types.includes('application/x-file-reorder')) {
+      setDragOverFileId(fileId)
+    }
+  }, [])
+
+  const handleFileDragLeave = useCallback(() => {
+    setDragOverFileId(null)
+  }, [])
+
+  const handleFileDrop = useCallback((e: DragEvent<HTMLDivElement>, dropTargetId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!draggedFileId || draggedFileId === dropTargetId) {
+      setDraggedFileId(null)
+      setDragOverFileId(null)
+      return
+    }
+
+    // Reorder files
+    const draggedIndex = files.findIndex(f => f.id === draggedFileId)
+    const targetIndex = files.findIndex(f => f.id === dropTargetId)
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedFileId(null)
+      setDragOverFileId(null)
+      return
+    }
+
+    const newFiles = [...files]
+    const [draggedFile] = newFiles.splice(draggedIndex, 1)
+    newFiles.splice(targetIndex, 0, draggedFile)
+
+    setFiles(newFiles)
+    addLog('info', 'Reordered files', {
+      from: draggedFile.file.name,
+      fromPosition: draggedIndex + 1,
+      toPosition: targetIndex + 1
+    })
+
+    setDraggedFileId(null)
+    setDragOverFileId(null)
+  }, [draggedFileId, files, addLog])
+
+  const handleFileDragEnd = useCallback(() => {
+    setDraggedFileId(null)
+    setDragOverFileId(null)
+  }, [])
+
   return (
     <>
       {/* Hide footer on this page only */}
@@ -299,10 +371,27 @@ export default function MergeMarkdownPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {files.map((markdownFile) => (
+              {files.map((markdownFile) => {
+                const isDraggedCard = draggedFileId === markdownFile.id
+                const isDropTarget = dragOverFileId === markdownFile.id
+
+                return (
                 <div
                   key={markdownFile.id}
-                  className="relative bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow aspect-[5/7] flex flex-col"
+                  draggable
+                  onDragStart={(e) => handleFileDragStart(e, markdownFile.id)}
+                  onDragOver={(e) => handleFileDragOver(e, markdownFile.id)}
+                  onDragEnter={(e) => handleFileDragEnter(e, markdownFile.id)}
+                  onDragLeave={handleFileDragLeave}
+                  onDrop={(e) => handleFileDrop(e, markdownFile.id)}
+                  onDragEnd={handleFileDragEnd}
+                  className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all aspect-[5/7] flex flex-col cursor-move ${
+                    isDraggedCard
+                      ? 'opacity-50 border-primary-400'
+                      : isDropTarget
+                      ? 'border-primary-500 border-4 scale-105'
+                      : 'border-gray-200'
+                  }`}
                 >
                   {/* Remove button */}
                   <button
@@ -345,7 +434,8 @@ export default function MergeMarkdownPage() {
                     </p>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
