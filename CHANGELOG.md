@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Updated Header Navigation Links** (2025-11-14):
+  - **Replaced old navigation links** with new structure:
+    - Removed: Help, About pages
+    - Changed shortLabel for tool pages: "PDF" → "PDF to Markdown", "Markdown" → "Merge Markdowns"
+    - Added external links: iLovePDF (https://www.ilovepdf.com), iLoveMD (https://www.ilovemarkdown.com), Token Counter (https://platform.openai.com/tokenizer)
+  - **Added support for external links in NavLink type**:
+    - Added optional `external` boolean field to NavLink interface
+    - External links render as anchor tags with target="_blank" and rel="noopener noreferrer"
+    - Internal links continue using Next.js Link component
+  - **Updated header component**:
+    - Desktop and mobile menus now conditionally render anchor tags for external links
+    - All external links open in new tab for better user experience
+    - Navigation logging works for both internal and external links
+  - **Files Modified**:
+    - Updated: `src/types/index.ts`, `src/lib/constants.ts`, `src/components/layout/Header.tsx`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped) | Coverage: 75.77%
+
+### Fixed
+- **Header Layout Spacing** (2025-11-14):
+  - **Fixed header navigation spacing issue**:
+    - Removed `max-w-7xl mx-auto` constraint from nav element
+    - Header now spans full width of viewport
+    - Navigation elements properly spread from left to right edge
+    - Logo/panel on left, navigation links on right with proper spacing
+  - **Updated navigation labels**:
+    - "I Love PDF" → "iLovePDF"
+    - "I Love Markdown" → "iLoveMD"
+    - "Tokenizer" → "Token Counter"
+  - **Files Modified**:
+    - Updated: `src/lib/constants.ts`, `src/components/layout/Header.tsx`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped)
+
+- **Header Accessibility and Code Quality** (2025-11-14):
+  - **Improved accessibility for external links**:
+    - Added aria-label attributes to external navigation links
+    - Screen readers now announce "(opens in new tab)" for external links
+    - Better experience for users with assistive technology
+  - **Refactored navigation code**:
+    - Extracted duplicated link rendering logic into NavLinkItem component
+    - Eliminated code duplication between desktop and mobile menus
+    - Improved maintainability and consistency
+  - **Addressed Copilot review feedback**:
+    - Fixed all 3 accessibility and code quality issues from PR review
+    - Desktop and mobile navigation now use shared component
+  - **Files Modified**:
+    - Updated: `src/components/layout/Header.tsx`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped)
+
 ### Added
 - **Cloud/Local Mode Toggle for PDF to Markdown** (2025-11-14):
   - **Added mode toggle UI** to switch between Local Marker and Cloud API:
