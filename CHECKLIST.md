@@ -556,6 +556,17 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Files Modified**: 1 (src/app/merge-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
+### 2025-11-14 - PDF to Markdown UI Visual Improvements
+- **Changed**:
+  - Added thin separator line between drop zone text and browse buttons area
+  - Updated status message boxes from blue background to white card design for consistency
+  - Status messages now use `bg-white shadow-md` matching other sections
+  - Changed status text color from `text-blue-800` to `text-gray-900`
+- **Impact**: More cohesive and professional UI with clearer visual hierarchy
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ---
 
 ## Project Complete!
