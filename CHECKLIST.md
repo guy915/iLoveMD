@@ -587,6 +587,36 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Files Modified**: 1 (src/app/merge-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
+### 2025-11-14 - Merge Markdown Sorting Options (PR 4)
+- **Added**:
+  - Single toggle button for alphabetical sorting (A→Z ⟷ Z→A)
+  - Button always displays in primary blue color for visual consistency
+  - Smooth visual shuffling animations using Framer Motion library
+  - Cards slide smoothly when sorting or reordering (no teleporting)
+  - Spring-based transitions for natural movement
+  - Fade in/out animations when adding/removing files
+  - Sort modes: 'none' (default), 'alphabetical' (A→Z), 'reverseAlphabetical' (Z→A)
+  - Case-insensitive alphabetical comparison using localeCompare
+  - Manual reordering preserved until user explicitly sorts
+  - Clear All resets sort mode to 'none'
+  - aria-pressed attribute for accessibility
+- **Changed**:
+  - Removed uploadOrderRef (was causing bugs)
+  - Changed sort mode from 'uploadOrder' to 'none' for clearer semantics
+  - Converted file grid cards from div to motion.div
+  - Button text changes dynamically based on state
+- **Fixed**:
+  - uploadOrderRef causing removed files to reappear on sort toggle
+  - Manual reordering lost when switching sort modes
+  - Removed unused useEffect import
+  - Type assertions for DragEvent compatibility with Framer Motion
+- **Impact**: Users can sort files alphabetically with beautiful smooth animations showing cards sliding into new positions. No teleporting - every position change is visually animated for professional UX
+- **Testing**: Build ✅ | Lint ✅
+- **Commits**: 1 commit (28c8ef8)
+- **Files Modified**: 3 (src/app/merge-markdown/page.tsx, package.json, package-lock.json)
+- **Dependencies Added**: framer-motion
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ---
 
 ## Project Complete!

@@ -22,6 +22,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build: ✅ | Lint: ✅
 
 ### Added
+- **Merge Markdown Sorting Options (PR 4)** (2025-11-14):
+  - **Implemented alphabetical sorting with smooth shuffle animations**:
+    - Single toggle button for sorting files alphabetically
+    - Button cycles through modes: A→Z → Z→A → A→Z...
+    - Button always displays in primary blue color for visual consistency
+    - Sort modes: 'none' (default upload order), 'alphabetical' (A→Z), 'reverseAlphabetical' (Z→A)
+    - Case-insensitive alphabetical comparison using localeCompare
+    - Manual drag-and-drop reordering preserved until user explicitly sorts
+    - Clear All resets sort mode to 'none'
+  - **Smooth visual shuffling animations using Framer Motion**:
+    - Integrated framer-motion library for professional animations
+    - Cards smoothly slide to new positions when sorting (no teleporting)
+    - Cards smoothly shuffle when manually reordering via drag-and-drop
+    - Spring-based transitions (stiffness: 300, damping: 30) for natural movement
+    - Fade in/out animations when adding/removing files (opacity + scale)
+    - AnimatePresence with popLayout mode for exit animations
+    - Layout prop on motion.div automatically animates position changes
+  - **Technical implementation**:
+    - Added framer-motion dependency to package.json
+    - Converted file grid cards from div to motion.div
+    - Type assertions (as unknown as DragEvent) for compatibility between Framer Motion and React DragEvent types
+    - Removed uploadOrderRef (was causing bugs with file resurrection)
+    - Changed sort mode from 'uploadOrder' to 'none' for clearer semantics
+    - sortFiles function works on current state, not stale refs
+    - All sort operations properly memoized with useCallback
+  - **UX improvements**:
+    - Button text changes dynamically: "A → Z" or "Z → A" based on current mode
+    - aria-pressed attribute for accessibility
+    - Visual feedback: button always blue (primary-600) with hover state (primary-700)
+    - Smooth animations make reordering feel professional and polished
+  - **Bug fixes from code review**:
+    - Fixed uploadOrderRef causing removed files to reappear on sort toggle
+    - Fixed manual reordering being lost when switching sort modes
+    - Removed unused useEffect import
+    - Added proper accessibility attributes
+  - **Impact**: Users can now sort files alphabetically with a single button, with beautiful smooth animations that show cards sliding into new positions. No more teleporting - every position change is visually animated for a professional, satisfying user experience.
+  - **Files Modified**: src/app/merge-markdown/page.tsx, package.json, package-lock.json
+  - Build: ✅ | Lint: ✅
 - **Component Tests** (2025-11-14):
   - **Created comprehensive test suites for core React components**:
     - 87 tests across 3 components with 99.8% coverage
