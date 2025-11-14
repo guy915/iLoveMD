@@ -590,6 +590,58 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Impact**: More cohesive and professional UI with clearer visual hierarchy
 - **Testing**: Build ✅ | Lint ✅
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
+
+### 2025-11-14 - Full-Page Drop Zone FINAL Fix (Fourth Attempt)
+- **Root causes (multiple failed attempts)**:
+  1. **First attempt**: Drop handlers on narrow `max-w-4xl mx-auto` div (896px wide)
+     - Not full page width despite overlay being full screen
+  2. **Second attempt**: Fixed `inset-0` div with `pointer-events: 'none'`
+     - Prevented all events including drag - handlers never fired
+  3. **Third attempt**: Fixed div with conditional pointer-events
+     - `pointerEvents: showDropOverlay ? 'auto' : 'none'`
+     - Chicken-and-egg: overlay can't show because drag events don't fire because pointer-events is 'none'
+- **Final solution - document-level events**:
+  - Added drag event listeners directly to `document` in useEffect
+  - No wrapper div - nothing to block clicks or interactions
+  - Drag handlers fire anywhere on entire page
+  - Clean up listeners on component unmount
+  - Same pattern successfully used in merge-markdown page
+- **Technical implementation**:
+  - useEffect with document.addEventListener for dragenter/dragleave/dragover/drop
+  - dragCounterRef tracks nested drag events
+  - showDropOverlay state controls overlay visibility
+  - All handlers in closure with proper dependencies
+- **Folder drag note**:
+  - OS folder drag doesn't work (browser security)
+  - "Browse Folders" button works (webkitdirectory)
+  - Overlay message directs users to button
+- **Impact**: Full-page drop NOW ACTUALLY WORKS - drag anywhere on the page!
+- **Testing**: Build ✅ | Lint ✅
+- **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+### 2025-11-14 - Full-Page Drop Zone Implementation (Initial)
+- **Added**:
+  - Full-page drop overlay for PDF to Markdown page
+    - Overlay appears when dragging files anywhere on the page
+    - Beautiful blue translucent background with backdrop blur effect
+    - Central white card with dashed border and clear drop message
+    - Uses drag counter (`dragCounterRef`) to correctly handle nested drag events
+    - Automatic hide when files dropped or drag leaves page
+  - New drag event handlers: `handlePageDragEnter`, `handlePageDragLeave`, `handlePageDragOver`
+  - State management: `showDropOverlay` for overlay visibility
+  - Wrapped entire page content in drag event listeners
+- **Changed**:
+  - Added descriptive subtext to buttons:
+    - "Browse Files" → "Select individual PDFs"
+    - "Browse Folders" → "Select entire folder"
+  - Changed button layout to flex-col for better text stacking
+  - Added py-6 padding to buttons for better spacing
+- **Note**: Initial implementation had a bug where inner overlay card blocked drops (fixed in subsequent session)
+- **Testing**: Build ✅ | Lint ✅ | Tests: ✅ (335 passed, 6 skipped)
+- **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-14 - Merge Markdown File Reordering (PR 3)
 - **Added**:
   - Drag-and-drop file reordering in file grid
