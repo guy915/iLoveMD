@@ -775,7 +775,7 @@ export default function PdfToMarkdownPage() {
             />
             <span className="ml-3">
               <span className="block text-sm font-medium text-gray-900">Add page separators</span>
-              <span className="block text-sm text-gray-500">Include page breaks in the output</span>
+              <span className="block text-sm text-gray-500">Include page breaks and numbers</span>
             </span>
           </label>
 
@@ -792,6 +792,25 @@ export default function PdfToMarkdownPage() {
               <span className="block text-sm text-gray-500">Apply line formatting to improve readability</span>
             </span>
           </label>
+
+          {/* Local mode only options */}
+          {mode === 'local' && (
+            <label className="flex items-start">
+              <input
+                type="checkbox"
+                checked={options.redo_inline_math ?? false}
+                onChange={(e) => handleOptionChange('redo_inline_math', e.target.checked)}
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={processing}
+              />
+              <span className="ml-3">
+                <span className="block text-sm font-medium text-gray-900">Format math expressions</span>
+                <span className="block text-sm text-gray-500">
+                  Apply LaTeX formatting to improve readability
+                </span>
+              </span>
+            </label>
+          )}
 
           <label className="flex items-start">
             <input
@@ -824,10 +843,10 @@ export default function PdfToMarkdownPage() {
               disabled={processing || !options.use_llm}
             />
             <span className="ml-3">
-              <span className="block text-sm font-medium text-gray-900">Disable image extraction</span>
+              <span className="block text-sm font-medium text-gray-900">Create image descriptions</span>
               <span className="block text-sm text-gray-500">
                 {options.use_llm
-                  ? 'Skip extracting images and replace with descriptions'
+                  ? 'Replace images with text descriptions'
                   : 'Requires LLM enhancement to be enabled'}
               </span>
             </span>

@@ -736,6 +736,34 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Updated: src/lib/constants.ts, src/lib/services/markerApiService.ts, src/app/pdf-to-markdown/page.tsx
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
+### 2025-11-14 - Local Marker Support PR 3: Local-Specific Options
+- **Added**:
+  - `redo_inline_math` option to MarkerOptions type (optional boolean)
+  - Checkbox in Options Section (only visible in local mode)
+  - Option appears below "Disable image extraction" when mode === 'local'
+  - Label: "Redo inline math"
+  - Description: "Reprocess inline mathematical expressions (local mode only)"
+- **Implementation**:
+  - Updated MarkerOptions interface in src/types/index.ts
+  - Added to DEFAULT_OPTIONS in constants.ts (default: false)
+  - Conditional rendering in page.tsx: `{mode === 'local' && (...)}` wraps the checkbox
+  - Uses nullish coalescing in checked prop: `options.redo_inline_math ?? false`
+  - Local API route checks if option is defined before adding to formData: `if (options.redo_inline_math !== undefined)`
+- **Why local-only**:
+  - Cloud Marker API does not support this option
+  - Local Marker Docker instance provides additional math processing capabilities
+  - Only applicable when running local Marker instance
+- **User Experience**:
+  - Option only appears when user switches to local mode
+  - Disappears when switching to cloud mode
+  - Persisted to localStorage with other options
+  - No special dependencies or enablement conditions (always available in local mode)
+- **Note**: This is PR 3 of 4-part plan for local Marker support. Local mode now has feature parity with cloud mode plus additional local-specific options.
+- **Testing**: Build ✅ | Lint ✅ (no warnings)
+- **Files Modified**: 4
+  - Updated: src/types/index.ts, src/lib/constants.ts, src/app/pdf-to-markdown/page.tsx, src/app/api/marker/local/route.ts
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ---
 
 ## Project Complete!
