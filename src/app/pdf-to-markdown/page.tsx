@@ -45,6 +45,10 @@ export default function PdfToMarkdownPage() {
   const statusTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const prevOptionsRef = useRef<MarkerOptions>(options)
 
+  // Full-page drop zone state
+  const [showDropOverlay, setShowDropOverlay] = useState(false)
+  const dragCounterRef = useRef(0)
+
   // Cleanup on unmount to prevent memory leaks
   useEffect(() => {
     isMountedRef.current = true
@@ -192,11 +196,42 @@ export default function PdfToMarkdownPage() {
     e.preventDefault()
     e.stopPropagation()
 
+    // Hide overlay and reset counter
+    dragCounterRef.current = 0
+    setShowDropOverlay(false)
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       addLog('info', `${e.dataTransfer.files.length} file(s) dropped`)
       handleFilesSelect(e.dataTransfer.files, false)
     }
   }, [handleFilesSelect, addLog])
+
+  // Full-page drag handlers
+  const handlePageDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    dragCounterRef.current++
+    if (dragCounterRef.current === 1) {
+      setShowDropOverlay(true)
+      addLog('info', 'Files dragged over page - showing drop overlay')
+    }
+  }, [addLog])
+
+  const handlePageDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    dragCounterRef.current--
+    if (dragCounterRef.current === 0) {
+      setShowDropOverlay(false)
+    }
+  }, [])
+
+  const handlePageDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
 
   const handleConvert = useCallback(async () => {
     if (!apiKey.trim()) {
@@ -431,7 +466,23 @@ export default function PdfToMarkdownPage() {
   }, [batchZipBlob, batchZipFilename, addLog])
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
+    <div
+      className="relative max-w-4xl mx-auto px-4 py-12"
+      onDragEnter={handlePageDragEnter}
+      onDragLeave={handlePageDragLeave}
+      onDragOver={handlePageDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Full-page drop overlay */}
+      {showDropOverlay && (
+        <div className="fixed inset-0 z-50 bg-blue-500 bg-opacity-20 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="bg-white rounded-2xl shadow-2xl p-12 border-4 border-dashed border-blue-500">
+            <p className="text-3xl font-bold text-blue-600 mb-2">Drop PDF files here</p>
+            <p className="text-lg text-gray-600">Release to upload</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -479,12 +530,12 @@ export default function PdfToMarkdownPage() {
           onDrop={handleDrop}
         >
           <p className="text-lg py-4 font-medium text-gray-700 text-center">
-            Drop PDF files or folders here
+            Drop PDF files here
           </p>
 
           <div className="flex items-stretch gap-0 min-h-[180px] border-t border-gray-300">
             {/* Files Button (Left Half) */}
-            <label className="flex-1 cursor-pointer flex items-center justify-center hover:bg-gray-50 transition-colors rounded-bl-lg border-r border-gray-200">
+            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center hover:bg-gray-50 transition-colors rounded-bl-lg border-r border-gray-200 py-6">
               <input
                 type="file"
                 accept=".pdf,application/pdf"
@@ -500,13 +551,16 @@ export default function PdfToMarkdownPage() {
               <span className="text-base font-medium text-gray-700">
                 Browse Files
               </span>
+              <span className="text-sm text-gray-500 mt-1">
+                Select individual PDFs
+              </span>
             </label>
 
             {/* Soft Divider */}
             <div className="w-px bg-gray-200"></div>
 
             {/* Folder Button (Right Half) */}
-            <label className="flex-1 cursor-pointer flex items-center justify-center hover:bg-gray-50 transition-colors rounded-br-lg border-l border-gray-200">
+            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center hover:bg-gray-50 transition-colors rounded-br-lg border-l border-gray-200 py-6">
               <input
                 type="file"
                 accept=".pdf,application/pdf"
@@ -523,6 +577,9 @@ export default function PdfToMarkdownPage() {
               />
               <span className="text-base font-medium text-gray-700">
                 Browse Folders
+              </span>
+              <span className="text-sm text-gray-500 mt-1">
+                Select entire folder
               </span>
             </label>
           </div>
