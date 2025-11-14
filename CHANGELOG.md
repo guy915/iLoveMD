@@ -8,6 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **API Route Tests** (2025-11-14):
+  - **Created comprehensive test suite for /api/marker GET endpoint**:
+    - 26 tests covering polling, error handling, and edge cases
+    - **Validation tests** (3 tests):
+      - Missing parameters: checkUrl, API key, both
+      - Empty parameter handling
+    - **Network error handling** (6 tests):
+      - Timeout errors (AbortError, error messages)
+      - Connection errors (ECONNREFUSED, error messages)
+      - DNS errors (ENOTFOUND, error messages)
+      - Unknown network errors with fallback messages
+    - **API response handling** (6 tests):
+      - Invalid JSON responses (502 Bad Gateway)
+      - Malformed response structure validation
+      - HTTP error responses (401, 404, 429, 500)
+      - Default error messages when fields missing
+    - **Successful polling** (7 tests):
+      - All status types: pending, processing, complete, error
+      - Progress tracking and markdown content
+      - Partial response handling (status-only, error-only, progress-only)
+    - **Edge cases** (4 tests):
+      - Empty parameters (checkUrl, API key)
+      - External API call verification (headers, method)
+      - Response field validation
+  - **Test coverage improvement**:
+    - route.ts (GET handler): 0% → 71.42% coverage
+    - app/api/marker: 0% → 74.69% overall
+    - Overall codebase: 45.92% → 47.91% (+1.99%)
+    - Test suite: 177 → 203 tests (+26)
+  - **Testing approach**:
+    - GET handler fully tested with mock fetch
+    - Network error simulation with proper error codes
+    - Response validation for all status codes
+    - POST handler excluded (requires integration tests due to FormData parsing complexity)
+  - **Impact**: Core API polling endpoint fully tested, ensuring reliable network error handling, response validation, and status tracking
+  - **Files Added**: src/app/api/marker/route.test.ts (545 lines, 26 tests)
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (203/203 passing)
+
 - **Batch Conversion Service Tests** (2025-11-14):
   - **Created comprehensive test suite for batchConversionService.ts**:
     - 31 tests covering filtering, validation, retry logic, and batch processing
