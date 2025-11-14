@@ -106,6 +106,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: Diagnostic logging system fully tested, ensuring reliable error tracking, network interception, storage persistence, and comprehensive application monitoring
   - **Files Added**: src/contexts/LogContext.test.tsx (959 lines, 51 tests: 45 passing + 6 skipped)
   - Build: ✅ | Lint: ✅ | Tests: ✅ (248/254 passing, 6 skipped)
+- **Merge Markdown Sorting Options (PR 4)** (2025-11-14):
+  - **Implemented alphabetical sorting with smooth shuffle animations**:
+    - Single toggle button for sorting files alphabetically
+    - Button cycles through modes: A→Z → Z→A → A→Z...
+    - Button always displays in primary blue color for visual consistency
+    - Sort modes: 'none' (default upload order), 'alphabetical' (A→Z), 'reverseAlphabetical' (Z→A)
+    - Case-insensitive alphabetical comparison using localeCompare
+    - Manual drag-and-drop reordering preserved until user explicitly sorts
+    - Clear All resets sort mode to 'none'
+  - **Smooth visual shuffling animations using Framer Motion**:
+    - Integrated framer-motion library for professional animations
+    - Cards smoothly slide to new positions when sorting (no teleporting)
+    - Cards smoothly shuffle when manually reordering via drag-and-drop
+    - Spring-based transitions (stiffness: 300, damping: 30) for natural movement
+    - Fade in/out animations when adding/removing files (opacity + scale)
+    - AnimatePresence with popLayout mode for exit animations
+    - Layout prop on motion.div automatically animates position changes
+  - **Technical implementation**:
+    - Added framer-motion dependency to package.json
+    - Converted file grid cards from div to motion.div
+    - Type assertions (as unknown as DragEvent) for compatibility between Framer Motion and React DragEvent types
+    - Removed uploadOrderRef (was causing bugs with file resurrection)
+    - Changed sort mode from 'uploadOrder' to 'none' for clearer semantics
+    - sortFiles function works on current state, not stale refs
+    - All sort operations properly memoized with useCallback
+  - **UX improvements**:
+    - Button text changes dynamically: "A → Z" or "Z → A" based on current mode
+    - aria-pressed attribute for accessibility
+    - Visual feedback: button always blue (primary-600) with hover state (primary-700)
+    - Smooth animations make reordering feel professional and polished
+  - **Bug fixes from code review**:
+    - Fixed uploadOrderRef causing removed files to reappear on sort toggle
+    - Fixed manual reordering being lost when switching sort modes
+    - Removed unused useEffect import
+    - Added proper accessibility attributes
+  - **Impact**: Users can now sort files alphabetically with a single button, with beautiful smooth animations that show cards sliding into new positions. No more teleporting - every position change is visually animated for a professional, satisfying user experience.
+  - **Files Modified**: src/app/merge-markdown/page.tsx, package.json, package-lock.json
+  - Build: ✅ | Lint: ✅
+- **Component Tests** (2025-11-14):
+  - **Created comprehensive test suites for core React components**:
+    - 87 tests across 3 components with 99.8% coverage
+    - **Button component** (26 tests):
+      - Rendering: variants (primary/secondary), children, custom classes
+      - Loading state: loading text, custom loading text, disabled during loading
+      - Disabled state: opacity, cursor, interaction blocking
+      - Interactions: onClick, keyboard accessibility, disabled behavior
+      - Memoization: re-render behavior, prop updates
+      - Base styles: padding, rounded corners, transitions
+    - **FileUpload component** (35 tests):
+      - Rendering: labels, file types, max size display, accessibility
+      - File selection: click to browse, file display, input reset, repeat selection
+      - Validation: size limits, error display, error clearing
+      - Drag and drop: drag states, file dropping, validation on drop
+      - Keyboard accessibility: Enter/Space keys, focus management
+      - Edge cases: null files, zero-size files, file updates
+    - **ErrorBoundary component** (26 tests):
+      - Normal rendering: children display, no error UI
+      - Error catching: fallback UI, error logging to diagnostic panel
+      - Error details: collapsible details, error stack display
+      - Action buttons: Try Again, Go Home, correct styling
+      - UI styling: centering, card design, spacing
+      - Nested errors: deep component stacks, component info
+      - Error recovery: reset functionality, state clearing
+      - Edge cases: empty errors, string errors, missing stacks
+  - **Test coverage improvement**:
+    - Button.tsx: 0% → 100% coverage (all metrics)
+    - FileUpload.tsx: 0% → 100% statements, 95.83% branches
+    - ErrorBoundary.tsx: 0% → 100% statements, 85.71% branches
+    - components/common: 0% → 99.8% overall
+    - Overall codebase: 47.91% → 62.79% (+14.88%)
+    - Test suite: 203 → 290 tests (+87)
+  - **Testing patterns demonstrated**:
+    - React Testing Library best practices
+    - User event simulation with @testing-library/user-event
+    - Mock LogContext for isolated component testing
+    - Error boundary testing with intentional component throws
+    - Accessibility testing (aria attributes, keyboard navigation)
+    - Drag and drop event simulation
+    - File input interaction patterns
+  - **Impact**: Core UI components fully tested, ensuring reliable user interactions, error handling, and accessibility
+  - **Files Added**:
+    - src/components/common/Button.test.tsx (155 lines, 26 tests)
+    - src/components/common/FileUpload.test.tsx (430 lines, 35 tests)
+    - src/components/common/ErrorBoundary.test.tsx (410 lines, 26 tests)
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (290/290 passing)
 
 - **API Route Tests** (2025-11-14):
   - **Created comprehensive test suite for /api/marker GET endpoint**:
