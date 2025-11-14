@@ -823,6 +823,130 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ---
 
+### 2025-11-14 - Header Navigation Update
+
+**What Changed**:
+- Updated header navigation to remove Help and About pages
+- Replaced old navigation links with tool pages and external resources
+- Added support for external links in navigation
+
+**Navigation Changes**:
+- Internal links:
+  - "PDF" → "PDF to Markdown" (full name instead of abbreviation)
+  - "Markdown" → "Merge Markdowns" (full name instead of abbreviation)
+- External links added:
+  - I Love PDF (https://www.ilovepdf.com)
+  - I Love Markdown (https://www.ilovemarkdown.com)
+  - Tokenizer (https://platform.openai.com/tokenizer)
+- Removed:
+  - Help page link
+  - About page link
+
+**Technical Changes**:
+- Added `external` optional field to NavLink type in src/types/index.ts
+- Updated NAV_LINKS constant in src/lib/constants.ts
+- Updated Header component to conditionally render anchor tags for external links
+- External links open in new tab with target="_blank" and rel="noopener noreferrer"
+- Internal links continue using Next.js Link component for SPA navigation
+
+**Why This Change**:
+- Focus header on primary tool access and external resources
+- Help and About pages not essential for navigation bar
+- External resources provide additional value to users
+- Cleaner, more focused navigation experience
+
+**Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped) | Coverage: 75.77%
+
+**Files Modified**: 3
+- Updated: src/types/index.ts, src/lib/constants.ts, src/components/layout/Header.tsx
+
+**Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+---
+
+### 2025-11-14 - Header Layout and Label Fixes
+
+**What Changed**:
+- Fixed header navigation layout spacing issue
+- Updated external link labels to correct branding
+
+**Layout Fix**:
+- Removed `max-w-7xl mx-auto` constraint from nav element
+- Header now spans full viewport width
+- Navigation elements properly distributed across full width
+- Logo and diagnostic panel on left edge
+- Navigation links on right edge
+- No more excessive center clustering
+
+**Label Updates**:
+- "I Love PDF" → "iLovePDF" (correct branding)
+- "I Love Markdown" → "iLoveMD" (correct branding)
+- "Tokenizer" → "Token Counter" (more descriptive)
+
+**Why This Change**:
+- User feedback: navigation elements too close to center, weird spacing
+- Correct external site branding (iLovePDF, iLoveMD)
+- More descriptive label for token counter tool
+
+**Technical Changes**:
+- Removed width constraint from header nav container
+- Updated shortLabel values in NAV_LINKS constant
+- Navigation now uses full viewport width with justify-between
+
+**Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
+
+**Files Modified**: 2
+- Updated: src/lib/constants.ts, src/components/layout/Header.tsx
+
+**Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+---
+
+### 2025-11-14 - Header Accessibility and Code Quality Improvements
+
+**What Changed**:
+- Addressed Copilot PR review feedback
+- Improved accessibility for screen reader users
+- Refactored navigation code to eliminate duplication
+
+**Accessibility Improvements**:
+- Added aria-label to all external navigation links
+- Screen readers now announce "(opens in new tab)" for external links
+- Example: aria-label="iLovePDF (opens in new tab)"
+- Better experience for users with assistive technology
+
+**Code Quality Improvements**:
+- Created NavLinkItem component to handle both internal and external links
+- Extracted duplicated logic from desktop and mobile menus
+- Single source of truth for navigation link rendering
+- Improved maintainability - changes only need to be made in one place
+
+**Copilot Review Issues Addressed**:
+1. ✅ External links lack screen reader indication (desktop menu)
+2. ✅ External links lack screen reader indication (mobile menu)
+3. ✅ Duplicated conditional rendering logic
+
+**Technical Changes**:
+- Created NavLinkItem functional component with link, onClick, className props
+- Accepts NavLink type and conditionally renders anchor or Link component
+- Removed duplicated code blocks (40+ lines of duplication eliminated)
+- Component now used in both desktop and mobile navigation
+
+**Why This Matters**:
+- Accessibility compliance for users with screen readers
+- Cleaner, more maintainable codebase
+- Easier to update navigation behavior in the future
+- Demonstrates responsiveness to code review feedback
+
+**Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
+
+**Files Modified**: 1
+- Updated: src/components/layout/Header.tsx
+
+**Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+---
+
 ## Project Complete!
 
 - [ ] All phases completed

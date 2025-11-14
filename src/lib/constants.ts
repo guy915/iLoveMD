@@ -30,10 +30,11 @@ export const FILE_SIZE = {
 
 // Navigation links for header
 export const NAV_LINKS: readonly NavLink[] = [
-  { href: '/pdf-to-markdown', label: 'PDF to Markdown', shortLabel: 'PDF' },
-  { href: '/merge-markdown', label: 'Merge Markdown', shortLabel: 'Markdown' },
-  { href: '/help', label: 'Help', shortLabel: 'Help' },
-  { href: '/about', label: 'About', shortLabel: 'About' },
+  { href: '/pdf-to-markdown', label: 'PDF to Markdown', shortLabel: 'PDF to Markdown' },
+  { href: '/merge-markdown', label: 'Merge Markdown', shortLabel: 'Merge Markdowns' },
+  { href: 'https://www.ilovepdf.com', label: 'iLovePDF', shortLabel: 'iLovePDF', external: true },
+  { href: 'https://www.ilovemarkdown.com', label: 'iLoveMD', shortLabel: 'iLoveMD', external: true },
+  { href: 'https://platform.openai.com/tokenizer', label: 'Token Counter', shortLabel: 'Token Counter', external: true },
 ] as const
 
 // Tool cards for homepage

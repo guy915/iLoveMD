@@ -3,8 +3,49 @@
 import Link from 'next/link'
 import { useState, useCallback, useEffect } from 'react'
 import { NAV_LINKS } from '@/lib/constants'
+import type { NavLink } from '@/types'
 import { useLogs } from '@/contexts/LogContext'
 import GlobalDiagnosticPanel from './GlobalDiagnosticPanel'
+
+/**
+ * Navigation link component that handles both internal and external links
+ */
+function NavLinkItem({
+  link,
+  onClick,
+  className
+}: {
+  link: NavLink
+  onClick: () => void
+  className: string
+}) {
+  if (link.external) {
+    return (
+      <a
+        key={link.href}
+        href={link.href}
+        className={className}
+        onClick={onClick}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${link.shortLabel} (opens in new tab)`}
+      >
+        {link.shortLabel}
+      </a>
+    )
+  }
+
+  return (
+    <Link
+      key={link.href}
+      href={link.href}
+      className={className}
+      onClick={onClick}
+    >
+      {link.shortLabel}
+    </Link>
+  )
+}
 
 /**
  * Header component with navigation menu
@@ -41,7 +82,7 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b border-gray-200">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Diagnostic Panel */}
           <div className="flex items-center gap-4">
@@ -58,14 +99,12 @@ export default function Header() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((link) => (
-              <Link
+              <NavLinkItem
                 key={link.href}
-                href={link.href}
-                className="hover:text-primary-600"
+                link={link}
                 onClick={() => handleNavClick(link.shortLabel, link.href)}
-              >
-                {link.shortLabel}
-              </Link>
+                className="hover:text-primary-600"
+              />
             ))}
           </div>
 
@@ -85,17 +124,15 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 space-y-2">
             {NAV_LINKS.map((link) => (
-              <Link
+              <NavLinkItem
                 key={link.href}
-                href={link.href}
-                className="block py-2"
+                link={link}
                 onClick={() => {
                   handleNavClick(link.shortLabel, link.href)
                   closeMobileMenu()
                 }}
-              >
-                {link.shortLabel}
-              </Link>
+                className="block py-2"
+              />
             ))}
           </div>
         )}
