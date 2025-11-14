@@ -31,7 +31,7 @@ These steps should be your first to-do (a session will begin with a system promp
 ### Session Conclusion
 
 1. **Test Before Committing**
-   - Run `npm test` - All tests must pass (currently 335 tests: 329 passing + 6 skipped)
+   - Run `npm test` - All tests must pass
    - Run `npm run build` - Must pass without errors
    - Run `npm run lint` - Must pass without errors
    - Run `npm test -- --coverage` - Verify coverage remains above 70%
