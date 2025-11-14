@@ -13,16 +13,8 @@ import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
   // Mode state - 'local' uses true local setup, 'cloud-free' uses HuggingFace GPU, 'cloud-paid' uses Marker API
-  // Initialize from localStorage or default to 'cloud-free'
-  const [mode, setMode] = useState<'local' | 'cloud-free' | 'cloud-paid'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEYS.MARKER_MODE)
-      if (saved === 'local' || saved === 'cloud-free' || saved === 'cloud-paid') {
-        return saved
-      }
-    }
-    return 'cloud-free'
-  })
+  // Always start with 'local' to match SSR, then update from localStorage in useEffect
+  const [mode, setMode] = useState<'local' | 'cloud-free' | 'cloud-paid'>('local')
 
   // API keys
   const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (cloud mode)
@@ -62,6 +54,18 @@ export default function PdfToMarkdownPage() {
   const [showDropOverlay, setShowDropOverlay] = useState(false)
   const dragCounterRef = useRef(0)
 
+  // Local setup UI state
+  const [showManualSetup, setShowManualSetup] = useState(false)
+
+  // Load mode from localStorage immediately after mount (before any rendering)
+  // This prevents hydration mismatch by always starting with 'local' on both server and client
+  useEffect(() => {
+    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'local' | 'cloud-free' | 'cloud-paid' | null
+    if (savedMode === 'local' || savedMode === 'cloud-free' || savedMode === 'cloud-paid') {
+      setMode(savedMode)
+    }
+  }, [])
+
   // Cleanup on unmount to prevent memory leaks
   useEffect(() => {
     isMountedRef.current = true
@@ -80,7 +84,7 @@ export default function PdfToMarkdownPage() {
     }
   }, [])
 
-  // Load API keys from localStorage on mount (mode is already loaded in initial state)
+  // Load API keys from localStorage on mount
   useEffect(() => {
     const savedGeminiKey = storageService.getItem(STORAGE_KEYS.GEMINI_API_KEY)
     if (savedGeminiKey) {
@@ -716,6 +720,187 @@ export default function PdfToMarkdownPage() {
               'Enable "Use LLM enhancement" option below to activate this field'
             )}
           </p>
+        </div>
+      )}
+
+      {/* Local Mode Setup Section */}
+      {mode === 'local' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-6">
+          <div className="flex items-start gap-3 mb-4">
+            <span className="text-2xl">⚙️</span>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Local Mode Setup Required</h3>
+              <p className="text-sm text-gray-700">
+                Local mode needs Python and Marker installed to work.
+              </p>
+            </div>
+          </div>
+
+          {!showManualSetup ? (
+            <>
+              <p className="text-sm text-gray-700 mb-4">Download the setup script for your operating system:</p>
+
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <a
+                  href="/scripts/setup-windows.bat"
+                  download="setup-windows.bat"
+                  className="flex flex-col items-center justify-center px-4 py-6 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                >
+                  <span className="text-3xl mb-2">🪟</span>
+                  <span className="text-sm font-semibold text-gray-900">Windows</span>
+                  <span className="text-xs text-gray-600 mt-1">setup.bat</span>
+                </a>
+
+                <a
+                  href="/scripts/setup-mac.sh"
+                  download="setup-mac.sh"
+                  className="flex flex-col items-center justify-center px-4 py-6 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                >
+                  <span className="text-3xl mb-2">🍎</span>
+                  <span className="text-sm font-semibold text-gray-900">macOS</span>
+                  <span className="text-xs text-gray-600 mt-1">setup.sh</span>
+                </a>
+
+                <a
+                  href="/scripts/setup-linux.sh"
+                  download="setup-linux.sh"
+                  className="flex flex-col items-center justify-center px-4 py-6 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                >
+                  <span className="text-3xl mb-2">🐧</span>
+                  <span className="text-sm font-semibold text-gray-900">Linux</span>
+                  <span className="text-xs text-gray-600 mt-1">setup.sh</span>
+                </a>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-gray-900 mb-2">After downloading:</p>
+                <ol className="text-sm text-gray-700 space-y-1 ml-4">
+                  <li>1. Double-click the downloaded file (or run in terminal)</li>
+                  <li>2. Wait for installation to complete (~2-5 minutes)</li>
+                  <li>3. The server will start automatically</li>
+                  <li>4. Return here and click &quot;Convert to Markdown&quot;</li>
+                </ol>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-gray-900 mb-2">What the script does:</p>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  <li>✓ Checks Python 3.9+ (installs if needed - Windows only)</li>
+                  <li>✓ Installs marker-pdf via pip</li>
+                  <li>✓ Downloads and starts the local server</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={() => setShowManualSetup(true)}
+                className="text-sm text-blue-600 hover:text-blue-700 underline"
+              >
+                📋 Show Manual Instructions Instead
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-gray-900 mb-3">Prerequisites: Python 3.9+ must be installed</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Don&apos;t have Python?{' '}
+                  <a
+                    href="https://python.org/downloads"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-700 underline"
+                  >
+                    Download it here
+                  </a>
+                </p>
+
+                <div className="border-t border-gray-200 pt-4 mb-4">
+                  <p className="text-sm font-semibold text-gray-900 mb-3">🚀 One-Line Install (Recommended)</p>
+                  <p className="text-sm text-gray-700 mb-2">Copy and run this command in your terminal:</p>
+                  <div className="relative">
+                    <code className="block bg-gray-900 text-gray-100 text-sm p-3 rounded-lg overflow-x-auto">
+                      curl -sSL https://raw.githubusercontent.com/guy915/AI-Doc-Prep/main/scripts/setup.sh | bash
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('curl -sSL https://raw.githubusercontent.com/guy915/AI-Doc-Prep/main/scripts/setup.sh | bash')
+                        addLog('info', 'Copied one-line install command to clipboard')
+                      }}
+                      className="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">This will install marker-pdf and start the server automatically.</p>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-sm font-semibold text-gray-900 mb-3">📝 Step-by-Step Install</p>
+
+                  <p className="text-sm font-medium text-gray-700 mb-2">Step 1: Install marker-pdf</p>
+                  <div className="relative mb-4">
+                    <code className="block bg-gray-900 text-gray-100 text-sm p-3 rounded-lg">
+                      pip install marker-pdf
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('pip install marker-pdf')
+                        addLog('info', 'Copied pip install command to clipboard')
+                      }}
+                      className="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    >
+                      Copy
+                    </button>
+                  </div>
+
+                  <p className="text-sm font-medium text-gray-700 mb-2">Step 2: Download the server script</p>
+                  <div className="relative mb-4">
+                    <code className="block bg-gray-900 text-gray-100 text-sm p-3 rounded-lg overflow-x-auto">
+                      curl -o marker_server.py https://raw.githubusercontent.com/guy915/AI-Doc-Prep/main/scripts/marker_server.py
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('curl -o marker_server.py https://raw.githubusercontent.com/guy915/AI-Doc-Prep/main/scripts/marker_server.py')
+                        addLog('info', 'Copied server download command to clipboard')
+                      }}
+                      className="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    >
+                      Copy
+                    </button>
+                  </div>
+
+                  <p className="text-sm font-medium text-gray-700 mb-2">Step 3: Start the server</p>
+                  <div className="relative mb-4">
+                    <code className="block bg-gray-900 text-gray-100 text-sm p-3 rounded-lg">
+                      python marker_server.py
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('python marker_server.py')
+                        addLog('info', 'Copied server start command to clipboard')
+                      }}
+                      className="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    >
+                      Copy
+                    </button>
+                  </div>
+
+                  <div className="bg-amber-100 border border-amber-300 rounded-lg p-3">
+                    <p className="text-sm text-amber-900">
+                      ⚠️ Keep the terminal window open while using AI Doc Prep
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowManualSetup(false)}
+                className="text-sm text-blue-600 hover:text-blue-700 underline"
+              >
+                ⬅️ Back to Downloads
+              </button>
+            </>
+          )}
         </div>
       )}
 
