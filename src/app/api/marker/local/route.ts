@@ -404,7 +404,34 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       )
     }
 
-    // Validate response structure
+    // Check for HTTP errors first (404, 500, etc.)
+    if (!response.ok) {
+      console.error('Local Marker poll error:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      })
+      // If it's a 404, the job might not exist yet (race condition with Modal Volumes)
+      // Return processing status so polling continues
+      if (response.status === 404) {
+        return NextResponse.json(
+          {
+            success: true, // Return success so polling continues
+            status: 'processing'
+          },
+          { status: 200 }
+        )
+      }
+      return NextResponse.json(
+        {
+          success: false,
+          error: (data && typeof data === 'object' && 'error' in data) ? (data as { error: string }).error : 'Failed to check status'
+        },
+        { status: response.status }
+      )
+    }
+
+    // Validate response structure (only for successful responses)
     if (!isValidMarkerPollResponse(data)) {
       console.error('Local Marker poll returned unexpected response structure:', data)
       return NextResponse.json(
@@ -414,21 +441,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
           details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
         },
         { status: 502 }
-      )
-    }
-
-    if (!response.ok) {
-      console.error('Local Marker poll error:', {
-        status: response.status,
-        statusText: response.statusText,
-        data: data
-      })
-      return NextResponse.json(
-        {
-          success: false,
-          error: data.error || 'Failed to check status'
-        },
-        { status: response.status }
       )
     }
 
