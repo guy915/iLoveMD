@@ -30,7 +30,7 @@ These steps should be your first to-do (a session will begin with a system promp
 
 ### Session Conclusion
 
-1. **Test Before Committing**
+1. **Test Before Committing (can skip for small safe changes)**
    - Run `npm test` - All tests must pass
    - Run `npm run build` - Must pass without errors
    - Run `npm run lint` - Must pass without errors
@@ -40,7 +40,6 @@ These steps should be your first to-do (a session will begin with a system promp
 
 2. **Update Documentation**
    - Update CHANGELOG.md
-   - Update CHECKLIST.md
    - Update README.md *(optional)*
    - Update ARCHITECTURE.md *(optional)*
    - Update CONTRIBUTING.md *(optional)*
@@ -56,33 +55,6 @@ These steps should be your first to-do (a session will begin with a system promp
 ## Documentation
 
 Before updating documentation, read the **full** file (CHANGELOG.md is exempt from a *full* read).
-
----
-
-## API Key Management
-
-### Marker API Key (Paid Mode)
-
-**Behavior:**
-- Users must provide their own Marker API key
-- API key is persisted to localStorage for convenience
-- Key is loaded from localStorage on component mount
-- Key is saved to localStorage whenever it changes
-
-**Implementation:**
-- Location: `src/app/pdf-to-markdown/page.tsx`
-- Storage key: `STORAGE_KEYS.MARKER_API_KEY` (defined in `src/lib/constants.ts`)
-- Behavior matches Gemini API key persistence
-
-**Sign up for Marker API:** https://www.datalab.to/app/keys
-
-### Gemini API Key (Free Mode with LLM)
-
-**Behavior:**
-- Users provide their own Gemini API key when using LLM enhancement in free mode
-- API key is persisted to localStorage for convenience
-- Key is loaded from localStorage on component mount
-- Key is saved to localStorage whenever it changes
 
 ---
 
