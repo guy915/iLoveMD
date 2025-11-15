@@ -443,6 +443,7 @@ export async function convertBatchPdfToMarkdownLocal(
   const MAX_CONCURRENT = 10
   let currentIndex = 0
   const activePromises = new Map<number, Promise<void>>()
+  const allPromises: Promise<void>[] = []
 
   // Process files with concurrency control
   const processFile = async (index: number): Promise<void> => {
@@ -502,7 +503,7 @@ export async function convertBatchPdfToMarkdownLocal(
         status: 'failed',
         error: error instanceof Error ? error.message : 'Unknown error',
         attempts: 1,
-        startTime: Date.now(),
+        startTime,
         endTime,
         duration: endTime - startTime
       }
@@ -518,20 +519,36 @@ export async function convertBatchPdfToMarkdownLocal(
         const nextIndex = currentIndex++
         const nextPromise = processFile(nextIndex)
         activePromises.set(nextIndex, nextPromise)
+        allPromises.push(nextPromise)
       }
     }
   }
 
   // Start initial batch of concurrent conversions
   const initialBatch = Math.min(MAX_CONCURRENT, files.length)
+  
   for (let i = 0; i < initialBatch; i++) {
     currentIndex = i + 1
     const promise = processFile(i)
     activePromises.set(i, promise)
+    allPromises.push(promise)
   }
 
   // Wait for all conversions to complete
-  await Promise.all(Array.from(activePromises.values()))
+  // We need to wait for all promises, including those added dynamically in the finally blocks
+  // Keep waiting until all files have been processed
+  while (activePromises.size > 0 || currentIndex < files.length) {
+    // Wait for at least one promise to complete
+    if (activePromises.size > 0) {
+      await Promise.race(Array.from(activePromises.values()))
+    } else {
+      // No active promises but files still pending - wait a bit for new promises to start
+      await new Promise(resolve => setTimeout(resolve, 10))
+    }
+  }
+  
+  // Ensure all promises have completed
+  await Promise.all(allPromises)
 
   // Separate completed and failed results
   const completed = results.filter(r => r.status === 'complete')
