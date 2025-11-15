@@ -507,10 +507,10 @@ export async function convertBatchPdfToMarkdownLocal(
       const fileIndex = i + 1
       currentIndex = fileIndex + 1
       
-      // Stagger starts: 5 seconds between each file submission
+      // Stagger starts: delay between each file submission
       // This prevents multiple cold containers from hitting model init simultaneously
       if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 5000))
+        await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.BATCH.STAGGER_DELAY_MS))
       }
       
       const promise = processFile(fileIndex)
@@ -528,7 +528,7 @@ export async function convertBatchPdfToMarkdownLocal(
       await Promise.race(Array.from(activePromises.values()))
     } else {
       // No active promises but files still pending - wait a bit for new promises to start
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.BATCH.QUEUE_CHECK_INTERVAL_MS))
     }
   }
   
