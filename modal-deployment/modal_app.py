@@ -191,9 +191,12 @@ def create_app():
                 extract_images=extract_images,
             )
             
-            # Get the result (spawn returns a ModalFunctionCall which we can await)
-            # Note: This will block until the function completes, but it's in a background task
-            result = call.get()
+            # Get the result in a thread pool to avoid blocking the event loop
+            # This allows the endpoint to return immediately while conversion runs
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(call.get)
+                result = future.result()  # This will block the thread, not the event loop
             
             if result.get("success"):
                 app_jobs[request_id]["status"] = "complete"
