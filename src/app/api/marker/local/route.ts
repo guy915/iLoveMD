@@ -230,8 +230,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
           method: 'POST',
           body: markerFormData,
         },
-        120000
-      ) // 120 second timeout (Modal cold starts can take 60-90 seconds)
+        300000
+      ) // 5 minute timeout (Modal cold starts + initial response can take time)
     } catch (fetchError) {
       const errorType = getNetworkErrorType(fetchError)
       const errorMessage = getNetworkErrorMessage(errorType, true)
