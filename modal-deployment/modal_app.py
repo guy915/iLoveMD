@@ -11,7 +11,7 @@ import modal
 import os
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 # Create Modal app
 app = modal.App("marker-pdf-converter")
@@ -26,6 +26,9 @@ image = (
 
 # Create volume for storing temporary files
 volume = modal.Volume.from_name("marker-temp", create_if_missing=True)
+
+# In-memory job storage (Modal containers are ephemeral, but this works for short-term)
+jobs: Dict[str, Dict[str, Any]] = {}
 
 # Define the conversion function
 @app.function(
@@ -195,6 +198,13 @@ def create_app():
         # Generate request ID
         request_id = str(uuid.uuid4())
         
+        # Store job info (in-memory for now - Modal containers are ephemeral)
+        # In production, you'd use Modal Volumes or a database
+        jobs[request_id] = {
+            "status": "processing",
+            "filename": file.filename,
+        }
+        
         # Parse boolean options
         def str_to_bool(v: str) -> bool:
             return v.lower() in ('true', '1', 'yes', 'on')
@@ -202,27 +212,49 @@ def create_app():
         paginate_bool = str_to_bool(paginate)
         disable_image_extraction_bool = str_to_bool(disable_image_extraction)
         
-        # Call the GPU conversion function
-        result = convert_pdf.remote(
-            pdf_bytes=content,
-            filename=file.filename,
-            output_format=output_format,
-            langs=langs,
-            paginate=paginate_bool,
-            extract_images=not disable_image_extraction_bool,
+        # Start conversion asynchronously (non-blocking)
+        import asyncio
+        asyncio.create_task(
+            run_conversion_async(
+                request_id,
+                content,
+                file.filename,
+                output_format,
+                langs,
+                paginate_bool,
+                not disable_image_extraction_bool,
+            )
         )
         
-        if result.get("success"):
-            return JSONResponse(content={
-                "success": True,
-                "request_id": request_id,
-                "request_check_url": f"/status/{request_id}",
-            })
-        else:
-            return JSONResponse(
-                status_code=500,
-                content={"error": result.get("error", "Conversion failed")}
-            )
+        # Return immediately with request_id for polling
+        base_url = os.environ.get("MODAL_ENDPOINT_URL", "")
+        return JSONResponse(content={
+            "success": True,
+            "request_id": request_id,
+            "request_check_url": f"{base_url}/status/{request_id}",
+        })
+    
+    @web_app.get("/status/{request_id}")
+    async def check_status(request_id: str):
+        """Check conversion status"""
+        from fastapi import HTTPException
+        
+        if request_id not in jobs:
+            raise HTTPException(status_code=404, detail="Request ID not found")
+        
+        job = jobs[request_id]
+        response = {"status": job["status"]}
+        
+        if job["status"] == "complete":
+            response["markdown"] = job["markdown"]
+            # Clean up after retrieval
+            del jobs[request_id]
+        elif job["status"] == "error":
+            response["error"] = job["error"]
+            # Clean up after error retrieval
+            del jobs[request_id]
+        
+        return response
     
     @web_app.get("/health")
     def health():
@@ -236,6 +268,38 @@ def create_app():
         }
     
     return web_app
+
+
+async def run_conversion_async(
+    request_id: str,
+    pdf_bytes: bytes,
+    filename: str,
+    output_format: str,
+    langs: Optional[str],
+    paginate: bool,
+    extract_images: bool,
+):
+    """Run conversion asynchronously and update job status"""
+    try:
+        # Call the GPU conversion function
+        result = convert_pdf.remote(
+            pdf_bytes=pdf_bytes,
+            filename=filename,
+            output_format=output_format,
+            langs=langs,
+            paginate=paginate,
+            extract_images=extract_images,
+        )
+        
+        if result.get("success"):
+            jobs[request_id]["status"] = "complete"
+            jobs[request_id]["markdown"] = result.get("markdown", "")
+        else:
+            jobs[request_id]["status"] = "error"
+            jobs[request_id]["error"] = result.get("error", "Conversion failed")
+    except Exception as e:
+        jobs[request_id]["status"] = "error"
+        jobs[request_id]["error"] = f"Conversion error: {str(e)}"
 
 
 # Local testing
