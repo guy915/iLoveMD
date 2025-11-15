@@ -24,8 +24,9 @@ image = (
     .pip_install("python-multipart")
 )
 
-# Create volume for storing temporary files
+# Create volume for storing temporary files and job state
 volume = modal.Volume.from_name("marker-temp", create_if_missing=True)
+job_storage_volume = modal.Volume.from_name("marker-jobs", create_if_missing=True)
 
 # Define the conversion function
 @app.function(
@@ -147,7 +148,10 @@ def convert_pdf(
 
 
 # Create FastAPI web endpoint
-@app.function(image=image)
+@app.function(
+    image=image,
+    volumes={"/tmp/marker-jobs": job_storage_volume}
+)
 @modal.asgi_app()
 def create_app():
     from fastapi import FastAPI, File, UploadFile, Form
@@ -166,8 +170,42 @@ def create_app():
         allow_headers=["*"],
     )
     
-    # In-memory job storage for this app instance
-    app_jobs: Dict[str, Dict[str, Any]] = {}
+    # Job storage path on volume (persists across container restarts)
+    JOB_STORAGE_PATH = "/tmp/marker-jobs"
+    
+    def get_job_path(request_id: str) -> str:
+        """Get file path for storing job data"""
+        import os
+        os.makedirs(JOB_STORAGE_PATH, exist_ok=True)
+        return f"{JOB_STORAGE_PATH}/{request_id}.json"
+    
+    def load_job(request_id: str) -> Optional[Dict[str, Any]]:
+        """Load job from persistent storage"""
+        import json
+        job_path = get_job_path(request_id)
+        if os.path.exists(job_path):
+            try:
+                with open(job_path, 'r') as f:
+                    return json.load(f)
+            except:
+                return None
+        return None
+    
+    def save_job(request_id: str, job_data: Dict[str, Any]):
+        """Save job to persistent storage"""
+        import json
+        import os
+        job_path = get_job_path(request_id)
+        os.makedirs(os.path.dirname(job_path), exist_ok=True)
+        with open(job_path, 'w') as f:
+            json.dump(job_data, f)
+    
+    def delete_job(request_id: str):
+        """Delete job from persistent storage"""
+        import os
+        job_path = get_job_path(request_id)
+        if os.path.exists(job_path):
+            os.remove(job_path)
     
     @web_app.post("/marker")
     async def marker_endpoint(
@@ -209,12 +247,12 @@ def create_app():
         # Generate request ID
         request_id = str(uuid.uuid4())
         
-        # Store job info (in-memory for now - Modal containers are ephemeral)
-        # In production, you'd use Modal Volumes or a database
-        app_jobs[request_id] = {
+        # Store job info in persistent storage (Modal Volume)
+        job_data = {
             "status": "processing",
             "filename": file.filename,
         }
+        save_job(request_id, job_data)
         
         # Parse boolean options
         def str_to_bool(v: str) -> bool:
@@ -244,15 +282,23 @@ def create_app():
                     future = executor.submit(call.get)
                     result = future.result()
                 
+                # Load current job data
+                job_data = load_job(request_id) or {"status": "processing"}
+                
                 if result.get("success"):
-                    app_jobs[request_id]["status"] = "complete"
-                    app_jobs[request_id]["markdown"] = result.get("markdown", "")
+                    job_data["status"] = "complete"
+                    job_data["markdown"] = result.get("markdown", "")
                 else:
-                    app_jobs[request_id]["status"] = "error"
-                    app_jobs[request_id]["error"] = result.get("error", "Conversion failed")
+                    job_data["status"] = "error"
+                    job_data["error"] = result.get("error", "Conversion failed")
+                
+                # Save updated job data
+                save_job(request_id, job_data)
             except Exception as e:
-                app_jobs[request_id]["status"] = "error"
-                app_jobs[request_id]["error"] = f"Conversion error: {str(e)}"
+                job_data = load_job(request_id) or {"status": "processing"}
+                job_data["status"] = "error"
+                job_data["error"] = f"Conversion error: {str(e)}"
+                save_job(request_id, job_data)
         
         # Start thread (truly non-blocking)
         thread = threading.Thread(target=run_conversion_thread, daemon=True)
@@ -270,20 +316,20 @@ def create_app():
         """Check conversion status"""
         from fastapi import HTTPException
         
-        if request_id not in app_jobs:
+        job = load_job(request_id)
+        if not job:
             raise HTTPException(status_code=404, detail="Request ID not found")
         
-        job = app_jobs[request_id]
-        response = {"status": job["status"]}
+        response = {"status": job.get("status", "processing")}
         
-        if job["status"] == "complete":
-            response["markdown"] = job["markdown"]
+        if job.get("status") == "complete":
+            response["markdown"] = job.get("markdown", "")
             # Clean up after retrieval
-            del app_jobs[request_id]
-        elif job["status"] == "error":
-            response["error"] = job["error"]
+            delete_job(request_id)
+        elif job.get("status") == "error":
+            response["error"] = job.get("error", "Unknown error")
             # Clean up after error retrieval
-            del app_jobs[request_id]
+            delete_job(request_id)
         
         return response
     
