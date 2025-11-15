@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useCallback, useEffect } from 'react'
 import { NAV_LINKS } from '@/lib/constants'
 import type { NavLink } from '@/types'
@@ -88,10 +89,16 @@ export default function Header() {
           <div className="flex items-center gap-4">
             <Link
               href="/"
-              className="flex items-center gap-2 font-semibold text-lg"
+              className="flex items-center gap-2"
               onClick={() => addLog('info', 'Logo clicked - Navigating to home')}
             >
-              iLoveLLM
+              <Image
+                src="/logo.svg"
+                alt="iLoveLLM"
+                width={120}
+                height={40}
+                priority
+              />
             </Link>
             <GlobalDiagnosticPanel />
           </div>

@@ -8,6 +8,9 @@ import { LogProvider } from '@/contexts/LogContext'
 export const metadata: Metadata = {
   title: 'iLoveLLM',
   description: 'Prepare documents for LLMs - Convert PDFs, HTML, and merge markdown files',
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 interface RootLayoutProps {
