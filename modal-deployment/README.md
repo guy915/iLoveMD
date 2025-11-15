@@ -4,7 +4,7 @@ Free serverless GPU-powered PDF to Markdown conversion using [Modal](https://mod
 
 ## What is This?
 
-This folder contains the Modal deployment for providing **FREE** GPU-powered PDF conversion to users of the AI Doc Prep website.
+This folder contains the Modal deployment for providing **FREE** GPU-powered PDF conversion to users of the iLoveLLM website.
 
 ## Why Modal?
 
@@ -105,4 +105,4 @@ Check your usage at: https://modal.com/apps
 
 - [Modal Documentation](https://modal.com/docs)
 - [Marker AI GitHub](https://github.com/VikParuchuri/marker)
-- [AI Doc Prep Issues](https://github.com/guy915/AI-Doc-Prep/issues)
+- [iLoveLLM Issues](https://github.com/guy915/iLoveLLM/issues)

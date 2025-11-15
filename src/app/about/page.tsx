@@ -7,7 +7,7 @@ export default function About() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">About AI Doc Prep</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">About iLoveLLM</h1>
         <p className="text-xl text-gray-600">
           Simple, privacy-focused tools for preparing documents for Large Language Models
         </p>
@@ -18,7 +18,7 @@ export default function About() {
         <div className="bg-white rounded-lg shadow p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Mission</h2>
           <p className="text-gray-600 mb-4">
-            AI Doc Prep was built to solve a common problem: getting documents into a format that LLMs like
+            iLoveLLM was built to solve a common problem: getting documents into a format that LLMs like
             ChatGPT and Claude can easily process. While these AI assistants are powerful, they work best with
             clean, well-formatted markdown.
           </p>
@@ -137,7 +137,7 @@ export default function About() {
         <div className="bg-primary-50 rounded-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Open Source</h2>
           <p className="text-gray-700 mb-4">
-            AI Doc Prep is an open-source project. The code is available for review, contributions,
+            iLoveLLM is an open-source project. The code is available for review, contributions,
             and learning purposes.
           </p>
           <p className="text-gray-700">

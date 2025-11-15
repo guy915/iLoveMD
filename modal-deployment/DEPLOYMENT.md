@@ -49,7 +49,7 @@ You should see: "Token created and stored successfully!"
 Navigate to your project directory:
 
 ```bash
-cd /path/to/AI-Doc-Prep/modal-deployment
+cd /path/to/iLoveLLM/modal-deployment
 ```
 
 Deploy the app:
@@ -109,7 +109,7 @@ You should get back:
 
 ## Step 7: Update Your Website Code
 
-Open `src/lib/constants.ts` in your AI-Doc-Prep project:
+Open `src/lib/constants.ts` in your iLoveLLM project:
 
 ```typescript
 export const API_ENDPOINTS = {
@@ -278,4 +278,4 @@ After deployment:
 - Modal Docs: https://modal.com/docs
 - Modal Discord: https://discord.gg/modal
 - Marker Issues: https://github.com/VikParuchuri/marker/issues
-- Your Project Issues: https://github.com/guy915/AI-Doc-Prep/issues
+- Your Project Issues: https://github.com/guy915/iLoveLLM/issues
