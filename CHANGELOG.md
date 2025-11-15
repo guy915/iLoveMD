@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Code Refactoring - Fixed Code Smells** (2025-11-15):
+  - **Extract duplicated API helper functions**:
+    - Created new utility file: src/lib/utils/apiHelpers.ts
+    - Moved shared helper functions from API routes to centralized location:
+      - `getNetworkErrorType()` - Identifies network error types (timeout, connection, DNS)
+      - `getNetworkErrorMessage()` - User-friendly error messages with local/cloud context
+      - `isValidMarkerSubmitResponse()` - Validates submit response structure
+      - `isValidMarkerPollResponse()` - Validates poll response structure
+      - `fetchWithTimeout()` - Fetch wrapper with configurable timeout
+    - Updated routes to import from shared utility:
+      - src/app/api/marker/route.ts (removed 121 lines of duplicated code)
+      - src/app/api/marker/local/route.ts (removed 121 lines of duplicated code)
+    - **Impact**: Eliminated 242 lines of duplicated code, improved maintainability
+  - **Move magic numbers to constants**:
+    - Added new constants to MARKER_CONFIG in src/lib/constants.ts:
+      - `POLLING.INITIAL_DELAY_MS` - 1 second delay before first poll
+      - `TIMEOUTS.SUBMIT_REQUEST_MS` - 30 seconds for cloud submit requests
+      - `TIMEOUTS.POLL_REQUEST_MS` - 30 seconds for cloud poll requests
+      - `TIMEOUTS.LOCAL_SUBMIT_REQUEST_MS` - 5 minutes for local submit (Modal cold starts)
+      - `TIMEOUTS.LOCAL_POLL_REQUEST_MS` - 60 seconds for local poll requests
+      - `BATCH.STAGGER_DELAY_MS` - 5 seconds between batch submissions
+      - `BATCH.QUEUE_CHECK_INTERVAL_MS` - 10ms for checking queue slots
+    - Replaced hardcoded values with named constants in:
+      - src/app/api/marker/route.ts (2 timeout values)
+      - src/app/api/marker/local/route.ts (2 timeout values)
+      - src/lib/services/batchConversionService.ts (2 delay values)
+      - src/lib/services/markerApiService.ts (1 delay value)
+    - **Impact**: Improved code readability and centralized configuration
+  - **Add clipboard error handling**:
+    - Updated src/components/layout/GlobalDiagnosticPanel.tsx
+    - Added proper error handling to clipboard.writeText() operation
+    - Now handles permission denials and clipboard access failures gracefully
+    - Logs success/error messages to diagnostic panel
+    - **Impact**: Better user experience, prevents silent failures
+  - **Code quality metrics**:
+    - All tests pass: 383 passed, 6 skipped (389 total)
+    - Build succeeds with no errors
+    - Lint passes with no warnings
+
 ### Removed
 - **Cleanup Unused Files and Deployment Artifacts** (2025-11-15):
   - **Removed unused Hugging Face Space deployment**:
