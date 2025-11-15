@@ -359,7 +359,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
     try {
       response = await fetchWithTimeout(checkUrl, {
         method: 'GET',
-      }, 30000) // 30 second timeout
+      }, 60000) // 60 second timeout (Modal status checks can take time)
     } catch (fetchError) {
       const errorType = getNetworkErrorType(fetchError)
       const errorMessage = getNetworkErrorMessage(errorType, true)
