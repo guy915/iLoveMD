@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Added Icons to Tool Cards and Updated Design** (2025-11-15):
+  - **Created custom SVG icons for tool cards**:
+    - Created pdf-icon.svg for "PDF to Markdown" card (blue document with PDF text)
+    - Created merge-icon.svg for "Merge Markdown" card (two documents with merge arrows)
+  - **Updated tool card design** to match iLovePDF style:
+    - Icons now display at the top of each card
+    - Layout changed to center-aligned with icon, title, and description
+    - Converted descriptions from long paragraphs to short single sentences
+    - "PDF to Markdown": "Convert PDF files to clean markdown optimized for LLMs"
+    - "Merge Markdown": "Combine multiple markdown files into a single file"
+  - **Ensured consistent card sizing**:
+    - All cards maintain the same height with flex layout
+    - Cards are visually balanced and professional
+  - **Technical changes**:
+    - Added `icon` property to ToolCard interface in types/index.ts
+    - Updated TOOL_CARDS constant with icon paths and shortened descriptions
+    - Updated ToolTile component to display icons using Next.js Image component
+    - Updated page.tsx to pass icon prop to ToolTile
+  - **Files Modified**:
+    - Created: public/pdf-icon.svg, public/merge-icon.svg
+    - Updated: src/types/index.ts, src/lib/constants.ts, src/components/home/ToolTile.tsx, src/app/page.tsx
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped)
+
 - **Added Favicon and Logo** (2025-11-15):
   - **Added custom favicon and logo**:
     - Created public folder for static assets
