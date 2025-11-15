@@ -308,7 +308,7 @@ export async function convertPdfToMarkdownLocal(
     const submitResponse = await submitPdfConversionLocal(file, geminiApiKey, options)
 
     if (!submitResponse.request_check_url) {
-      return { success: false, error: 'No status check URL returned from Modal GPU service' }
+      return { success: false, error: 'No status check URL returned from Modal' }
     }
 
     // Poll for results
@@ -336,14 +336,14 @@ export async function convertPdfToMarkdownLocal(
       // Check if complete
       if (pollResponse.status === 'complete') {
         if (!pollResponse.markdown) {
-          return { success: false, error: 'No content received from Modal GPU service' }
+          return { success: false, error: 'No content received from Modal' }
         }
         return { success: true, markdown: pollResponse.markdown }
       }
 
       // Check if error
       if (pollResponse.status === 'error') {
-        return { success: false, error: 'Conversion failed on Modal GPU service' }
+        return { success: false, error: 'Conversion failed on Modal' }
       }
 
       // Wait before next poll (unless this is the last attempt)

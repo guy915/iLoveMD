@@ -154,7 +154,7 @@ def convert_pdf(
 )
 @modal.asgi_app()
 def create_app():
-    from fastapi import FastAPI, File, UploadFile, Form
+    from fastapi import FastAPI, File, UploadFile, Form, BackgroundTasks
     from fastapi.responses import JSONResponse
     from fastapi.middleware.cors import CORSMiddleware
     import asyncio
@@ -211,6 +211,7 @@ def create_app():
     
     @web_app.post("/marker")
     async def marker_endpoint(
+        background_tasks: BackgroundTasks,
         file: UploadFile = File(...),
         output_format: str = Form("markdown"),
         langs: Optional[str] = Form(None),
@@ -264,9 +265,9 @@ def create_app():
         }
         save_job(request_id, job_data)
         
-        # Start conversion in background using asyncio.create_task
-        # Modal's spawn() returns a handle that we need to await properly
-        async def run_conversion_async():
+        # Define background task function (runs after response is sent)
+        # Use async function to properly handle Modal's async context
+        async def run_conversion_background():
             try:
                 # Spawn the conversion (non-blocking, returns immediately)
                 call = convert_pdf.spawn(
@@ -278,10 +279,9 @@ def create_app():
                     extract_images=not disable_image_extraction_bool,
                 )
                 
-                # Wait for result in a thread pool (call.get() is blocking)
-                # This ensures the conversion actually runs
-                import concurrent.futures
+                # Wait for result in thread pool (call.get() is blocking)
                 loop = asyncio.get_event_loop()
+                import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     result = await loop.run_in_executor(executor, call.get)
                 
@@ -304,13 +304,8 @@ def create_app():
                 job_data["error"] = f"Conversion error: {str(e)}"
                 save_job(request_id, job_data)
         
-        # Start async task (non-blocking, runs in background)
-        # Store the task to prevent garbage collection
-        task = asyncio.create_task(run_conversion_async())
-        # Keep reference to prevent task from being garbage collected
-        if not hasattr(web_app.state, 'background_tasks'):
-            web_app.state.background_tasks = []
-        web_app.state.background_tasks.append(task)
+        # Add background task (runs after response is sent)
+        background_tasks.add_task(run_conversion_background)
         
         # Return immediately with request_id for polling
         return JSONResponse(content={
