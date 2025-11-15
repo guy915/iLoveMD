@@ -1,0 +1,11 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left document - slightly larger -->
+  <path d="M8 14C8 12.3431 9.34315 11 11 11H28L37 20V59C37 60.6569 35.6569 62 34 62H11C9.34315 62 8 60.6569 8 59V14Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
+
+  <!-- Right document - slightly larger -->
+  <path d="M43 21C43 19.3431 44.3431 18 46 18H63L72 27V66C72 67.6569 70.6569 69 69 69H46C44.3431 69 43 67.6569 43 66V21Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
+
+  <!-- X-shaped lines in the middle - longer lines -->
+  <line x1="30" y1="32" x2="50" y2="48" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="30" y1="48" x2="50" y2="32" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
