@@ -364,37 +364,38 @@ export default function PdfToMarkdownPage() {
               signal: abortControllerRef.current.signal
             })
 
-        if (!result.success || !result.zipBlob) {
-          // Show detailed error message including failed file count
-          const errorMsg = result.error || 'Batch conversion failed'
-          const failedCount = result.failed?.length || 0
-          const totalCount = files.length
-          
-          if (failedCount > 0 && failedCount < totalCount) {
-            // Partial success - some files converted
-            throw new Error(`${errorMsg}. ${result.completed?.length || 0}/${totalCount} files converted successfully.`)
-          } else {
-            // All failed
-            throw new Error(errorMsg)
+          if (!result.success || !result.zipBlob) {
+            // Show detailed error message including failed file count
+            const errorMsg = result.error || 'Batch conversion failed'
+            const failedCount = result.failed?.length || 0
+            const totalCount = files.length
+            
+            if (failedCount > 0 && failedCount < totalCount) {
+              // Partial success - some files converted
+              throw new Error(`${errorMsg}. ${result.completed?.length || 0}/${totalCount} files converted successfully.`)
+            } else {
+              // All failed
+              throw new Error(errorMsg)
+            }
           }
-        }
 
-        // Generate ZIP filename
-        const zipName = folderName
-          ? `${folderName}_markdown.zip`
-          : `converted_markdowns_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.zip`
+          // Generate ZIP filename
+          const zipName = folderName
+            ? `${folderName}_markdown.zip`
+            : `converted_markdowns_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.zip`
 
-        addLog('success', `Batch conversion complete!`, {
-          completed: result.completed.length,
-          failed: result.failed.length,
-          zipName
-        })
+          addLog('success', `Batch conversion complete!`, {
+            completed: result.completed.length,
+            failed: result.failed.length,
+            zipName
+          })
 
-        if (isMountedRef.current) {
-          setBatchZipBlob(result.zipBlob)
-          setBatchZipFilename(zipName)
-          setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted. Click Download.`)
-          setProcessing(false)
+          if (isMountedRef.current) {
+            setBatchZipBlob(result.zipBlob)
+            setBatchZipFilename(zipName)
+            setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted. Click Download.`)
+            setProcessing(false)
+          }
         }
 
       } else {
