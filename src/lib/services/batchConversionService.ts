@@ -439,8 +439,8 @@ export async function convertBatchPdfToMarkdownLocal(
     onProgress?.(progress)
   }
 
-  // Process files in parallel with concurrency limit (reduced to 3 to avoid model init conflicts)
-  const MAX_CONCURRENT = 3
+  // Process files in parallel with concurrency limit (Modal allows up to 10 concurrent)
+  const MAX_CONCURRENT = 10
   let currentIndex = 0
   const activePromises = new Map<number, Promise<void>>()
 
