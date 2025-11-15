@@ -692,34 +692,34 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - **Files Modified**: 1 new file (src/app/merge-markdown/page.test.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
-### 2025-11-14 - Local Marker Support PR 1: Mode Toggle UI
+### 2025-11-14 - Modal Support PR 1: Mode Toggle UI
 - **Added**:
-  - Mode toggle UI for Local Marker vs Cloud API (two-button toggle)
+  - Mode toggle UI for Modal vs Cloud API (two-button toggle)
   - Mode state persisted to localStorage (default: local)
-  - Button order: "Local Marker" (left, default) and "Cloud API" (right)
+  - Button order: "Modal" (left, default) and "Cloud API" (right)
   - Conditional API key inputs:
     - Cloud mode: Marker API key (required)
     - Local mode: Gemini API key (always visible, disabled when use_llm is not enabled)
   - Dynamic validation for Convert button based on mode
   - Mode-specific "How it works" instructions
   - Explanatory text for each mode
-  - Guard in handleConvert: prevents local mode from calling cloud API (shows error directing user to switch to cloud or wait for PR 2)
+  - Guard in handleConvert: prevents Modal mode from calling cloud API (shows error directing user to switch to cloud or wait for PR 2)
 - **Technical**:
   - Added STORAGE_KEYS.MARKER_MODE and STORAGE_KEYS.GEMINI_API_KEY to constants
   - Updated handleConvert dependencies (removed geminiApiKey for now, will be re-added in PR 2)
   - All state properly loaded/saved from/to localStorage
   - Removed obsolete comment flagged by Copilot
-- **Note**: This is PR 1 of 4-part plan for local Marker support. UI only - no backend integration yet.
+- **Note**: This is PR 1 of 4-part plan for Modal support. UI only - no backend integration yet.
 - **Testing**: Build ✅ | Lint ✅ (no warnings)
 - **Files Modified**: 2 (src/app/pdf-to-markdown/page.tsx, src/lib/constants.ts)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
-### 2025-11-14 - Local Marker Support PR 2: Backend Integration
+### 2025-11-14 - Modal Support PR 2: Backend Integration
 - **Added**:
-  - New API route `/api/marker/local` for local Marker instance communication
+  - New API route `/api/marker/local` for Modal instance communication
   - Local service functions in markerApiService.ts:
-    - `submitPdfConversionLocal()` - submit PDF to local Marker
-    - `pollConversionStatusLocal()` - poll local Marker status (no auth needed)
+    - `submitPdfConversionLocal()` - submit PDF to Modal
+    - `pollConversionStatusLocal()` - poll Modal status (no auth needed)
     - `convertPdfToMarkdownLocal()` - complete flow with polling
   - Mode-based conversion logic in handleConvert():
     - Cloud mode: calls `convertPdfToMarkdown()` with Marker API key
@@ -727,7 +727,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Mode-based validation:
     - Cloud mode: validates Marker API key
     - Local mode: validates Gemini API key (only when use_llm is enabled)
-  - Status messages reflect mode: "Submitting to Marker API..." vs "Submitting to local Marker..."
+  - Status messages reflect mode: "Submitting to Marker API..." vs "Submitting to Modal..."
   - Added geminiApiKey back to handleConvert dependencies
 - **Configuration**:
   - Added API_ENDPOINTS.MARKER_LOCAL ('/api/marker/local')
@@ -735,32 +735,32 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Local API route proxies to localhost:8000 (Docker default)
   - Gemini API key passed as 'api_key' parameter when use_llm is enabled
 - **Limitations**:
-  - Batch mode not supported in local mode (shows error: "Batch conversion is not yet supported in local mode. Please switch to Cloud API mode or convert files individually.")
+  - Batch mode not supported in Modal mode (shows error: "Batch conversion is not yet supported in Modal mode. Please switch to Cloud API mode or convert files individually.")
   - Single file conversion fully functional
 - **Error Handling**:
-  - Enhanced network error messages for local mode
-  - Connection refused → "Unable to connect to local Marker instance. Please ensure Docker is running and Marker is started on http://localhost:8000"
+  - Enhanced network error messages for Modal mode
+  - Connection refused → "Unable to connect to Modal instance. Please ensure Docker is running and Marker is started on http://localhost:8000"
   - Timeout errors, DNS errors, generic network errors all handled with user-friendly messages
 - **Updated**:
-  - "How it works" section: Updated local mode note to mention Docker setup and batch limitation
+  - "How it works" section: Updated Modal mode note to mention Docker setup and batch limitation
 - **Technical**:
-  - Removed guard that blocked local mode
+  - Removed guard that blocked Modal mode
   - Local API route structure mirrors cloud route but without Marker API key auth
   - All validation, error handling, and response parsing consistent with cloud route
-- **Note**: This is PR 2 of 4-part plan for local Marker support. Full single-file local conversion now functional. PR 3 will add local-specific options (redo_inline_math).
+- **Note**: This is PR 2 of 4-part plan for Modal support. Full single-file local conversion now functional. PR 3 will add local-specific options (redo_inline_math).
 - **Testing**: Build ✅ | Lint ✅ (no warnings)
 - **Files Modified**: 4
   - Added: src/app/api/marker/local/route.ts (461 lines)
   - Updated: src/lib/constants.ts, src/lib/services/markerApiService.ts, src/app/pdf-to-markdown/page.tsx
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
 
-### 2025-11-14 - Local Marker Support PR 3: Local-Specific Options
+### 2025-11-14 - Modal Support PR 3: Local-Specific Options
 - **Added**:
   - `redo_inline_math` option to MarkerOptions type (optional boolean)
-  - Checkbox in Options Section (only visible in local mode)
+  - Checkbox in Options Section (only visible in Modal mode)
   - Option appears below "Disable image extraction" when mode === 'local'
   - Label: "Redo inline math"
-  - Description: "Reprocess inline mathematical expressions (local mode only)"
+  - Description: "Reprocess inline mathematical expressions (Modal mode only)"
 - **Implementation**:
   - Updated MarkerOptions interface in src/types/index.ts
   - Added to DEFAULT_OPTIONS in constants.ts (default: false)
@@ -769,14 +769,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Local API route checks if option is defined before adding to formData: `if (options.redo_inline_math !== undefined)`
 - **Why local-only**:
   - Cloud Marker API does not support this option
-  - Local Marker Docker instance provides additional math processing capabilities
-  - Only applicable when running local Marker instance
+  - Modal Docker instance provides additional math processing capabilities
+  - Only applicable when running Modal instance
 - **User Experience**:
-  - Option only appears when user switches to local mode
+  - Option only appears when user switches to Modal mode
   - Disappears when switching to cloud mode
   - Persisted to localStorage with other options
-  - No special dependencies or enablement conditions (always available in local mode)
-- **Note**: This is PR 3 of 4-part plan for local Marker support. Local mode now has feature parity with cloud mode plus additional local-specific options.
+  - No special dependencies or enablement conditions (always available in Modal mode)
+- **Note**: This is PR 3 of 4-part plan for Modal support. Local mode now has feature parity with cloud mode plus additional local-specific options.
 - **Testing**: Build ✅ | Lint ✅ (no warnings)
 - **Files Modified**: 4
   - Updated: src/types/index.ts, src/lib/constants.ts, src/app/pdf-to-markdown/page.tsx, src/app/api/marker/local/route.ts
@@ -784,10 +784,10 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ---
 
-### 2025-11-14 - Local Marker Support PR 4: Testing and Polish
+### 2025-11-14 - Modal Support PR 4: Testing and Polish
 
 **What Changed**:
-- Added comprehensive test coverage for all local Marker service functions
+- Added comprehensive test coverage for all Modal service functions
 - Updated test file header documentation
 - Verified all tests pass and coverage meets requirements
 
@@ -800,7 +800,7 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - `pollConversionStatusLocal()` tests:
   - Poll status without API key requirement
   - Return complete status with markdown
-  - Error handling from local Marker
+  - Error handling from Modal
   - URL encoding in query parameters
   - Generic error handling
 - `convertPdfToMarkdownLocal()` tests:
@@ -819,21 +819,21 @@ Track your progress through each implementation phase. Update checkboxes as you 
 - Total tests: 413 passing (up from 386)
 - markerApiService.test.ts: 58 tests (31 cloud + 27 local)
 - Overall coverage: 75.96% (exceeds 70% threshold)
-- All local mode functions have comprehensive test coverage matching cloud mode test patterns
+- All Modal mode functions have comprehensive test coverage matching cloud mode test patterns
 
 **Implementation Details**:
 - Updated `defaultOptions` in test file to include `redo_inline_math: false`
-- Updated test file header to document local mode test coverage
-- All local mode tests follow same structure as cloud mode tests for consistency
+- Updated test file header to document Modal mode test coverage
+- All Modal mode tests follow same structure as cloud mode tests for consistency
 - Tests verify Gemini API key handling, redo_inline_math option, error scenarios, and polling behavior
 
 **Why This Matters**:
-- Ensures local mode functionality is thoroughly tested
+- Ensures Modal mode functionality is thoroughly tested
 - Prevents regressions as codebase evolves
 - Documents expected behavior through tests
 - Validates all edge cases and error scenarios
 
-**Note**: This is PR 4 of 4-part plan for local Marker support. Testing complete. Local Marker mode is now fully functional with comprehensive test coverage.
+**Note**: This is PR 4 of 4-part plan for Modal support. Testing complete. Modal mode is now fully functional with comprehensive test coverage.
 - **Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
 - **Files Modified**: 1
   - Updated: src/lib/services/markerApiService.test.ts
