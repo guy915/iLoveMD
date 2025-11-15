@@ -34,7 +34,7 @@ job_storage_volume = modal.Volume.from_name("marker-jobs", create_if_missing=Tru
 @app.function(
     image=image,
     gpu="T4",  # Use NVIDIA T4 GPU (~$2/hour, scales to zero when idle)
-    timeout=7200,  # 2 hour timeout per conversion (supports very large/complex PDFs)
+    timeout=5400,  # 90 minute timeout per conversion (supports very large/complex academic PDFs)
     volumes={"/tmp/marker": volume},
     scaledown_window=900,  # Keep containers alive for 15 minutes after last use (covers typical sessions, you pay for GPU time during this period)
 )
