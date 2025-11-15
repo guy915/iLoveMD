@@ -3,7 +3,7 @@
  *
  * Tests cover:
  * - SSR safety (typeof window === 'undefined')
- * - All CRUD operations (getItem, setItem, removeItem, clear)
+ * - CRUD operations (getItem, setItem, removeItem)
  * - JSON operations (getJSON, setJSON with parsing/stringify)
  * - Error handling (quota exceeded, JSON errors, exceptions)
  * - Edge cases (null, undefined, empty strings, special characters)
@@ -16,8 +16,6 @@ import {
   removeItem,
   getJSON,
   setJSON,
-  clear,
-  hasItem,
 } from './storageService'
 
 describe('storageService', () => {
@@ -305,75 +303,12 @@ describe('storageService', () => {
     })
   })
 
-  describe('clear', () => {
-    it('should clear all items', () => {
-      setItem('key1', 'value1')
-      setItem('key2', 'value2')
-      setItem('key3', 'value3')
-
-      const result = clear()
-      expect(result).toBe(true)
-      expect(getItem('key1')).toBeNull()
-      expect(getItem('key2')).toBeNull()
-      expect(getItem('key3')).toBeNull()
-    })
-
-    it('should succeed even if storage is already empty', () => {
-      const result = clear()
-      expect(result).toBe(true)
-    })
-
-    it('should handle errors gracefully', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      const originalClear = localStorage.clear
-      localStorage.clear = vi.fn(() => {
-        throw new Error('Storage error')
-      })
-
-      const result = clear()
-      expect(result).toBe(false)
-      expect(consoleErrorSpy).toHaveBeenCalled()
-
-      localStorage.clear = originalClear
-      consoleErrorSpy.mockRestore()
-    })
-  })
-
-  describe('hasItem', () => {
-    it('should return true for existing key', () => {
-      setItem('test', 'value')
-      expect(hasItem('test')).toBe(true)
-    })
-
-    it('should return false for non-existent key', () => {
-      expect(hasItem('non-existent')).toBe(false)
-    })
-
-    it('should return true even for empty string values', () => {
-      setItem('empty', '')
-      // Mock localStorage may convert empty string to null
-      // hasItem returns false if getItem returns null
-      const retrieved = getItem('empty')
-      if (retrieved === null) {
-        expect(hasItem('empty')).toBe(false)
-      } else {
-        expect(hasItem('empty')).toBe(true)
-      }
-    })
-
-    it('should return false after item is removed', () => {
-      setItem('test', 'value')
-      removeItem('test')
-      expect(hasItem('test')).toBe(false)
-    })
-  })
-
   describe('real-world usage scenarios', () => {
     it('should handle marker API key storage', () => {
       const apiKey = 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ'
       setItem('markerApiKey', apiKey)
       expect(getItem('markerApiKey')).toBe(apiKey)
-      expect(hasItem('markerApiKey')).toBe(true)
+      expect(getItem('markerApiKey')).not.toBeNull()
     })
 
     it('should handle marker options storage', () => {
@@ -395,8 +330,8 @@ describe('storageService', () => {
       setJSON('options', { setting1: true, setting2: 'value' })
 
       // Verify both exist
-      expect(hasItem('apiKey')).toBe(true)
-      expect(hasItem('options')).toBe(true)
+      expect(getItem('apiKey')).not.toBeNull()
+      expect(getItem('options')).not.toBeNull()
 
       // Update options
       setJSON('options', { setting1: false, setting2: 'new-value' })
@@ -404,12 +339,12 @@ describe('storageService', () => {
 
       // Remove API key
       removeItem('apiKey')
-      expect(hasItem('apiKey')).toBe(false)
-      expect(hasItem('options')).toBe(true)
+      expect(getItem('apiKey')).toBeNull()
+      expect(getItem('options')).not.toBeNull()
 
-      // Clear everything
-      clear()
-      expect(hasItem('options')).toBe(false)
+      // Remove options
+      removeItem('options')
+      expect(getItem('options')).toBeNull()
     })
   })
 })

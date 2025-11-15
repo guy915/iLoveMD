@@ -175,16 +175,3 @@ export interface ApiError {
   /** HTTP status code */
   status?: number
 }
-
-/**
- * Type guard to check if response is an error
- */
-export function isApiError(response: unknown): response is ApiError {
-  return (
-    typeof response === 'object' &&
-    response !== null &&
-    'success' in response &&
-    response.success === false &&
-    'error' in response
-  )
-}
