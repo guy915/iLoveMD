@@ -317,6 +317,10 @@ export async function convertPdfToMarkdownLocal(
     const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
     const startTime = Date.now()
 
+    // Small delay before first status check to allow Modal Volumes to propagate
+    // Modal Volumes have eventual consistency, so the job might not be readable immediately
+    await new Promise(resolve => setTimeout(resolve, 1000)) // 1 second delay
+
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       // Check if cancelled
       if (signal?.aborted) {
