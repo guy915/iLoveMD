@@ -343,12 +343,15 @@ export default function PdfToMarkdownPage() {
           const failed: Array<{ file: File; error: string; filename: string }> = []
           
           // Process files ONE AT A TIME - wait for each to fully complete before starting next
+          console.log(`[BATCH] Starting batch conversion of ${files.length} files`)
           for (let i = 0; i < files.length; i++) {
             if (abortControllerRef.current?.signal.aborted) {
+              console.log(`[BATCH] Aborted at file ${i + 1}`)
               break
             }
             
             const file = files[i]
+            console.log(`[BATCH] Processing file ${i + 1}/${files.length}: ${file.name}`)
             setStatus(`Processing file ${i + 1}/${files.length}: ${file.name}...`)
             
             // Use EXACT same code as single file conversion - this will wait for full completion
@@ -359,6 +362,7 @@ export default function PdfToMarkdownPage() {
             }
             
             try {
+              console.log(`[BATCH] About to call convertPdfToMarkdownLocal for file ${i + 1}`)
               // AWAIT this - it will submit, poll until complete, and return markdown
               // This blocks until the ENTIRE conversion is done
               const result = await convertPdfToMarkdownLocal(
@@ -368,9 +372,11 @@ export default function PdfToMarkdownPage() {
                 onProgress,
                 abortControllerRef.current.signal
               )
+              console.log(`[BATCH] File ${i + 1} conversion complete:`, result.success ? 'SUCCESS' : 'FAILED')
               
               // Only after this await completes (conversion fully done) do we continue
               if (result.success && result.markdown) {
+                console.log(`[BATCH] File ${i + 1} SUCCESS - adding to completed list`)
                 completed.push({
                   file,
                   markdown: result.markdown,
@@ -384,7 +390,9 @@ export default function PdfToMarkdownPage() {
                 
                 // Small delay to ensure Modal has fully cleaned up before next file
                 if (i < files.length - 1) {
-                  await new Promise(resolve => setTimeout(resolve, 1000)) // 1 second delay between files
+                  console.log(`[BATCH] Waiting 2 seconds before starting next file...`)
+                  await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay between files
+                  console.log(`[BATCH] Delay complete, moving to next file`)
                 }
               } else {
                 failed.push({
