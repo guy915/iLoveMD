@@ -48,7 +48,7 @@ function getNetworkErrorType(error: unknown): NetworkErrorType {
 
 // Helper to get user-friendly error message
 function getNetworkErrorMessage(errorType: NetworkErrorType, isLocal: boolean = true): string {
-  const service = isLocal ? 'Modal GPU service' : 'Marker service'
+  const service = isLocal ? 'Modal' : 'Marker service'
 
   switch (errorType) {
     case 'timeout':
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
                 return NextResponse.json(
                   {
                     success: false,
-                    error: 'Received invalid response from Modal GPU service. Please try again.',
+                    error: 'Received invalid response from Modal. Please try again.',
                     details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
                   },
                   { status: 502 }
@@ -276,7 +276,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
               return NextResponse.json(
                 {
                   success: false,
-                  error: 'Received malformed response from Modal GPU service',
+                  error: 'Received malformed response from Modal',
                   details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
                 },
                 { status: 502 }
@@ -397,32 +397,40 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
               return NextResponse.json(
                 {
                   success: false,
-                  error: 'Received invalid response from Modal GPU service during status check.',
+                    error: 'Received invalid response from Modal during status check.',
                   details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
                 },
                 { status: 502 }
               )
     }
 
+    // Handle 502 Bad Gateway - job might not exist yet (eventual consistency)
+    if (response.status === 502 || response.status === 404) {
+      // If job doesn't exist yet, return "processing" status instead of error
+      // This handles Modal Volume eventual consistency
+      return NextResponse.json({
+        success: true,
+        status: 'processing' as const,
+      })
+    }
+
     // Validate response structure
     if (!isValidMarkerPollResponse(data)) {
-      console.error('Local Marker poll returned unexpected response structure:', data)
-              return NextResponse.json(
-                {
-                  success: false,
-                  error: 'Received malformed response from Modal GPU service during status check',
-                  details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
-                },
-                { status: 502 }
-              )
+      console.error('Modal poll returned unexpected response structure:', data)
+      // If we got a response but it's malformed, assume still processing
+      return NextResponse.json({
+        success: true,
+        status: 'processing' as const,
+      })
     }
 
     if (!response.ok) {
-      console.error('Local Marker poll error:', {
+      console.error('Modal poll error:', {
         status: response.status,
         statusText: response.statusText,
         data: data
       })
+      // For non-502/404 errors, return the error
       return NextResponse.json(
         {
           success: false,
