@@ -18,7 +18,7 @@ export default function PdfToMarkdownPage() {
   const [mounted, setMounted] = useState(false)
 
   // API keys
-  const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (paid mode)
+  const [apiKey, setApiKey] = useState('') // Marker API key (paid mode)
   const [geminiApiKey, setGeminiApiKey] = useState('') // Gemini API key (free mode with LLM)
 
   // File state - supports both single and batch
@@ -87,6 +87,17 @@ export default function PdfToMarkdownPage() {
       setMode('paid') // Old 'cloud' → new 'paid'
     }
 
+    const savedMarkerKey = storageService.getItem(STORAGE_KEYS.MARKER_API_KEY)
+    // One-time migration: Remove old test key if found
+    const OLD_TEST_KEY = 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ'
+    if (savedMarkerKey === OLD_TEST_KEY) {
+      storageService.removeItem(STORAGE_KEYS.MARKER_API_KEY)
+      addLog('info', 'Removed old test API key from localStorage')
+    } else if (savedMarkerKey) {
+      setApiKey(savedMarkerKey)
+      addLog('info', 'Loaded saved Marker API key from localStorage')
+    }
+
     const savedGeminiKey = storageService.getItem(STORAGE_KEYS.GEMINI_API_KEY)
     if (savedGeminiKey) {
       setGeminiApiKey(savedGeminiKey)
@@ -109,6 +120,13 @@ export default function PdfToMarkdownPage() {
       storageService.setItem(STORAGE_KEYS.MARKER_MODE, mode)
     }
   }, [mode, mounted])
+
+  // Save Marker API key to localStorage whenever it changes
+  useEffect(() => {
+    if (hasLoadedOptions) {
+      storageService.setItem(STORAGE_KEYS.MARKER_API_KEY, apiKey)
+    }
+  }, [apiKey, hasLoadedOptions])
 
   // Save Gemini API key to localStorage whenever it changes
   useEffect(() => {

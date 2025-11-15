@@ -59,16 +59,30 @@ Before updating documentation, read the **full** file (CHANGELOG.md is exempt fr
 
 ---
 
-## Development API Keys
+## API Key Management
 
-**Test Marker API Key:** `w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ`
+### Marker API Key (Paid Mode)
 
-### IMPORTANT: DO NOT REMOVE THE HARDCODED TEST KEY
+**Behavior:**
+- Users must provide their own Marker API key
+- API key is persisted to localStorage for convenience
+- Key is loaded from localStorage on component mount
+- Key is saved to localStorage whenever it changes
 
-**Location:** `src/app/pdf-to-markdown/page.tsx` - Line 16
-```typescript
-const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ')
-```
+**Implementation:**
+- Location: `src/app/pdf-to-markdown/page.tsx`
+- Storage key: `STORAGE_KEYS.MARKER_API_KEY` (defined in `src/lib/constants.ts`)
+- Behavior matches Gemini API key persistence
+
+**Sign up for Marker API:** https://www.datalab.to/app/keys
+
+### Gemini API Key (Free Mode with LLM)
+
+**Behavior:**
+- Users provide their own Gemini API key when using LLM enhancement in free mode
+- API key is persisted to localStorage for convenience
+- Key is loaded from localStorage on component mount
+- Key is saved to localStorage whenever it changes
 
 ---
 
