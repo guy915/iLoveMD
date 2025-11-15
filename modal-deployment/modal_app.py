@@ -170,8 +170,9 @@ def create_app():
     ):
         """Run conversion asynchronously and update job status"""
         try:
-            # Call the GPU conversion function
-            result = convert_pdf.remote(
+            # Spawn the conversion as a background task (non-blocking)
+            # Modal's spawn returns a handle we can poll
+            call = convert_pdf.spawn(
                 pdf_bytes=pdf_bytes,
                 filename=filename,
                 output_format=output_format,
@@ -179,6 +180,9 @@ def create_app():
                 paginate=paginate,
                 extract_images=extract_images,
             )
+            
+            # Wait for the result asynchronously
+            result = await call
             
             if result.get("success"):
                 app_jobs[request_id]["status"] = "complete"
