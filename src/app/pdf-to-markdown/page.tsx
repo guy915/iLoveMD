@@ -24,6 +24,8 @@ export default function PdfToMarkdownPage() {
   // File state - supports both single and batch
   const [files, setFiles] = useState<File[]>([])
   const [folderName, setFolderName] = useState<string | null>(null)
+  // Map from original file to unique output filename (for handling duplicates)
+  const [filenameMap, setFilenameMap] = useState<Map<File, string>>(new Map())
 
   const [processing, setProcessing] = useState(false)
   const [status, setStatus] = useState('')
@@ -187,6 +189,34 @@ export default function PdfToMarkdownPage() {
   // Determine if this is a batch conversion
   const isBatch = files.length > 1
 
+  /**
+   * Generate unique output filename for a file, handling duplicates with numerical suffixes
+   * Example: "file.pdf" → "file.md", second "file.pdf" → "file (1).md"
+   */
+  const generateUniqueFilename = useCallback((
+    file: File,
+    existingFiles: File[],
+    existingMap: Map<File, string>
+  ): string => {
+    const baseName = file.name.replace(/\.pdf$/i, '')
+    let outputName = `${baseName}.md`
+
+    // Check if this exact filename is already used
+    const usedNames = new Set(Array.from(existingMap.values()))
+
+    if (!usedNames.has(outputName)) {
+      return outputName
+    }
+
+    // Find next available number
+    let counter = 1
+    while (usedNames.has(`${baseName} (${counter}).md`)) {
+      counter++
+    }
+
+    return `${baseName} (${counter}).md`
+  }, [])
+
   const handleFilesSelect = useCallback((selectedFiles: FileList, fromFolder: boolean = false) => {
     const filesArray = Array.from(selectedFiles)
     let pdfFiles = filterPdfFiles(filesArray)
@@ -214,11 +244,30 @@ export default function PdfToMarkdownPage() {
       excludedSubfolderFiles: fromFolder ? filesArray.length - pdfFiles.length : 0
     })
 
-    // Accumulate files - avoid duplicates by name
+    // Accumulate ALL files - allow duplicates by name
+    // Generate unique output filenames with numerical suffixes for duplicates
     setFiles(prevFiles => {
-      const existingNames = new Set(prevFiles.map(f => f.name))
-      const newFiles = pdfFiles.filter(f => !existingNames.has(f.name))
-      return [...prevFiles, ...newFiles]
+      const allFiles = [...prevFiles, ...pdfFiles]
+
+      // Update filename map with unique names
+      setFilenameMap(prevMap => {
+        const newMap = new Map(prevMap)
+
+        // Generate unique names for new files
+        for (const file of pdfFiles) {
+          const uniqueName = generateUniqueFilename(file, allFiles, newMap)
+          newMap.set(file, uniqueName)
+
+          // Log if file was renamed (has numerical suffix)
+          if (uniqueName !== file.name.replace(/\.pdf$/i, '.md')) {
+            addLog('info', `Renamed duplicate file: "${file.name}" → "${uniqueName}"`)
+          }
+        }
+
+        return newMap
+      })
+
+      return allFiles
     })
 
     // Update folder name if this is first selection or if single folder
@@ -234,11 +283,12 @@ export default function PdfToMarkdownPage() {
     setBatchProgress(null)
     setBatchZipBlob(null)
     setBatchZipFilename(null)
-  }, [addLog, files.length])
+  }, [addLog, files.length, generateUniqueFilename])
 
   const handleClearFiles = useCallback(() => {
     setFiles([])
     setFolderName(null)
+    setFilenameMap(new Map())
     setError('')
     setConvertedMarkdown(null)
     setOutputFilename(null)
@@ -362,6 +412,7 @@ export default function PdfToMarkdownPage() {
           const result = await convertBatchPdfToMarkdownLocal(files, {
             geminiApiKey: options.use_llm ? geminiApiKey : null,
             markerOptions: options,
+            filenameMap: filenameMap,
             onProgress: (progress: BatchProgress) => {
               if (isMountedRef.current) {
                 setBatchProgress(progress)
@@ -408,6 +459,7 @@ export default function PdfToMarkdownPage() {
           const result = await convertBatchPdfToMarkdown(files, {
             apiKey,
             markerOptions: options,
+            filenameMap: filenameMap,
             onProgress: (progress: BatchProgress) => {
               if (isMountedRef.current) {
                 setBatchProgress(progress)
@@ -507,7 +559,7 @@ export default function PdfToMarkdownPage() {
     } finally {
       abortControllerRef.current = null
     }
-  }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, addLog])
+  }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, filenameMap, addLog])
 
   const handleDownload = useCallback(async () => {
     if (!convertedMarkdown || !outputFilename) return
