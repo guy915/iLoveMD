@@ -156,14 +156,16 @@ def convert_pdf(
 
 
 # Create FastAPI web endpoint
-from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import JSONResponse
-
-web_app = FastAPI()
-
 @app.function(image=image)
-@modal.fastapi_endpoint(app=web_app, method="POST")
-async def marker_endpoint(
+@modal.asgi_app()
+def create_app():
+    from fastapi import FastAPI, File, UploadFile, Form
+    from fastapi.responses import JSONResponse
+    
+    web_app = FastAPI()
+    
+    @web_app.post("/marker")
+    async def marker_endpoint(
     file: UploadFile = File(...),
     output_format: str = Form("markdown"),
     langs: Optional[str] = Form(None),
@@ -230,20 +232,19 @@ async def marker_endpoint(
             status_code=500,
             content={"error": result.get("error", "Conversion failed")}
         )
-
-
-# Health check endpoint
-@app.function(image=image)
-@modal.fastapi_endpoint(app=web_app, method="GET")
-def health():
-    """Health check endpoint"""
-    return {
-        "status": "online",
-        "service": "Marker PDF Converter (Modal)",
-        "version": "1.0.0",
-        "gpu": "NVIDIA T4",
-        "platform": "Modal.com",
-    }
+    
+    @web_app.get("/health")
+    def health():
+        """Health check endpoint"""
+        return {
+            "status": "online",
+            "service": "Marker PDF Converter (Modal)",
+            "version": "1.0.0",
+            "gpu": "NVIDIA T4",
+            "platform": "Modal.com",
+        }
+    
+    return web_app
 
 
 # Local testing
