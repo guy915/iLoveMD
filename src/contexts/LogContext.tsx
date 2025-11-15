@@ -6,7 +6,7 @@ import type { LogEntry, LogType, LogContextValue } from '@/types'
 const LogContext = createContext<LogContextValue | undefined>(undefined)
 const LOGS_STORAGE_KEY = 'diagnosticLogs'
 const LOG_COUNTER_KEY = 'diagnosticLogCounter'
-const MAX_LOGS = 500
+const MAX_LOGS = 50
 
 // Storage helper with quota checking
 let storageQuotaExceeded = false // Flag to avoid repeated quota errors
@@ -180,7 +180,7 @@ export function LogProvider({ children }: LogProviderProps) {
     safeStorageSet(LOG_COUNTER_KEY, persistentLogCounter.toString())
 
     const newLog: LogEntry = { timestamp, type, message, data, id }
-    // Keep only last 500 logs (sliding window) - only slice when necessary
+    // Keep only last 50 logs (sliding window) - only slice when necessary
     setLogs(prev => {
       const newLogs = [...prev, newLog]
       return newLogs.length > MAX_LOGS ? newLogs.slice(-MAX_LOGS) : newLogs
