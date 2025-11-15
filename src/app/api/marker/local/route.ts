@@ -48,17 +48,17 @@ function getNetworkErrorType(error: unknown): NetworkErrorType {
 
 // Helper to get user-friendly error message
 function getNetworkErrorMessage(errorType: NetworkErrorType, isLocal: boolean = true): string {
-  const service = isLocal ? 'local Marker instance' : 'Marker service'
+  const service = isLocal ? 'Modal GPU service' : 'Marker service'
 
   switch (errorType) {
     case 'timeout':
       return `Request timed out. The ${service} is taking too long to respond. Please try again.`
-    case 'connection':
-      return `Unable to connect to ${service}. ${isLocal ? 'Please ensure Docker is running and Marker is started on http://localhost:8000' : 'The service may be temporarily unavailable.'}`
+            case 'connection':
+              return `Unable to connect to ${service}. ${isLocal ? 'The Modal GPU service may be temporarily unavailable.' : 'The service may be temporarily unavailable.'}`
     case 'dns':
       return `Unable to resolve ${service} hostname. Please check your configuration.`
     default:
-      return `Network error occurred. Please check ${isLocal ? 'that Docker and Marker are running' : 'your internet connection'} and try again.`
+              return `Network error occurred. Please check ${isLocal ? 'your internet connection and try again' : 'your internet connection'} and try again.`
   }
 }
 
@@ -260,27 +260,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         statusText: response.statusText,
         error: parseError
       })
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Received invalid response from local Marker instance. Please ensure Marker is running correctly.',
-          details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
-        },
-        { status: 502 }
-      )
+                return NextResponse.json(
+                  {
+                    success: false,
+                    error: 'Received invalid response from Modal GPU service. Please try again.',
+                    details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
+                  },
+                  { status: 502 }
+                )
     }
 
     // Validate response structure
     if (!isValidMarkerSubmitResponse(data)) {
       console.error('Local Marker returned unexpected response structure:', data)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Received malformed response from local Marker instance',
-          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
-        },
-        { status: 502 }
-      )
+              return NextResponse.json(
+                {
+                  success: false,
+                  error: 'Received malformed response from Modal GPU service',
+                  details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
+                },
+                { status: 502 }
+              )
     }
 
     if (!response.ok) {
@@ -394,27 +394,27 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
         statusText: response.statusText,
         error: parseError
       })
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Received invalid response from local Marker instance during status check.',
-          details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
-        },
-        { status: 502 }
-      )
+              return NextResponse.json(
+                {
+                  success: false,
+                  error: 'Received invalid response from Modal GPU service during status check.',
+                  details: { httpStatus: response.status } // Only expose HTTP status, not parse error details
+                },
+                { status: 502 }
+              )
     }
 
     // Validate response structure
     if (!isValidMarkerPollResponse(data)) {
       console.error('Local Marker poll returned unexpected response structure:', data)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Received malformed response from local Marker instance during status check',
-          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
-        },
-        { status: 502 }
-      )
+              return NextResponse.json(
+                {
+                  success: false,
+                  error: 'Received malformed response from Modal GPU service during status check',
+                  details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
+                },
+                { status: 502 }
+              )
     }
 
     if (!response.ok) {

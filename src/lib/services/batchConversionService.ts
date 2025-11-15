@@ -14,7 +14,7 @@
  * - 200 concurrent API requests maximum
  */
 
-import { convertPdfToMarkdown } from './markerApiService'
+import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from './markerApiService'
 import { replaceExtension } from '@/lib/utils/downloadUtils'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
@@ -56,10 +56,22 @@ export interface BatchProgress {
 export type BatchProgressCallback = (progress: BatchProgress) => void
 
 /**
- * Options for batch conversion
+ * Options for batch conversion (paid mode)
  */
 export interface BatchConversionOptions {
   apiKey: string
+  markerOptions: MarkerOptions
+  maxConcurrent?: number
+  maxRetries?: number
+  onProgress?: BatchProgressCallback
+  signal?: AbortSignal
+}
+
+/**
+ * Options for batch conversion (free mode)
+ */
+export interface BatchConversionOptionsLocal {
+  geminiApiKey: string | null
   markerOptions: MarkerOptions
   maxConcurrent?: number
   maxRetries?: number
@@ -94,7 +106,7 @@ function getRetryDelay(attempt: number): number {
 }
 
 /**
- * Convert a single file with retry logic
+ * Convert a single file with retry logic (paid mode)
  */
 async function convertFileWithRetry(
   file: File,
@@ -123,6 +135,65 @@ async function convertFileWithRetry(
     try {
       // Forward abort signal to individual conversion
       const conversionResult = await convertPdfToMarkdown(file, apiKey, markerOptions, undefined, signal)
+
+      if (conversionResult.success && conversionResult.markdown) {
+        result.markdown = conversionResult.markdown
+        result.status = 'complete'
+        result.endTime = Date.now()
+        result.duration = result.endTime - (result.startTime || 0)
+        return result
+      } else {
+        throw new Error(conversionResult.error || 'Conversion failed')
+      }
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries
+
+      if (isLastAttempt) {
+        result.status = 'failed'
+        result.error = error instanceof Error ? error.message : 'Unknown error'
+        result.endTime = Date.now()
+        result.duration = result.endTime - (result.startTime || 0)
+      } else {
+        // Wait before retrying with exponential backoff
+        const delay = getRetryDelay(attempt)
+        await sleep(delay)
+      }
+    }
+  }
+
+  return result
+}
+
+/**
+ * Convert a single file with retry logic (free mode)
+ */
+async function convertFileWithRetryLocal(
+  file: File,
+  geminiApiKey: string | null,
+  markerOptions: MarkerOptions,
+  maxRetries: number,
+  signal?: AbortSignal
+): Promise<FileConversionResult> {
+  const result: FileConversionResult = {
+    file,
+    filename: file.name,
+    status: 'processing',
+    attempts: 0,
+    startTime: Date.now()
+  }
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (signal?.aborted) {
+      result.status = 'failed'
+      result.error = 'Conversion cancelled'
+      break
+    }
+
+    result.attempts = attempt + 1
+
+    try {
+      // Forward abort signal to individual conversion
+      const conversionResult = await convertPdfToMarkdownLocal(file, geminiApiKey, markerOptions, undefined, signal)
 
       if (conversionResult.success && conversionResult.markdown) {
         result.markdown = conversionResult.markdown
@@ -269,13 +340,199 @@ export async function convertBatchPdfToMarkdown(
   const completed = results.filter(r => r.status === 'complete')
   const failed = results.filter(r => r.status === 'failed')
 
-  // If all conversions failed, return early
+  // If all conversions failed, return early with detailed error info
   if (completed.length === 0) {
+    // Collect error messages from failed conversions
+    const errorMessages = failed
+      .map(r => r.error)
+      .filter((msg): msg is string => !!msg)
+      .slice(0, 3) // Show first 3 errors
+    
+    const errorSummary = errorMessages.length > 0
+      ? `All conversions failed. Errors: ${errorMessages.join('; ')}${failed.length > 3 ? ` (and ${failed.length - 3} more)` : ''}`
+      : 'All conversions failed'
+    
     return {
       success: false,
       completed: [],
       failed: results,
-      error: 'All conversions failed'
+      error: errorSummary
+    }
+  }
+
+  // Create ZIP file with successful conversions
+  try {
+    // Dynamically import JSZip (client-side only library)
+    // Handle both ESM and CommonJS module formats
+    const JSZipModule = await import('jszip')
+    const JSZip = JSZipModule.default || JSZipModule
+    const zip = new JSZip()
+
+    for (const result of completed) {
+      if (result.markdown) {
+        const outputFilename = replaceExtension(result.filename, 'md')
+        zip.file(outputFilename, result.markdown)
+      }
+    }
+
+    // Generate ZIP blob
+    const zipBlob = await zip.generateAsync({
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 }
+    })
+
+    return {
+      success: true,
+      completed,
+      failed,
+      zipBlob
+    }
+  } catch (error) {
+    return {
+      success: false,
+      completed,
+      failed,
+      error: `Failed to create ZIP: ${error instanceof Error ? error.message : 'Unknown error'}`
+    }
+  }
+}
+
+/**
+ * Convert multiple PDF files to markdown in parallel with retry logic (free mode)
+ * Uses Modal serverless GPU instead of Marker API
+ */
+export async function convertBatchPdfToMarkdownLocal(
+  files: File[],
+  options: BatchConversionOptionsLocal
+): Promise<BatchConversionResult> {
+  const {
+    geminiApiKey,
+    markerOptions,
+    maxConcurrent = 10, // Lower concurrency for free mode (Modal GPU limits)
+    maxRetries = MARKER_CONFIG.BATCH.MAX_RETRIES,
+    onProgress,
+    signal
+  } = options
+
+  // Initialize results array
+  const results: FileConversionResult[] = files.map(file => ({
+    file,
+    filename: file.name,
+    status: 'pending' as FileConversionStatus,
+    attempts: 0
+  }))
+
+  // Track progress
+  const progress: BatchProgress = {
+    total: files.length,
+    completed: 0,
+    failed: 0,
+    inProgress: 0,
+    results
+  }
+
+  // Update progress helper
+  const updateProgress = () => {
+    onProgress?.(progress)
+  }
+
+  // Create file-to-index map for O(1) lookups instead of O(n) indexOf
+  const fileIndexMap = new Map(files.map((file, index) => [file, index]))
+
+  // Queue of files to process
+  const queue = [...files]
+  const inProgress = new Set<Promise<void>>()
+
+  // Process files with concurrency control
+  while (queue.length > 0 || inProgress.size > 0) {
+    // Check if cancelled
+    if (signal?.aborted) {
+      break
+    }
+
+    // Start new conversions up to concurrency limit
+    while (queue.length > 0 && inProgress.size < maxConcurrent) {
+      const file = queue.shift()!
+      const resultIndex = fileIndexMap.get(file)!
+
+      // Mark as in progress
+      results[resultIndex].status = 'processing'
+      progress.inProgress++
+      updateProgress()
+
+      // Start conversion - create wrapper function to handle cleanup
+      const conversionPromise = (async () => {
+        try {
+          const result = await convertFileWithRetryLocal(
+            file,
+            geminiApiKey,
+            markerOptions,
+            maxRetries,
+            signal
+          )
+
+          // Update result
+          results[resultIndex] = result
+
+          // Update counters
+          progress.inProgress--
+          if (result.status === 'complete') {
+            progress.completed++
+          } else if (result.status === 'failed') {
+            progress.failed++
+          }
+
+          updateProgress()
+        } catch (error) {
+          // Handle unexpected errors
+          results[resultIndex].status = 'failed'
+          results[resultIndex].error = error instanceof Error ? error.message : 'Unknown error'
+          progress.inProgress--
+          progress.failed++
+          updateProgress()
+        }
+      })()
+
+      // Add to tracking set
+      inProgress.add(conversionPromise)
+
+      // Remove from tracking when complete
+      conversionPromise.finally(() => {
+        inProgress.delete(conversionPromise)
+      })
+    }
+
+    // Wait for at least one conversion to complete before continuing
+    if (inProgress.size > 0) {
+      await Promise.race(inProgress)
+    }
+  }
+
+  // Wait for all remaining conversions to complete
+  await Promise.all(inProgress)
+
+  // Separate completed and failed results
+  const completed = results.filter(r => r.status === 'complete')
+  const failed = results.filter(r => r.status === 'failed')
+
+  // If all conversions failed, return early with detailed error info
+  if (completed.length === 0) {
+    // Collect error messages from failed conversions
+    const errorMessages = failed
+      .map(r => r.error)
+      .filter((msg): msg is string => !!msg)
+      .slice(0, 3) // Show first 3 errors
+    
+    const errorSummary = errorMessages.length > 0
+      ? `All conversions failed. Errors: ${errorMessages.join('; ')}${failed.length > 3 ? ` (and ${failed.length - 3} more)` : ''}`
+      : 'All conversions failed'
+    
+    return {
+      success: false,
+      completed: [],
+      failed: results,
+      error: errorSummary
     }
   }
 

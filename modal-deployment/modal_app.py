@@ -264,10 +264,11 @@ def create_app():
         }
         save_job(request_id, job_data)
         
-        # Start conversion in background using asyncio.create_task (better for FastAPI)
+        # Start conversion in background using asyncio.create_task
+        # Modal's spawn() returns a handle that we need to await properly
         async def run_conversion_async():
             try:
-                # Spawn the conversion (non-blocking)
+                # Spawn the conversion (non-blocking, returns immediately)
                 call = convert_pdf.spawn(
                     pdf_bytes=content,
                     filename=file.filename,
@@ -277,8 +278,12 @@ def create_app():
                     extract_images=not disable_image_extraction_bool,
                 )
                 
-                # Wait for result (this will block the async task, not the endpoint)
-                result = await asyncio.to_thread(call.get)
+                # Wait for result in a thread pool (call.get() is blocking)
+                # This ensures the conversion actually runs
+                import concurrent.futures
+                loop = asyncio.get_event_loop()
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    result = await loop.run_in_executor(executor, call.get)
                 
                 # Update job data
                 job_data = load_job(request_id) or {"status": "processing"}
@@ -299,8 +304,13 @@ def create_app():
                 job_data["error"] = f"Conversion error: {str(e)}"
                 save_job(request_id, job_data)
         
-        # Start async task (non-blocking, better than threading for FastAPI)
-        asyncio.create_task(run_conversion_async())
+        # Start async task (non-blocking, runs in background)
+        # Store the task to prevent garbage collection
+        task = asyncio.create_task(run_conversion_async())
+        # Keep reference to prevent task from being garbage collected
+        if not hasattr(web_app.state, 'background_tasks'):
+            web_app.state.background_tasks = []
+        web_app.state.background_tasks.append(task)
         
         # Return immediately with request_id for polling
         return JSONResponse(content={
