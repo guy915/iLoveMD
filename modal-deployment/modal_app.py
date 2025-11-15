@@ -78,33 +78,44 @@ def convert_pdf(
         # Write PDF bytes to file
         input_file.write_bytes(pdf_bytes)
 
-        # Use Marker Python API directly instead of CLI
-        from marker.convert import convert_single_pdf
-        from marker.models import load_all_models
+        # Use Marker Python API directly (as per official README)
+        from marker.converters.pdf import PdfConverter
+        from marker.models import create_model_dict
+        from marker.output import text_from_rendered
+        from marker.config.parser import ConfigParser
         
-        # Load models (this is cached, so it's fast on subsequent calls)
-        model_lst = load_all_models()
+        # Create configuration
+        config_dict = {
+            "output_format": output_format,
+        }
         
-        # Convert PDF using Python API
-        # The API returns a dictionary with the markdown content
-        full_text, images, out_meta = convert_single_pdf(
-            str(input_file),
-            model_lst,
-            output_format=output_format,
-            langs=langs.split(",") if langs else None,
-            batch_multiplier=1,
-            no_image_extraction=not extract_images,
+        if not extract_images:
+            config_dict["disable_image_extraction"] = True
+        
+        if paginate:
+            config_dict["paginate_output"] = True
+        
+        if langs:
+            config_dict["langs"] = langs.split(",") if "," in langs else [langs]
+        
+        config_parser = ConfigParser(config_dict)
+        
+        # Create converter with models
+        converter = PdfConverter(
+            artifact_dict=create_model_dict(),
+            config=config_parser.generate_config_dict(),
+            processor_list=config_parser.get_processors(),
+            renderer=config_parser.get_renderer(),
         )
         
-        # Get markdown content
-        if output_format == "markdown":
-            markdown_content = full_text
-        else:
-            # For other formats, full_text might be in different format
-            markdown_content = str(full_text)
-
-        # Use metadata from API response
-        metadata = out_meta if out_meta else {}
+        # Convert PDF
+        rendered = converter(str(input_file))
+        
+        # Extract text and images from rendered output
+        markdown_content, _, images = text_from_rendered(rendered)
+        
+        # Get metadata from rendered object
+        metadata = rendered.metadata if hasattr(rendered, 'metadata') else {}
 
         return {
             "success": True,
