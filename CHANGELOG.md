@@ -8,6 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Code Cleanup - Removed Unused Code and Duplicate Functions** (2025-11-15):
+  - **Removed duplicate code**:
+    - Removed duplicate `formatFileSize()` function from merge-markdown page, now imports from @/lib/utils/formatUtils
+    - Ensures consistent file size formatting across the application
+  - **Removed unused exports** (test-only functions no longer needed in production):
+    - Removed `validateApiKey()` and `validatePdfFile()` from markerApiService.ts
+    - Removed `validateBatchFiles()` from batchConversionService.ts
+    - Removed `clear()` and `hasItem()` from storageService.ts
+    - Removed `isApiError()` type guard from types/index.ts
+  - **Updated tests**:
+    - Removed 23 test cases for deleted validation functions (no longer testing internal utilities)
+    - Updated 3 test cases to use `getItem() !== null` instead of removed `hasItem()`
+    - Fixed file size display test to match formatFileSize output format (1.21 KB vs 1.2 KB)
+    - Test count reduced from 419 to 389 tests (removed test-only function tests)
+  - **Files Modified**:
+    - Updated: src/app/merge-markdown/page.tsx (removed duplicate formatFileSize, added import from utils)
+    - Updated: src/lib/services/markerApiService.ts (removed validateApiKey, validatePdfFile)
+    - Updated: src/lib/services/batchConversionService.ts (removed validateBatchFiles)
+    - Updated: src/lib/services/storageService.ts (removed clear, hasItem)
+    - Updated: src/types/index.ts (removed isApiError)
+    - Updated: src/lib/services/markerApiService.test.ts (removed validation tests, updated comments)
+    - Updated: src/lib/services/batchConversionService.test.ts (removed validateBatchFiles tests)
+    - Updated: src/lib/services/storageService.test.ts (removed clear/hasItem tests, updated real-world tests)
+    - Updated: src/app/merge-markdown/page.test.tsx (fixed file size format expectation)
+  - **Test Results**:
+    - Before: 419 tests (88 failing due to missing functions)
+    - After: 389 tests (383 passing, 6 skipped)
+    - Coverage maintained above 70% threshold
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (383 passed, 6 skipped)
+
 - **Handle Duplicate Filenames in Batch Processing** (2025-11-15):
   - **Changed behavior**: Users can now upload multiple PDFs with the same filename (from different folders)
   - **Auto-rename with numerical suffixes**: Duplicates automatically renamed like browsers do
