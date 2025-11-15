@@ -1,5 +1,5 @@
 {
-  "name": "ai-doc-prep",
+  "name": "ilovellm",
   "version": "0.1.0",
   "private": true,
   "description": "A web application for preparing documents for LLMs and RAG. Converts PDFs to markdown, HTML to markdown, and merges markdown files.",
@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/guy915/AI-Doc-Prep.git"
+    "url": "https://github.com/guy915/iLoveLLM.git"
   },
   "scripts": {
     "dev": "next dev",

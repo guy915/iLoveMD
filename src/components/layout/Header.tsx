@@ -91,7 +91,7 @@ export default function Header() {
               className="flex items-center gap-2 font-semibold text-lg"
               onClick={() => addLog('info', 'Logo clicked - Navigating to home')}
             >
-              AI Doc Prep
+              iLoveLLM
             </Link>
             <GlobalDiagnosticPanel />
           </div>
