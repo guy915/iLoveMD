@@ -1,0 +1,11 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left document -->
+  <path d="M10 15C10 13.3431 11.3431 12 13 12H28L36 20V58C36 59.6569 34.6569 61 33 61H13C11.3431 61 10 59.6569 10 58V15Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
+
+  <!-- Right document -->
+  <path d="M44 22C44 20.3431 45.3431 19 47 19H62L70 27V65C70 66.6569 68.6569 68 67 68H47C45.3431 68 44 66.6569 44 65V22Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
+
+  <!-- Arrows indicating merge -->
+  <path d="M30 35L40 40L30 45" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M50 42L40 40L50 38" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -41,13 +41,15 @@ export const NAV_LINKS: readonly NavLink[] = [
 export const TOOL_CARDS: readonly ToolCard[] = [
   {
     title: 'PDF to Markdown',
-    description: 'Convert PDF documents to clean, LLM-optimized markdown using Marker AI. Supports complex layouts, tables, equations, and optional OCR for scanned documents.',
+    description: 'Convert PDF files to clean markdown optimized for LLMs',
     href: '/pdf-to-markdown',
+    icon: '/pdf-icon.svg',
   },
   {
     title: 'Merge Markdown',
-    description: 'Combine multiple markdown files into one. Drag to reorder, customize separators, and optionally generate a table of contents.',
+    description: 'Combine multiple markdown files into a single file',
     href: '/merge-markdown',
+    icon: '/merge-icon.svg',
   },
 ] as const
 
