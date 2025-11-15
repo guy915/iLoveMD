@@ -27,9 +27,6 @@ image = (
 # Create volume for storing temporary files
 volume = modal.Volume.from_name("marker-temp", create_if_missing=True)
 
-# In-memory job storage (Modal containers are ephemeral, but this works for short-term)
-jobs: Dict[str, Dict[str, Any]] = {}
-
 # Define the conversion function
 @app.function(
     image=image,
@@ -155,8 +152,43 @@ def convert_pdf(
 def create_app():
     from fastapi import FastAPI, File, UploadFile, Form
     from fastapi.responses import JSONResponse
+    import asyncio
     
     web_app = FastAPI()
+    
+    # In-memory job storage for this app instance
+    app_jobs: Dict[str, Dict[str, Any]] = {}
+    
+    async def run_conversion_async(
+        request_id: str,
+        pdf_bytes: bytes,
+        filename: str,
+        output_format: str,
+        langs: Optional[str],
+        paginate: bool,
+        extract_images: bool,
+    ):
+        """Run conversion asynchronously and update job status"""
+        try:
+            # Call the GPU conversion function
+            result = convert_pdf.remote(
+                pdf_bytes=pdf_bytes,
+                filename=filename,
+                output_format=output_format,
+                langs=langs,
+                paginate=paginate,
+                extract_images=extract_images,
+            )
+            
+            if result.get("success"):
+                app_jobs[request_id]["status"] = "complete"
+                app_jobs[request_id]["markdown"] = result.get("markdown", "")
+            else:
+                app_jobs[request_id]["status"] = "error"
+                app_jobs[request_id]["error"] = result.get("error", "Conversion failed")
+        except Exception as e:
+            app_jobs[request_id]["status"] = "error"
+            app_jobs[request_id]["error"] = f"Conversion error: {str(e)}"
     
     @web_app.post("/marker")
     async def marker_endpoint(
@@ -200,7 +232,7 @@ def create_app():
         
         # Store job info (in-memory for now - Modal containers are ephemeral)
         # In production, you'd use Modal Volumes or a database
-        jobs[request_id] = {
+        app_jobs[request_id] = {
             "status": "processing",
             "filename": file.filename,
         }
@@ -213,7 +245,6 @@ def create_app():
         disable_image_extraction_bool = str_to_bool(disable_image_extraction)
         
         # Start conversion asynchronously (non-blocking)
-        import asyncio
         asyncio.create_task(
             run_conversion_async(
                 request_id,
@@ -239,20 +270,20 @@ def create_app():
         """Check conversion status"""
         from fastapi import HTTPException
         
-        if request_id not in jobs:
+        if request_id not in app_jobs:
             raise HTTPException(status_code=404, detail="Request ID not found")
         
-        job = jobs[request_id]
+        job = app_jobs[request_id]
         response = {"status": job["status"]}
         
         if job["status"] == "complete":
             response["markdown"] = job["markdown"]
             # Clean up after retrieval
-            del jobs[request_id]
+            del app_jobs[request_id]
         elif job["status"] == "error":
             response["error"] = job["error"]
             # Clean up after error retrieval
-            del jobs[request_id]
+            del app_jobs[request_id]
         
         return response
     
@@ -268,38 +299,6 @@ def create_app():
         }
     
     return web_app
-
-
-async def run_conversion_async(
-    request_id: str,
-    pdf_bytes: bytes,
-    filename: str,
-    output_format: str,
-    langs: Optional[str],
-    paginate: bool,
-    extract_images: bool,
-):
-    """Run conversion asynchronously and update job status"""
-    try:
-        # Call the GPU conversion function
-        result = convert_pdf.remote(
-            pdf_bytes=pdf_bytes,
-            filename=filename,
-            output_format=output_format,
-            langs=langs,
-            paginate=paginate,
-            extract_images=extract_images,
-        )
-        
-        if result.get("success"):
-            jobs[request_id]["status"] = "complete"
-            jobs[request_id]["markdown"] = result.get("markdown", "")
-        else:
-            jobs[request_id]["status"] = "error"
-            jobs[request_id]["error"] = result.get("error", "Conversion failed")
-    except Exception as e:
-        jobs[request_id]["status"] = "error"
-        jobs[request_id]["error"] = f"Conversion error: {str(e)}"
 
 
 # Local testing
