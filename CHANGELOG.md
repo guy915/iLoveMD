@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Removed Hardcoded Marker API Key and Restored Persistence** (2025-11-15):
+  - **Removed prefilled test API key**:
+    - Changed Marker API key initialization from hardcoded test key to empty string
+    - Users must now provide their own API key (matches Gemini API key behavior)
+  - **Implemented API key persistence**:
+    - Added loading Marker API key from localStorage on component mount
+    - Added saving Marker API key to localStorage whenever it changes
+    - API key now persists across browser sessions (matches Gemini API key behavior)
+  - **Why this change**:
+    - Eliminates confusion from prefilled test key
+    - Provides consistent behavior between Marker and Gemini API keys
+    - Users can save their own keys for convenience
+  - **Files Modified**:
+    - Updated: `src/app/pdf-to-markdown/page.tsx`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped)
+
 - **Updated Header Navigation Links** (2025-11-14):
   - **Replaced old navigation links** with new structure:
     - Removed: Help, About pages

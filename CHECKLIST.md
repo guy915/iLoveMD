@@ -437,6 +437,22 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-15 - Remove Hardcoded Marker API Key and Restore Persistence
+- **Changed**:
+  - Removed hardcoded test API key from Marker API key initialization (changed to empty string)
+  - Added loading Marker API key from localStorage on component mount
+  - Added saving Marker API key to localStorage whenever it changes
+  - API key now persists across browser sessions (matches Gemini API key behavior)
+- **Why**:
+  - User requested to remove prefilled test key
+  - Provides consistent behavior between Marker and Gemini API keys
+  - Eliminates confusion from hardcoded test key
+  - Users can save their own keys for convenience
+- **Impact**: Users must now provide their own Marker API key, but it will persist across sessions
+- **Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
+- **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md, CLAUDE.md
+
 ### 2025-11-13 - Diagnostics Panel Scroll Leak Fix
 - **Fixed**:
   - Page no longer scrolls while scrolling within diagnostics panel
