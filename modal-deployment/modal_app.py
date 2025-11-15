@@ -115,10 +115,10 @@ def convert_pdf(
         
         # Create converter with models - use lock + random delay to prevent concurrent initialization
         # 1. Threading lock prevents concurrent init within same container
-        # 2. Random delay (0-2s) staggers cold starts across multiple containers
+        # 2. Random delay (0-5s) staggers cold starts across multiple containers
         # This fixes the "Cannot copy out of meta tensor" error when multiple requests initialize models simultaneously
-        # Add small random delay to stagger cold starts (prevents all containers from hitting model init at exact same time)
-        time.sleep(random.uniform(0, 2.0))
+        # Longer delay range ensures better staggering when multiple containers start simultaneously
+        time.sleep(random.uniform(0, 5.0))
         
         with _model_init_lock:
             artifact_dict = create_model_dict()
