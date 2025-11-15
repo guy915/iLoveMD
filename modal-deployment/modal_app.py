@@ -36,7 +36,7 @@ job_storage_volume = modal.Volume.from_name("marker-jobs", create_if_missing=Tru
     gpu="T4",  # Use NVIDIA T4 GPU (~$2/hour, scales to zero when idle)
     timeout=1800,  # 30 minute timeout per conversion (Marker can be slow for complex PDFs)
     volumes={"/tmp/marker": volume},
-    scaledown_window=3600,  # Keep containers alive for 1 hour after last use (free, helps with session-based usage)
+    scaledown_window=900,  # Keep containers alive for 15 minutes after last use (covers typical sessions, you pay for GPU time during this period)
 )
 @modal.concurrent(max_inputs=10)  # Handle up to 10 concurrent requests
 def convert_pdf(
@@ -159,7 +159,7 @@ def convert_pdf(
 @app.function(
     image=image,
     volumes={"/tmp/marker-jobs": job_storage_volume},
-    scaledown_window=3600,  # Keep containers alive for 1 hour after last use (free, helps with session-based usage)
+    scaledown_window=900,  # Keep containers alive for 15 minutes after last use (covers typical sessions, you pay for GPU time during this period)
 )
 @modal.asgi_app()
 def create_app():
