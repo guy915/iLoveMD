@@ -1,11 +1,11 @@
 <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Left document -->
-  <path d="M10 15C10 13.3431 11.3431 12 13 12H28L36 20V58C36 59.6569 34.6569 61 33 61H13C11.3431 61 10 59.6569 10 58V15Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
+  <!-- Left document - slightly larger -->
+  <path d="M8 14C8 12.3431 9.34315 11 11 11H28L37 20V59C37 60.6569 35.6569 62 34 62H11C9.34315 62 8 60.6569 8 59V14Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
 
-  <!-- Right document -->
-  <path d="M44 22C44 20.3431 45.3431 19 47 19H62L70 27V65C70 66.6569 68.6569 68 67 68H47C45.3431 68 44 66.6569 44 65V22Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
+  <!-- Right document - slightly larger -->
+  <path d="M43 21C43 19.3431 44.3431 18 46 18H63L72 27V66C72 67.6569 70.6569 69 69 69H46C44.3431 69 43 67.6569 43 66V21Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
 
-  <!-- X-shaped lines in the middle -->
-  <line x1="32" y1="34" x2="48" y2="46" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="32" y1="46" x2="48" y2="34" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- X-shaped lines in the middle - longer lines -->
+  <line x1="30" y1="32" x2="50" y2="48" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="30" y1="48" x2="50" y2="32" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
 </svg>
