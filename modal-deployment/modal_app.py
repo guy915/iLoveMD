@@ -10,8 +10,14 @@ GPU usage is pay-per-second, only when processing.
 import modal
 import os
 import uuid
+import threading
+import time
+import random
 from pathlib import Path
 from typing import Optional, Dict, Any
+
+# Lock to prevent concurrent model initialization within a container (fixes meta tensor error)
+_model_init_lock = threading.Lock()
 
 # Create Modal app
 app = modal.App("marker-pdf-converter")
@@ -107,9 +113,18 @@ def convert_pdf(
         
         config_parser = ConfigParser(config_dict)
         
-        # Create converter with models
+        # Create converter with models - use lock + random delay to prevent concurrent initialization
+        # 1. Threading lock prevents concurrent init within same container
+        # 2. Random delay (0-2s) staggers cold starts across multiple containers
+        # This fixes the "Cannot copy out of meta tensor" error when multiple requests initialize models simultaneously
+        # Add small random delay to stagger cold starts (prevents all containers from hitting model init at exact same time)
+        time.sleep(random.uniform(0, 2.0))
+        
+        with _model_init_lock:
+            artifact_dict = create_model_dict()
+        
         converter = PdfConverter(
-            artifact_dict=create_model_dict(),
+            artifact_dict=artifact_dict,
             config=config_parser.generate_config_dict(),
             processor_list=config_parser.get_processors(),
             renderer=config_parser.get_renderer(),
