@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added loading Marker API key from localStorage on component mount
     - Added saving Marker API key to localStorage whenever it changes
     - API key now persists across browser sessions (matches Gemini API key behavior)
+  - **Added automatic migration**:
+    - One-time migration detects and removes old test key from localStorage
+    - Prevents old cached test key from persisting after code update
+    - Users see empty field on first load after update
   - **Why this change**:
     - Eliminates confusion from prefilled test key
     - Provides consistent behavior between Marker and Gemini API keys

@@ -443,12 +443,14 @@ Track your progress through each implementation phase. Update checkboxes as you 
   - Added loading Marker API key from localStorage on component mount
   - Added saving Marker API key to localStorage whenever it changes
   - API key now persists across browser sessions (matches Gemini API key behavior)
+  - Added one-time migration to detect and remove old test key from localStorage
 - **Why**:
   - User requested to remove prefilled test key
   - Provides consistent behavior between Marker and Gemini API keys
   - Eliminates confusion from hardcoded test key
   - Users can save their own keys for convenience
-- **Impact**: Users must now provide their own Marker API key, but it will persist across sessions
+  - Migration prevents old cached test key from persisting after update
+- **Impact**: Users must now provide their own Marker API key, but it will persist across sessions. On first load after update, the old test key is automatically removed.
 - **Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
 - **Files Modified**: 1 (src/app/pdf-to-markdown/page.tsx)
 - **Documentation Updated**: CHANGELOG.md, CHECKLIST.md, CLAUDE.md
