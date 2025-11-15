@@ -191,8 +191,9 @@ def create_app():
                 extract_images=extract_images,
             )
             
-            # Wait for the result asynchronously
-            result = await call
+            # Get the result (spawn returns a ModalFunctionCall which we can await)
+            # Note: This will block until the function completes, but it's in a background task
+            result = call.get()
             
             if result.get("success"):
                 app_jobs[request_id]["status"] = "complete"
