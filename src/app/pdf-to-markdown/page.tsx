@@ -335,30 +335,48 @@ export default function PdfToMarkdownPage() {
 
       if (isBatch) {
         // Batch conversion
-        // NOTE: Batch mode only supports cloud API for now (local batch will be added in future PR if needed)
-        if (mode === 'free') {
-          throw new Error('Batch conversion is not yet supported in free mode. Please switch to Paid mode or convert files individually.')
-        }
-
         setStatus('Processing batch...')
 
         // Dynamically import batch service
-        const { convertBatchPdfToMarkdown } = await import('@/lib/services/batchConversionService')
+        const { convertBatchPdfToMarkdown, convertBatchPdfToMarkdownLocal } = await import('@/lib/services/batchConversionService')
 
-        const result = await convertBatchPdfToMarkdown(files, {
-          apiKey,
-          markerOptions: options,
-          onProgress: (progress) => {
-            if (isMountedRef.current) {
-              setBatchProgress(progress)
-              setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
-            }
-          },
-          signal: abortControllerRef.current.signal
-        })
+        const result = mode === 'paid'
+          ? await convertBatchPdfToMarkdown(files, {
+              apiKey,
+              markerOptions: options,
+              onProgress: (progress) => {
+                if (isMountedRef.current) {
+                  setBatchProgress(progress)
+                  setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+                }
+              },
+              signal: abortControllerRef.current.signal
+            })
+          : await convertBatchPdfToMarkdownLocal(files, {
+              geminiApiKey: options.use_llm ? geminiApiKey : null,
+              markerOptions: options,
+              onProgress: (progress: BatchProgress) => {
+                if (isMountedRef.current) {
+                  setBatchProgress(progress)
+                  setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+                }
+              },
+              signal: abortControllerRef.current.signal
+            })
 
         if (!result.success || !result.zipBlob) {
-          throw new Error(result.error || 'Batch conversion failed')
+          // Show detailed error message including failed file count
+          const errorMsg = result.error || 'Batch conversion failed'
+          const failedCount = result.failed?.length || 0
+          const totalCount = files.length
+          
+          if (failedCount > 0 && failedCount < totalCount) {
+            // Partial success - some files converted
+            throw new Error(`${errorMsg}. ${result.completed?.length || 0}/${totalCount} files converted successfully.`)
+          } else {
+            // All failed
+            throw new Error(errorMsg)
+          }
         }
 
         // Generate ZIP filename
@@ -994,7 +1012,9 @@ export default function PdfToMarkdownPage() {
               Free tier covers ~100-200 PDFs/month, no API key required!
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              <strong>Note:</strong> Batch conversion is not yet supported in free mode. Please convert files individually or switch to Paid mode for batch processing.
+              <strong>Batch Processing:</strong> Select multiple files or folders for automatic batch conversion.
+              Output is a ZIP file containing all converted markdowns.
+              Free mode processes up to 10 files concurrently (slower but free).
             </p>
           </>
         )}
