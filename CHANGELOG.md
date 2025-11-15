@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Handle Duplicate Filenames in Batch Processing** (2025-11-15):
+  - **Changed behavior**: Users can now upload multiple PDFs with the same filename (from different folders)
+  - **Auto-rename with numerical suffixes**: Duplicates automatically renamed like browsers do
+    - First file: `PDF1.pdf` → `PDF1.md`
+    - Second file: `PDF1.pdf` → `PDF1 (1).md`
+    - Third file: `PDF1.pdf` → `PDF1 (2).md`
+  - **Diagnostic logging**: Shows when files are renamed (e.g., "Renamed duplicate file: 'PDF1.pdf' → 'PDF1 (1).md'")
+  - **User benefits**:
+    - Can upload PDFs with same name from different directories without losing files
+    - Can intentionally upload the same PDF multiple times if desired
+    - No more silent duplicate removal - all files are processed
+    - Clear visibility into renames via diagnostic logs
+  - **Files Modified**:
+    - Updated: src/app/pdf-to-markdown/page.tsx (added filenameMap state, generateUniqueFilename function, updated file selection logic)
+    - Updated: src/lib/services/batchConversionService.ts (added filenameMap parameter to BatchConversionOptions, uses custom filenames when creating ZIP)
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped) | Coverage: 72.84%
+
 - **Complete Remaining Checklist Items** (2025-11-15):
   - **Completed all automated testing and validation tasks** from Phase 5:
     - Ran full test suite: 413 tests passing, 6 skipped (73.09% coverage exceeds 70% threshold)
