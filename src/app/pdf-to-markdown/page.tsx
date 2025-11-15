@@ -966,11 +966,26 @@ export default function PdfToMarkdownPage() {
               {processing && (
                 <span className="text-blue-600 animate-spin text-2xl">⟳</span>
               )}
-            <p className="text-base font-semibold text-gray-900">
-              {batchProgress && processing
-                ? `Converting ${batchProgress.completed}/${batchProgress.total} files`
-                : status}
-            </p>
+              <p className="text-base font-semibold text-gray-900">
+                {batchProgress && processing
+                  ? `Converting ${batchProgress.completed}/${batchProgress.total} files`
+                  : status}
+              </p>
+            </div>
+            {processing && (
+              <button
+                onClick={() => {
+                  if (abortControllerRef.current) {
+                    abortControllerRef.current.abort()
+                    setStatus('Cancelling...')
+                    setProcessing(false)
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                Cancel
+              </button>
+            )}
           </div>
           {batchProgress && batchProgress.failed > 0 && (
             <p className="text-sm text-red-600 ml-11 mt-2">Failed: {batchProgress.failed}</p>
