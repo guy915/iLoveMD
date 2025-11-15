@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Local Marker Server - Simple HTTP server that runs Marker CLI commands
+Modal Server - Simple HTTP server that runs Marker CLI commands
 
 This server receives PDF files from the website and runs marker_single CLI commands.
 No Docker required - just install marker-pdf via pip.
@@ -27,7 +27,7 @@ from fastapi.responses import JSONResponse
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Local Marker Server",
+    title="Modal Server",
     description="Simple server for running Marker CLI locally",
     version="1.0.0"
 )
@@ -61,7 +61,7 @@ async def root():
     """Health check."""
     return {
         "status": "online",
-        "service": "Local Marker Server",
+        "service": "Modal Server",
         "active_jobs": len(jobs)
     }
 
@@ -225,11 +225,11 @@ if __name__ == "__main__":
     import uvicorn
 
     print("\n" + "="*60)
-    print("🚀 Local Marker Server Starting...")
+    print("🚀 Modal Server Starting...")
     print("="*60)
     print("📍 Server: http://localhost:8000")
     print("🌐 Website: http://localhost:3000")
-    print("📝 Select 'Local Marker' mode in the website")
+    print("📝 Select 'Modal' mode in the website")
     print("✅ Keep this terminal open!")
     print("🛑 Press Ctrl+C to stop")
     print("="*60 + "\n")

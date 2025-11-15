@@ -679,13 +679,13 @@ describe('markerApiService', () => {
     it('should throw error if response is not ok', async () => {
       fetchMock.mockResolvedValue({
         ok: false,
-        json: async () => ({ success: false, error: 'Local Marker instance not running' }),
+        json: async () => ({ success: false, error: 'Modal instance not running' }),
       })
 
       const file = createMockFile('test.pdf', 1024)
 
       await expect(submitPdfConversionLocal(file, null, defaultOptions))
-        .rejects.toThrow('Local Marker instance not running')
+        .rejects.toThrow('Modal instance not running')
     })
 
     it('should throw generic error if no error message provided', async () => {
@@ -760,7 +760,7 @@ describe('markerApiService', () => {
       expect(result.markdown).toBe('# Local Converted Content')
     })
 
-    it('should handle error status from local Marker', async () => {
+    it('should handle error status from Modal', async () => {
       fetchMock.mockResolvedValue({
         ok: false,
         json: async () => ({
@@ -980,7 +980,7 @@ describe('markerApiService', () => {
       expect(result.error).toBe('Conversion timeout. Please try again.')
     })
 
-    it('should handle error status from local Marker', async () => {
+    it('should handle error status from Modal', async () => {
       const file = createMockFile('test.pdf', 1024)
 
       fetchMock.mockResolvedValueOnce({
@@ -998,7 +998,7 @@ describe('markerApiService', () => {
       const result = await promise
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Conversion failed on local Marker')
+      expect(result.error).toBe('Conversion failed on Modal')
     })
 
     it('should handle missing check URL from submit', async () => {
@@ -1012,7 +1012,7 @@ describe('markerApiService', () => {
       const result = await convertPdfToMarkdownLocal(file, null, defaultOptions)
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('No status check URL returned from local Marker')
+      expect(result.error).toBe('No status check URL returned from Modal')
     })
 
     it('should handle missing markdown in complete response', async () => {
@@ -1033,7 +1033,7 @@ describe('markerApiService', () => {
       const result = await promise
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('No content received from local Marker')
+      expect(result.error).toBe('No content received from Modal')
     })
 
     it('should catch and return errors from submit', async () => {
