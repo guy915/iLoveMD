@@ -1,6 +1,6 @@
 # Assets Directory
 
-This directory contains static assets and test files for the AI Doc Prep project.
+This directory contains static assets and test files for the iLoveLLM project.
 
 ## Structure
 
@@ -15,7 +15,7 @@ assets/
 ### sample.pdf
 - **Purpose:** Development and testing of PDF to Markdown conversion
 - **Size:** 572 bytes (1 page)
-- **Content:** Simple text "This is a test PDF for AI Doc Prep"
+- **Content:** Simple text "This is a test PDF for iLoveLLM"
 - **Use:** Quick testing without needing to upload large files
 
 ## Usage

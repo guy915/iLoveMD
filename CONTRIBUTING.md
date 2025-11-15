@@ -1,4 +1,4 @@
-# Contributing to AI Doc Prep
+# Contributing to iLoveLLM
 
 ## Table of Contents
 
@@ -23,8 +23,8 @@
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/AI-Doc-Prep.git
-   cd AI-Doc-Prep
+   git clone https://github.com/YOUR_USERNAME/iLoveLLM.git
+   cd iLoveLLM
    ```
 
 3. **Install dependencies**:
