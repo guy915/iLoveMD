@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Added Favicon and Logo** (2025-11-15):
+  - **Added custom favicon and logo**:
+    - Created public folder for static assets
+    - Added favicon.png (29KB PNG file)
+    - Added logo.svg (3KB SVG file)
+  - **Updated favicon configuration**:
+    - Added favicon reference in layout.tsx metadata
+    - Favicon now appears in browser tabs
+  - **Replaced text with logo**:
+    - Header component now displays logo SVG instead of "iLoveLLM" text
+    - Home page hero section now displays logo SVG instead of h1 text
+    - Both use Next.js Image component for optimization
+  - **Files Modified**:
+    - Created: public/favicon.png, public/logo.svg
+    - Updated: src/app/layout.tsx, src/components/layout/Header.tsx, src/app/page.tsx
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped)
+
 ### Changed
 - **Renamed "Local Marker" to "Modal" Throughout Codebase** (2025-11-15):
   - **Updated all references to free mode**:

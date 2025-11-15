@@ -437,6 +437,29 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-15 - Add Favicon and Logo
+- **Added**:
+  - Created public folder for static assets
+  - Added favicon.png (29KB PNG file) uploaded by user
+  - Added logo.svg (3KB SVG file) uploaded by user
+  - Added favicon configuration in layout.tsx metadata (icons.icon property)
+  - Replaced "iLoveLLM" text with logo SVG in Header component using Next.js Image
+  - Replaced h1 text with logo SVG in home page hero section using Next.js Image
+- **Why**:
+  - User uploaded custom favicon and logo files to root directory
+  - Requested to update website favicon and replace text branding with logo
+  - Improves brand consistency and professional appearance
+- **Technical**:
+  - Created /public directory (Next.js convention for static assets)
+  - Copied favicon and logo from root to public folder
+  - Used Next.js Image component with priority flag for above-the-fold images
+  - Logo dimensions: 120x40 in header, 300x100 on home page
+- **Impact**: Website now has custom favicon in browser tabs and logo branding in header and home page
+- **Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
+- **Files Created**: 2 (public/favicon.png, public/logo.svg)
+- **Files Modified**: 3 (src/app/layout.tsx, src/components/layout/Header.tsx, src/app/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-15 - Remove Hardcoded Marker API Key and Restore Persistence
 - **Changed**:
   - Removed hardcoded test API key from Marker API key initialization (changed to empty string)
