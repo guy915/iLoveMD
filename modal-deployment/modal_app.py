@@ -31,7 +31,7 @@ volume = modal.Volume.from_name("marker-temp", create_if_missing=True)
 @app.function(
     image=image,
     gpu="T4",  # Use NVIDIA T4 GPU (~$2/hour, scales to zero when idle)
-    timeout=600,  # 10 minute timeout per conversion
+    timeout=1800,  # 30 minute timeout per conversion (Marker can be slow for complex PDFs)
     volumes={"/tmp/marker": volume},
 )
 @modal.concurrent(max_inputs=10)  # Handle up to 10 concurrent requests
