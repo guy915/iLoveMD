@@ -335,51 +335,146 @@ export default function PdfToMarkdownPage() {
 
       if (isBatch) {
         // Batch conversion
-        setStatus('Processing batch...')
-
-        // Dynamically import batch service
-        const { convertBatchPdfToMarkdown, convertBatchPdfToMarkdownLocal } = await import('@/lib/services/batchConversionService')
-
-        const result = mode === 'paid'
-          ? await convertBatchPdfToMarkdown(files, {
-              apiKey,
-              markerOptions: options,
-              onProgress: (progress) => {
-                if (isMountedRef.current) {
-                  setBatchProgress(progress)
-                  setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+        if (mode === 'free') {
+          // Free mode: process files one at a time exactly like single mode
+          setStatus('Processing batch...')
+          
+          const completed: Array<{ file: File; markdown: string; filename: string }> = []
+          const failed: Array<{ file: File; error: string; filename: string }> = []
+          
+          // Process files ONE AT A TIME - wait for each to fully complete before starting next
+          for (let i = 0; i < files.length; i++) {
+            if (abortControllerRef.current?.signal.aborted) {
+              break
+            }
+            
+            const file = files[i]
+            setStatus(`Processing file ${i + 1}/${files.length}: ${file.name}...`)
+            
+            // Use EXACT same code as single file conversion - this will wait for full completion
+            const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
+              if (!isMountedRef.current) return
+              const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
+              setStatus(`Processing file ${i + 1}/${files.length}... (${attemptNumber}/${maxAttempts} checks, ${elapsedSeconds.toFixed(0)}s elapsed)`)
+            }
+            
+            try {
+              // AWAIT this - it will submit, poll until complete, and return markdown
+              // This blocks until the ENTIRE conversion is done
+              const result = await convertPdfToMarkdownLocal(
+                file,
+                options.use_llm ? geminiApiKey : null,
+                options,
+                onProgress,
+                abortControllerRef.current.signal
+              )
+              
+              // Only after this await completes (conversion fully done) do we continue
+              if (result.success && result.markdown) {
+                completed.push({
+                  file,
+                  markdown: result.markdown,
+                  filename: replaceExtension(file.name, 'md')
+                })
+                addLog('success', `File ${i + 1}/${files.length} converted successfully`, {
+                  filename: file.name,
+                  markdownLength: result.markdown.length
+                })
+                setStatus(`File ${i + 1}/${files.length} complete. ${i < files.length - 1 ? 'Starting next file...' : 'All files complete!'}`)
+                
+                // Small delay to ensure Modal has fully cleaned up before next file
+                if (i < files.length - 1) {
+                  await new Promise(resolve => setTimeout(resolve, 1000)) // 1 second delay between files
                 }
-              },
-              signal: abortControllerRef.current.signal
-            })
-          : await convertBatchPdfToMarkdownLocal(files, {
-              geminiApiKey: options.use_llm ? geminiApiKey : null,
-              markerOptions: options,
-              onProgress: (progress: BatchProgress) => {
-                if (isMountedRef.current) {
-                  setBatchProgress(progress)
-                  setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
-                }
-              },
-              signal: abortControllerRef.current.signal
-            })
+              } else {
+                failed.push({
+                  file,
+                  error: result.error || 'Conversion failed',
+                  filename: file.name
+                })
+                addLog('error', `File ${i + 1}/${files.length} failed`, {
+                  filename: file.name,
+                  error: result.error
+                })
+              }
+            } catch (error) {
+              failed.push({
+                file,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                filename: file.name
+              })
+              addLog('error', `File ${i + 1}/${files.length} error`, {
+                filename: file.name,
+                error: error instanceof Error ? error.message : 'Unknown error'
+              })
+            }
+          }
+          
+          if (completed.length === 0) {
+            throw new Error(`All conversions failed. ${failed.length > 0 ? `Errors: ${failed.map(f => f.error).join('; ')}` : ''}`)
+          }
+          
+          // Create ZIP file manually
+          const JSZipModule = await import('jszip')
+          const JSZip = JSZipModule.default || JSZipModule
+          const zip = new JSZip()
+          
+          for (const item of completed) {
+            zip.file(item.filename, item.markdown)
+          }
+          
+          const zipBlob = await zip.generateAsync({
+            type: 'blob',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }
+          })
+          
+          const zipName = folderName
+            ? `${folderName}_markdown.zip`
+            : `converted_markdowns_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.zip`
+          
+          addLog('success', `Batch conversion complete!`, {
+            completed: completed.length,
+            failed: failed.length,
+            zipName
+          })
+          
+          if (isMountedRef.current) {
+            setBatchZipBlob(zipBlob)
+            setBatchZipFilename(zipName)
+            setStatus(`Conversion complete! ${completed.length}/${files.length} files converted. Click Download.`)
+            setProcessing(false)
+          }
+        } else {
+          // Paid mode - use batch service
+          setStatus('Processing batch...')
+
+          const { convertBatchPdfToMarkdown } = await import('@/lib/services/batchConversionService')
+
+          const result = await convertBatchPdfToMarkdown(files, {
+            apiKey,
+            markerOptions: options,
+            onProgress: (progress: BatchProgress) => {
+              if (isMountedRef.current) {
+                setBatchProgress(progress)
+                setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+              }
+            },
+            signal: abortControllerRef.current.signal
+          })
 
           if (!result.success || !result.zipBlob) {
-            // Show detailed error message including failed file count
             const errorMsg = result.error || 'Batch conversion failed'
             const failedCount = result.failed?.length || 0
             const totalCount = files.length
             
             if (failedCount > 0 && failedCount < totalCount) {
-              // Partial success - some files converted
               throw new Error(`${errorMsg}. ${result.completed?.length || 0}/${totalCount} files converted successfully.`)
             } else {
-              // All failed
               throw new Error(errorMsg)
             }
           }
 
-          // Generate ZIP filename
           const zipName = folderName
             ? `${folderName}_markdown.zip`
             : `converted_markdowns_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.zip`
