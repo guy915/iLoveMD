@@ -166,7 +166,7 @@ def create_app():
     
     @web_app.post("/marker")
     async def marker_endpoint(
-    file: UploadFile = File(...),
+        file: UploadFile = File(...),
     output_format: str = Form("markdown"),
     langs: Optional[str] = Form(None),
     paginate: str = Form("false"),
