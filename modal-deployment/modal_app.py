@@ -53,6 +53,8 @@ def convert_pdf(
     force_ocr: bool = False,
     paginate: bool = False,
     extract_images: bool = True,
+    use_llm: bool = False,
+    api_key: Optional[str] = None,
 ) -> dict:
     """
     Convert a PDF file to Markdown using Marker AI.
@@ -65,6 +67,8 @@ def convert_pdf(
         force_ocr: Force OCR even if text is extractable
         paginate: Add page separators
         extract_images: Extract images from PDF
+        use_llm: Enable LLM enhancement (requires api_key)
+        api_key: Gemini API key (required if use_llm=True)
 
     Returns:
         Dictionary with conversion results
@@ -97,6 +101,12 @@ def convert_pdf(
         from marker.output import text_from_rendered
         from marker.config.parser import ConfigParser
         
+        # Set GEMINI_API_KEY environment variable if LLM is enabled
+        if use_llm and api_key:
+            os.environ["GEMINI_API_KEY"] = api_key
+        elif use_llm and not api_key:
+            print(f"[convert_pdf] WARNING: use_llm=True but no api_key provided")
+        
         # Create configuration
         config_dict = {
             "output_format": output_format,
@@ -111,10 +121,15 @@ def convert_pdf(
         if langs:
             config_dict["langs"] = langs.split(",") if "," in langs else [langs]
         
+        # Enable LLM if requested
+        if use_llm:
+            config_dict["use_llm"] = True
+            if api_key:
+                config_dict["gemini_api_key"] = api_key
+        
         config_parser = ConfigParser(config_dict)
         
         # DIAGNOSTIC: Check cache locations and container info
-        import os
         cache_locations = {
             "HF_HOME": os.environ.get("HF_HOME", "NOT SET"),
             "HUGGINGFACE_HUB_CACHE": os.environ.get("HUGGINGFACE_HUB_CACHE", "NOT SET"),
@@ -162,9 +177,17 @@ def convert_pdf(
         if artifact_dict is None:
             raise RuntimeError("Failed to initialize models after all retries")
         
+        # Get generated config (generate once and reuse)
+        generated_config = config_parser.generate_config_dict()
+        
+        # Ensure gemini_api_key is in the config if LLM is enabled
+        # ConfigParser may filter it out, so we add it manually as a safety measure
+        if use_llm and api_key and "gemini_api_key" not in generated_config:
+            generated_config["gemini_api_key"] = api_key
+        
         converter = PdfConverter(
             artifact_dict=artifact_dict,
-            config=config_parser.generate_config_dict(),
+            config=generated_config,
             processor_list=config_parser.get_processors(),
             renderer=config_parser.get_renderer(),
         )
@@ -343,6 +366,8 @@ def create_app():
                 def run_conversion():
                     """Run the conversion in a blocking way"""
                     print(f"[run_conversion] Calling convert_pdf.remote() for {file.filename}")
+                    # Parse use_llm boolean
+                    use_llm_bool = str_to_bool(use_llm)
                     return convert_pdf.remote(
                         pdf_bytes=content,
                         filename=file.filename,
@@ -350,6 +375,8 @@ def create_app():
                         langs=langs,
                         paginate=paginate_bool,
                         extract_images=not disable_image_extraction_bool,
+                        use_llm=use_llm_bool,
+                        api_key=api_key,
                     )
                 
                 print(f"[marker_endpoint] About to call convert_pdf.remote() in thread pool...")
