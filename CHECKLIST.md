@@ -1,4 +1,4 @@
-# AI Doc Prep - Implementation Checklist
+# iLoveLLM - Implementation Checklist
 
 Track your progress through each implementation phase. Update checkboxes as you complete tasks.
 

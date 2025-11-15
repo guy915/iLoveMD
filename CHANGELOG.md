@@ -1,11 +1,28 @@
 # Changelog
 
-All notable changes to the AI Doc Prep project will be documented in this file.
+All notable changes to the iLoveLLM project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+- **Renamed Project from "AI Doc Prep" to "iLoveLLM"** (2025-11-15):
+  - **Updated all project branding and references**:
+    - Changed project name throughout codebase, documentation, and UI
+    - Updated package.json name: "ai-doc-prep" → "ilovellm"
+    - Updated GitHub repository references from AI-Doc-Prep to iLoveLLM
+    - Updated all display names in headers, footers, page titles, and help text
+    - Updated diagnostic logging references
+    - Updated deployment documentation (Modal, HuggingFace)
+  - **Files Modified** (comprehensive rename across entire codebase):
+    - Core config: package.json, package-lock.json, CLAUDE.md, ARCHITECTURE.md
+    - Documentation: README.md, CONTRIBUTING.md, CHECKLIST.md, CHANGELOG.md, .env.example
+    - Source code: layout.tsx, Header.tsx, Footer.tsx, page.tsx, constants.ts, help/page.tsx, about/page.tsx, GlobalDiagnosticPanel.tsx
+    - Test files: assets/README.md, src/test/README.md, src/types/index.ts
+    - Deployment: modal-deployment/*, huggingface-space/*, .github/workflows/README.md
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped) | Coverage: 75.96%
 
 ### Changed
 - **Removed Hardcoded Marker API Key and Restored Persistence** (2025-11-15):

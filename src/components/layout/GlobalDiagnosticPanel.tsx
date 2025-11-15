@@ -80,7 +80,7 @@ export default function GlobalDiagnosticPanel() {
                 // Format metadata section
                 const metadata = `=== ABOUT THESE DIAGNOSTIC LOGS ===
 This is a diagnostic logging system that tracks all user interactions, application
-events, and errors that occur while using AI Doc Prep. These logs provide a complete
+events, and errors that occur while using iLoveLLM. These logs provide a complete
 timeline of what happened during your session, making it easier to troubleshoot issues
 and understand application behavior. If you encounter problems, share these logs when
 asking for help - they contain valuable context for debugging.
