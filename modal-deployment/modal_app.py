@@ -17,6 +17,8 @@ from typing import Optional, Dict, Any
 app = modal.App("marker-pdf-converter")
 
 # Define the container image with Marker dependencies
+# Note: We can't pre-initialize models during image build (needs GPU),
+# but models will be cached after first use in warm containers
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install("marker-pdf")
@@ -34,6 +36,7 @@ job_storage_volume = modal.Volume.from_name("marker-jobs", create_if_missing=Tru
     gpu="T4",  # Use NVIDIA T4 GPU (~$2/hour, scales to zero when idle)
     timeout=1800,  # 30 minute timeout per conversion (Marker can be slow for complex PDFs)
     volumes={"/tmp/marker": volume},
+    scaledown_window=3600,  # Keep containers alive for 1 hour after last use (free, helps with session-based usage)
 )
 @modal.concurrent(max_inputs=10)  # Handle up to 10 concurrent requests
 def convert_pdf(
@@ -72,6 +75,9 @@ def convert_pdf(
     temp_dir.mkdir(parents=True, exist_ok=True)
 
     input_file = temp_dir / filename
+    # Ensure parent directories exist (in case filename includes folder path like "folder/file.pdf")
+    input_file.parent.mkdir(parents=True, exist_ok=True)
+    
     output_dir = temp_dir / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -129,13 +135,15 @@ def convert_pdf(
     except Exception as e:
         # Catch all exceptions including timeouts
         error_msg = str(e)
+        import traceback
+        print(f"[convert_pdf] Error: {error_msg}")
+        print(f"[convert_pdf] Traceback: {traceback.format_exc()}")
         if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
             return {
                 "success": False,
                 "error": "Conversion timed out (>9 minutes)",
                 "request_id": request_id,
             }
-    except Exception as e:
         return {
             "success": False,
             "error": f"Unexpected error: {str(e)}",
@@ -150,11 +158,12 @@ def convert_pdf(
 # Create FastAPI web endpoint
 @app.function(
     image=image,
-    volumes={"/tmp/marker-jobs": job_storage_volume}
+    volumes={"/tmp/marker-jobs": job_storage_volume},
+    scaledown_window=3600,  # Keep containers alive for 1 hour after last use (free, helps with session-based usage)
 )
 @modal.asgi_app()
 def create_app():
-    from fastapi import FastAPI, File, UploadFile, Form, BackgroundTasks
+    from fastapi import FastAPI, File, UploadFile, Form
     from fastapi.responses import JSONResponse
     from fastapi.middleware.cors import CORSMiddleware
     import asyncio
@@ -209,9 +218,12 @@ def create_app():
         if os.path.exists(job_path):
             os.remove(job_path)
     
+    # Store background tasks to prevent garbage collection
+    if not hasattr(web_app.state, 'conversion_tasks'):
+        web_app.state.conversion_tasks = {}
+    
     @web_app.post("/marker")
     async def marker_endpoint(
-        background_tasks: BackgroundTasks,
         file: UploadFile = File(...),
         output_format: str = Form("markdown"),
         langs: Optional[str] = Form(None),
@@ -265,47 +277,73 @@ def create_app():
         }
         save_job(request_id, job_data)
         
-        # Define background task function (runs after response is sent)
-        # Use async function to properly handle Modal's async context
-        async def run_conversion_background():
+        # Define async task to run conversion (non-blocking)
+        async def run_conversion_task():
             try:
-                # Spawn the conversion (non-blocking, returns immediately)
-                call = convert_pdf.spawn(
-                    pdf_bytes=content,
-                    filename=file.filename,
-                    output_format=output_format,
-                    langs=langs,
-                    paginate=paginate_bool,
-                    extract_images=not disable_image_extraction_bool,
-                )
-                
-                # Wait for result in thread pool (call.get() is blocking)
+                print(f"[marker_endpoint] Starting conversion for {file.filename}, request_id={request_id}, file_size={len(content)} bytes")
+                # Use remote() instead of spawn() - this ensures the function actually runs
+                # We run it in a thread pool to avoid blocking the FastAPI event loop
                 loop = asyncio.get_event_loop()
                 import concurrent.futures
+                
+                def run_conversion():
+                    """Run the conversion in a blocking way"""
+                    print(f"[run_conversion] Calling convert_pdf.remote() for {file.filename}")
+                    return convert_pdf.remote(
+                        pdf_bytes=content,
+                        filename=file.filename,
+                        output_format=output_format,
+                        langs=langs,
+                        paginate=paginate_bool,
+                        extract_images=not disable_image_extraction_bool,
+                    )
+                
+                print(f"[marker_endpoint] About to call convert_pdf.remote() in thread pool...")
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    result = await loop.run_in_executor(executor, call.get)
+                    result = await loop.run_in_executor(executor, run_conversion)
+                
+                print(f"[marker_endpoint] convert_pdf result received: success={result.get('success') if result else 'None'}")
+                if result:
+                    print(f"[marker_endpoint] Result keys: {list(result.keys())}")
+                    if result.get("markdown"):
+                        print(f"[marker_endpoint] Markdown length: {len(result.get('markdown', ''))}")
+                    else:
+                        print(f"[marker_endpoint] WARNING: No markdown in result!")
                 
                 # Update job data
                 job_data = load_job(request_id) or {"status": "processing"}
                 
-                if result.get("success"):
+                if result and result.get("success"):
                     job_data["status"] = "complete"
-                    job_data["markdown"] = result.get("markdown", "")
+                    markdown = result.get("markdown", "")
+                    job_data["markdown"] = markdown
+                    print(f"[marker_endpoint] Saving job with markdown length: {len(markdown)}")
                 else:
                     job_data["status"] = "error"
-                    job_data["error"] = result.get("error", "Conversion failed")
+                    job_data["error"] = result.get("error", "Conversion failed") if result else "No result returned"
+                    print(f"[marker_endpoint] Saving job with error: {job_data['error']}")
                 
                 # Save updated job data
                 save_job(request_id, job_data)
+                print(f"[marker_endpoint] Job saved. Status: {job_data.get('status')}")
             except Exception as e:
                 # Update job with error
+                import traceback
+                error_msg = f"Conversion error: {str(e)}"
+                print(f"[marker_endpoint] Exception in run_conversion_task: {error_msg}")
+                print(f"[marker_endpoint] Traceback: {traceback.format_exc()}")
                 job_data = load_job(request_id) or {"status": "processing"}
                 job_data["status"] = "error"
-                job_data["error"] = f"Conversion error: {str(e)}"
+                job_data["error"] = error_msg
                 save_job(request_id, job_data)
+            finally:
+                # Remove task from storage when done
+                if request_id in web_app.state.conversion_tasks:
+                    del web_app.state.conversion_tasks[request_id]
         
-        # Add background task (runs after response is sent)
-        background_tasks.add_task(run_conversion_background)
+        # Create and store task to prevent garbage collection
+        task = asyncio.create_task(run_conversion_task())
+        web_app.state.conversion_tasks[request_id] = task
         
         # Return immediately with request_id for polling
         return JSONResponse(content={
@@ -332,18 +370,28 @@ def create_app():
                 time.sleep(retry_delay)
         
         if not job:
+            print(f"[check_status] Job not found for request_id: {request_id}")
             raise HTTPException(status_code=404, detail="Request ID not found")
         
-        response = {"status": job.get("status", "processing")}
+        status = job.get("status", "processing")
+        print(f"[check_status] Job status for {request_id}: {status}")
         
-        if job.get("status") == "complete":
-            response["markdown"] = job.get("markdown", "")
+        response = {"status": status}
+        
+        if status == "complete":
+            markdown = job.get("markdown", "")
+            print(f"[check_status] Returning markdown, length: {len(markdown)}")
+            response["markdown"] = markdown
             # Clean up after retrieval
             delete_job(request_id)
-        elif job.get("status") == "error":
-            response["error"] = job.get("error", "Unknown error")
+        elif status == "error":
+            error = job.get("error", "Unknown error")
+            print(f"[check_status] Returning error: {error}")
+            response["error"] = error
             # Clean up after error retrieval
             delete_job(request_id)
+        else:
+            print(f"[check_status] Job still processing")
         
         return response
     
