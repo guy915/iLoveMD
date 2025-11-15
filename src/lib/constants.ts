@@ -59,7 +59,7 @@ export const API_ENDPOINTS = {
   // Free Marker instance (Modal.com with free GPU - $30/month credits)
   // TODO: Replace with your Modal endpoint URL after deployment
   // Get this from: modal deploy modal_app.py
-  LOCAL_MARKER_INSTANCE: 'https://YOUR-USERNAME--marker-pdf-converter-marker-endpoint.modal.run',
+  LOCAL_MARKER_INSTANCE: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run',
 } as const
 
 // LocalStorage keys
