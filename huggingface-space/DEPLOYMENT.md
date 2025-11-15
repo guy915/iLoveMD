@@ -42,7 +42,7 @@ git clone https://huggingface.co/spaces/YOUR-USERNAME/marker-pdf-converter
 cd marker-pdf-converter
 
 # Copy files from this repo
-cp /path/to/AI-Doc-Prep/huggingface-space/* .
+cp /path/to/iLoveLLM/huggingface-space/* .
 
 # Commit and push
 git add .
@@ -97,7 +97,7 @@ curl https://YOUR-USERNAME-marker-pdf-converter.hf.space/status/{request_id}
 
 ## Step 7: Update Your Website
 
-In your `AI-Doc-Prep` project:
+In your `iLoveLLM` project:
 
 1. Open `src/lib/constants.ts`
 2. Update the URL:
@@ -203,4 +203,4 @@ After deployment:
 
 - HuggingFace Docs: https://huggingface.co/docs/hub/spaces
 - Marker Issues: https://github.com/VikParuchuri/marker/issues
-- Your Project Issues: https://github.com/guy915/AI-Doc-Prep/issues
+- Your Project Issues: https://github.com/guy915/iLoveLLM/issues

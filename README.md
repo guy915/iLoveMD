@@ -1,10 +1,10 @@
-# AI Doc Prep
+# iLoveLLM
 
 A website for preprocessing documents for LLMs and RAG.
 
 ## Overview
 
-AI Doc Prep provides simple, single-purpose tools to convert and prepare documents specifically for LLM workflows like ChatGPT, Claude, and other AI assistants. Everything converts to markdown because that's what LLMs digest best.
+iLoveLLM provides simple, single-purpose tools to convert and prepare documents specifically for LLM workflows like ChatGPT, Claude, and other AI assistants. Everything converts to markdown because that's what LLMs digest best.
 
 ## Features
 
@@ -24,8 +24,8 @@ Combine multiple markdown files into one with customizable separators and orderi
 
 ```bash
 # Clone the repository
-git clone https://github.com/guy915/AI-Doc-Prep.git
-cd AI-Doc-Prep
+git clone https://github.com/guy915/iLoveLLM.git
+cd iLoveLLM
 
 # Install dependencies
 npm install

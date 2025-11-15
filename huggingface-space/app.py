@@ -3,7 +3,7 @@ Marker PDF Converter - HuggingFace Space
 Free GPU-powered PDF to Markdown conversion
 
 This Space runs on HuggingFace's free GPU tier (NVIDIA T4)
-and provides a REST API for the AI Doc Prep website.
+and provides a REST API for the iLoveLLM website.
 """
 
 import os
@@ -28,7 +28,7 @@ app = FastAPI(
 BASE_URL = os.environ.get("BASE_URL", "https://huggingface.co/spaces/YOUR-USERNAME/marker-pdf-converter")
 
 # Configure CORS - allow all origins for public API
-# You can restrict this to your domain later: ["https://ai-doc-prep.com"]
+# You can restrict this to your domain later: ["https://ilovellm.com"]
 allowed_origins_str = os.environ.get("ALLOWED_ORIGINS", "*")
 if allowed_origins_str == "*":
     allowed_origins = ["*"]
