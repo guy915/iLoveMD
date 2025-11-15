@@ -176,62 +176,62 @@ def create_app():
         redo_inline_math: str = Form("false"),
         api_key: Optional[str] = Form(None),
     ):
-    """
-    Web endpoint for PDF conversion - matches HuggingFace API format.
-    """
-    import tempfile
-    import shutil
-    from pathlib import Path
-    
-    # Validate file
-    if not file.filename or not file.filename.lower().endswith('.pdf'):
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Only PDF files are supported"}
+        """
+        Web endpoint for PDF conversion - matches HuggingFace API format.
+        """
+        import tempfile
+        import shutil
+        from pathlib import Path
+        
+        # Validate file
+        if not file.filename or not file.filename.lower().endswith('.pdf'):
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Only PDF files are supported"}
+            )
+        
+        # Read file content
+        content = await file.read()
+        
+        # Validate file size (200MB limit)
+        MAX_PDF_FILE_SIZE = 200 * 1024 * 1024
+        if len(content) > MAX_PDF_FILE_SIZE:
+            return JSONResponse(
+                status_code=413,
+                content={"error": f"PDF file size exceeds {MAX_PDF_FILE_SIZE // (1024 * 1024)} MB"}
+            )
+        
+        # Generate request ID
+        request_id = str(uuid.uuid4())
+        
+        # Parse boolean options
+        def str_to_bool(v: str) -> bool:
+            return v.lower() in ('true', '1', 'yes', 'on')
+        
+        paginate_bool = str_to_bool(paginate)
+        disable_image_extraction_bool = str_to_bool(disable_image_extraction)
+        
+        # Call the GPU conversion function
+        result = convert_pdf.remote(
+            pdf_bytes=content,
+            filename=file.filename,
+            output_format=output_format,
+            langs=langs,
+            paginate=paginate_bool,
+            extract_images=not disable_image_extraction_bool,
         )
-    
-    # Read file content
-    content = await file.read()
-    
-    # Validate file size (200MB limit)
-    MAX_PDF_FILE_SIZE = 200 * 1024 * 1024
-    if len(content) > MAX_PDF_FILE_SIZE:
-        return JSONResponse(
-            status_code=413,
-            content={"error": f"PDF file size exceeds {MAX_PDF_FILE_SIZE // (1024 * 1024)} MB"}
-        )
-    
-    # Generate request ID
-    request_id = str(uuid.uuid4())
-    
-    # Parse boolean options
-    def str_to_bool(v: str) -> bool:
-        return v.lower() in ('true', '1', 'yes', 'on')
-    
-    paginate_bool = str_to_bool(paginate)
-    disable_image_extraction_bool = str_to_bool(disable_image_extraction)
-    
-    # Call the GPU conversion function
-    result = convert_pdf.remote(
-        pdf_bytes=content,
-        filename=file.filename,
-        output_format=output_format,
-        langs=langs,
-        paginate=paginate_bool,
-        extract_images=not disable_image_extraction_bool,
-    )
-    
-    if result.get("success"):
-        return JSONResponse(content={
-            "success": True,
-            "request_id": request_id,
-            "request_check_url": f"/status/{request_id}",
-        })
-    else:
-        return JSONResponse(
-            status_code=500,
-            content={"error": result.get("error", "Conversion failed")}
-        )
+        
+        if result.get("success"):
+            return JSONResponse(content={
+                "success": True,
+                "request_id": request_id,
+                "request_check_url": f"/status/{request_id}",
+            })
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"error": result.get("error", "Conversion failed")}
+            )
     
     @web_app.get("/health")
     def health():
