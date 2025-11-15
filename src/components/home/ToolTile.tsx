@@ -44,7 +44,6 @@ const ToolTile = memo(function ToolTile({ title, description, href, icon }: Tool
           alt={`${title} icon`}
           width={80}
           height={80}
-          priority
         />
       </div>
 
