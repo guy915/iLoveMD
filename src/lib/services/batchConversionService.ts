@@ -488,18 +488,28 @@ export async function convertBatchPdfToMarkdownLocal(
     }
   }
   
-  // Process first file sequentially to warm up models, then allow concurrent processing
-  // This prevents multiple cold containers from initializing models simultaneously
+  // Process files with staggered starts to prevent simultaneous cold container initialization
+  // Even with retry logic, if multiple containers start at the exact same time, they can all fail
+  // Staggering ensures containers initialize models at different times
   if (files.length > 0) {
-    // Process first file alone
+    // Process first file alone (no delay)
     await processFile(0)
     currentIndex = 1
     
-    // Now start the rest concurrently (up to MAX_CONCURRENT - 1, since we already processed 1)
-    const remainingConcurrent = Math.min(MAX_CONCURRENT - 1, files.length - 1)
-    for (let i = 0; i < remainingConcurrent; i++) {
+    // Start remaining files with staggered delays (5 seconds between each)
+    // This gives each container time to initialize models before the next one starts
+    // Combined with Modal-side retry logic, this should eliminate meta tensor errors
+    const remainingFiles = files.length - 1
+    for (let i = 0; i < remainingFiles; i++) {
       const fileIndex = i + 1
       currentIndex = fileIndex + 1
+      
+      // Stagger starts: 5 seconds between each file submission
+      // This prevents multiple cold containers from hitting model init simultaneously
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 5000))
+      }
+      
       const promise = processFile(fileIndex)
       activePromises.set(fileIndex, promise)
       allPromises.push(promise)
