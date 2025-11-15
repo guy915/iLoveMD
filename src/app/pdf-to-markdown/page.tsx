@@ -800,7 +800,7 @@ export default function PdfToMarkdownPage() {
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-700 underline"
                 >
-                  Get a Gemini API key
+                  Get a free Gemini API key
                 </a>
               </>
             ) : (
