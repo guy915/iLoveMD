@@ -488,14 +488,22 @@ export async function convertBatchPdfToMarkdownLocal(
     }
   }
   
-  // Start initial batch of concurrent conversions
-  const initialBatch = Math.min(MAX_CONCURRENT, files.length)
-  
-  for (let i = 0; i < initialBatch; i++) {
-    currentIndex = i + 1
-    const promise = processFile(i)
-    activePromises.set(i, promise)
-    allPromises.push(promise)
+  // Process first file sequentially to warm up models, then allow concurrent processing
+  // This prevents multiple cold containers from initializing models simultaneously
+  if (files.length > 0) {
+    // Process first file alone
+    await processFile(0)
+    currentIndex = 1
+    
+    // Now start the rest concurrently (up to MAX_CONCURRENT - 1, since we already processed 1)
+    const remainingConcurrent = Math.min(MAX_CONCURRENT - 1, files.length - 1)
+    for (let i = 0; i < remainingConcurrent; i++) {
+      const fileIndex = i + 1
+      currentIndex = fileIndex + 1
+      const promise = processFile(fileIndex)
+      activePromises.set(fileIndex, promise)
+      allPromises.push(promise)
+    }
   }
 
   // Wait for all conversions to complete
