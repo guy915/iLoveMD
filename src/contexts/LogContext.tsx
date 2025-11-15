@@ -6,7 +6,7 @@ import type { LogEntry, LogType, LogContextValue } from '@/types'
 const LogContext = createContext<LogContextValue | undefined>(undefined)
 const LOGS_STORAGE_KEY = 'diagnosticLogs'
 const LOG_COUNTER_KEY = 'diagnosticLogCounter'
-const MAX_LOGS = 50
+const MAX_LOGS = 500
 
 // Storage helper with quota checking
 let storageQuotaExceeded = false // Flag to avoid repeated quota errors
