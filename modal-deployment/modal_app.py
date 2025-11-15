@@ -34,7 +34,7 @@ volume = modal.Volume.from_name("marker-temp", create_if_missing=True)
     timeout=600,  # 10 minute timeout per conversion
     volumes={"/tmp/marker": volume},
 )
-@modal.concurrent(10)  # Handle up to 10 concurrent requests
+@modal.concurrent()  # Handle up to 10 concurrent requests (default is 10)
 def convert_pdf(
     pdf_bytes: bytes,
     filename: str,
