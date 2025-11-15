@@ -128,6 +128,8 @@ export interface ToolCard {
   description: string
   /** Link to tool page */
   href: string
+  /** Icon path (SVG file in public folder) */
+  icon: string
 }
 
 // ===== File & Download Types =====
