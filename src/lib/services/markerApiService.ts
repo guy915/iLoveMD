@@ -182,40 +182,6 @@ export async function convertPdfToMarkdown(
     return { success: false, error: err.message || 'An error occurred during conversion' }
   }
 }
-
-/**
- * Validate API key format
- *
- * @param apiKey - The API key to validate
- * @returns True if valid, false otherwise
- */
-export function validateApiKey(apiKey: string): boolean {
-  const trimmed = apiKey.trim()
-  return trimmed.length >= MARKER_CONFIG.VALIDATION.MIN_API_KEY_LENGTH
-}
-
-/**
- * Validate file for PDF conversion
- *
- * @param file - The file to validate
- * @returns Validation result with error message if invalid
- */
-export function validatePdfFile(file: File): { valid: boolean; error?: string } {
-  // Check file type
-  const validTypes = MARKER_CONFIG.VALIDATION.ACCEPTED_MIME_TYPES as readonly string[]
-  if (!file.type || !validTypes.includes(file.type)) {
-    return { valid: false, error: 'Only PDF files are accepted' }
-  }
-
-  // Check file size
-  if (file.size > FILE_SIZE.MAX_PDF_FILE_SIZE) {
-    const sizeMB = (file.size / FILE_SIZE.BYTES_PER_MB).toFixed(2)
-    return { valid: false, error: `File too large (max 200MB). Your file is ${sizeMB}MB` }
-  }
-
-  return { valid: true }
-}
-
 // ============================================================================
 // MODAL (FREE MODE) FUNCTIONS
 // ============================================================================

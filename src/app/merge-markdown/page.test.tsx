@@ -963,7 +963,7 @@ describe('MergeMarkdownPage', () => {
 
       await waitFor(() => {
         expect(screen.getByText('test.md')).toBeInTheDocument()
-        expect(screen.getByText('1.2 KB')).toBeInTheDocument()
+        expect(screen.getByText('1.21 KB')).toBeInTheDocument()
       })
     })
   })
