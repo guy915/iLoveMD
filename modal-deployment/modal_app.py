@@ -167,15 +167,15 @@ def create_app():
     @web_app.post("/marker")
     async def marker_endpoint(
         file: UploadFile = File(...),
-    output_format: str = Form("markdown"),
-    langs: Optional[str] = Form(None),
-    paginate: str = Form("false"),
-    format_lines: str = Form("false"),
-    use_llm: str = Form("false"),
-    disable_image_extraction: str = Form("false"),
-    redo_inline_math: str = Form("false"),
-    api_key: Optional[str] = Form(None),
-):
+        output_format: str = Form("markdown"),
+        langs: Optional[str] = Form(None),
+        paginate: str = Form("false"),
+        format_lines: str = Form("false"),
+        use_llm: str = Form("false"),
+        disable_image_extraction: str = Form("false"),
+        redo_inline_math: str = Form("false"),
+        api_key: Optional[str] = Form(None),
+    ):
     """
     Web endpoint for PDF conversion - matches HuggingFace API format.
     """
