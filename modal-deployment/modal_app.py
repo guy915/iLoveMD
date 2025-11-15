@@ -276,11 +276,13 @@ def create_app():
         )
         
         # Return immediately with request_id for polling
-        base_url = os.environ.get("MODAL_ENDPOINT_URL", "")
+        # Construct the full URL for the status endpoint
+        # Modal provides the endpoint URL, but we need to construct it from the current request
+        # For now, use a relative URL that the frontend will handle
         return JSONResponse(content={
             "success": True,
             "request_id": request_id,
-            "request_check_url": f"{base_url}/status/{request_id}",
+            "request_check_url": f"/status/{request_id}",
         })
     
     @web_app.get("/status/{request_id}")
