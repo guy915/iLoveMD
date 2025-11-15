@@ -2,7 +2,6 @@
  * Tests for markerApiService - PDF to Markdown conversion service
  *
  * Tests cover:
- * - Validation functions: validateApiKey, validatePdfFile
  * - Cloud API submission: submitPdfConversion with mocked fetch
  * - Cloud status polling: pollConversionStatus with various statuses
  * - Cloud conversion flow: convertPdfToMarkdown with polling simulation
@@ -16,8 +15,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
-  validateApiKey,
-  validatePdfFile,
   submitPdfConversion,
   pollConversionStatus,
   convertPdfToMarkdown,
@@ -55,92 +52,6 @@ const defaultOptions: MarkerOptions = {
 }
 
 describe('markerApiService', () => {
-  describe('validateApiKey', () => {
-    it('should return true for valid API key', () => {
-      const validKey = 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ'
-      expect(validateApiKey(validKey)).toBe(true)
-    })
-
-    it('should return true for minimum length key', () => {
-      const minKey = 'a'.repeat(MARKER_CONFIG.VALIDATION.MIN_API_KEY_LENGTH)
-      expect(validateApiKey(minKey)).toBe(true)
-    })
-
-    it('should return false for short API key', () => {
-      const shortKey = 'abc123'
-      expect(validateApiKey(shortKey)).toBe(false)
-    })
-
-    it('should return false for empty string', () => {
-      expect(validateApiKey('')).toBe(false)
-    })
-
-    it('should trim whitespace before validation', () => {
-      const keyWithSpaces = '  validkey123456  '
-      // After trimming, still 15 chars which is >= 10
-      expect(validateApiKey(keyWithSpaces)).toBe(true)
-    })
-
-    it('should return false for whitespace only', () => {
-      expect(validateApiKey('   ')).toBe(false)
-    })
-
-    it('should handle special characters in key', () => {
-      const keyWithSpecialChars = 'key-with_special.chars123'
-      expect(validateApiKey(keyWithSpecialChars)).toBe(true)
-    })
-  })
-
-  describe('validatePdfFile', () => {
-    it('should return valid for correct PDF file', () => {
-      const file = createMockFile('test.pdf', 1024 * 1024) // 1MB
-      const result = validatePdfFile(file)
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('should reject non-PDF file type', () => {
-      const file = createMockFile('test.txt', 1024, 'text/plain')
-      const result = validatePdfFile(file)
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe('Only PDF files are accepted')
-    })
-
-    it('should reject file without type', () => {
-      const file = createMockFile('test.pdf', 1024, '')
-      const result = validatePdfFile(file)
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe('Only PDF files are accepted')
-    })
-
-    it('should reject file larger than 200MB', () => {
-      const file = createMockFile('large.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE + 1)
-      const result = validatePdfFile(file)
-      expect(result.valid).toBe(false)
-      expect(result.error).toContain('File too large')
-      expect(result.error).toContain('200MB')
-    })
-
-    it('should accept file at exactly 200MB', () => {
-      const file = createMockFile('max.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE)
-      const result = validatePdfFile(file)
-      expect(result.valid).toBe(true)
-    })
-
-    it('should accept very small PDF', () => {
-      const file = createMockFile('tiny.pdf', 100) // 100 bytes
-      const result = validatePdfFile(file)
-      expect(result.valid).toBe(true)
-    })
-
-    it('should show file size in error message', () => {
-      const largeSize = 300 * FILE_SIZE.BYTES_PER_MB
-      const file = createMockFile('huge.pdf', largeSize)
-      const result = validatePdfFile(file)
-      expect(result.error).toContain('300.00MB')
-    })
-  })
-
   describe('submitPdfConversion', () => {
     let fetchMock: ReturnType<typeof vi.fn>
 

@@ -8,6 +8,7 @@ import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
+import { formatFileSize } from '@/lib/utils/formatUtils'
 import { FILE_SIZE } from '@/lib/constants'
 
 interface MarkdownFile {
@@ -18,14 +19,6 @@ interface MarkdownFile {
 
 type SortMode = 'none' | 'alphabetical' | 'reverseAlphabetical'
 type SeparatorStyle = 'newline' | 'page-break'
-
-// Helper function to format file sizes dynamically
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < FILE_SIZE.BYTES_PER_MB) return `${(bytes / FILE_SIZE.BYTES_PER_KB).toFixed(1)} KB`
-  if (bytes < FILE_SIZE.BYTES_PER_GB) return `${(bytes / FILE_SIZE.BYTES_PER_MB).toFixed(1)} MB`
-  return `${(bytes / FILE_SIZE.BYTES_PER_GB).toFixed(2)} GB`
-}
 
 export default function MergeMarkdownPage() {
   const [files, setFiles] = useState<MarkdownFile[]>([])

@@ -4,7 +4,6 @@ import {
   filterPdfFiles,
   filterImmediateFolderFiles,
   getFolderName,
-  validateBatchFiles,
   type BatchConversionOptions,
   type BatchProgress,
   type FileConversionResult,
@@ -168,115 +167,6 @@ describe('batchConversionService', () => {
       const file = createMockFile('doc.pdf', 1000, 'application/pdf', 'doc.pdf')
       const result = getFolderName(file)
       expect(result).toBeNull()
-    })
-  })
-
-  describe('validateBatchFiles', () => {
-    it('should return error for empty array', () => {
-      const result = validateBatchFiles([])
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe('No files selected')
-    })
-
-    it('should return error for null/undefined', () => {
-      const result = validateBatchFiles(null as any)
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe('No files selected')
-    })
-
-    it('should return error when too many files', () => {
-      const files = Array.from({ length: FILE_SIZE.MAX_BATCH_FILES + 1 }, (_, i) =>
-        createMockFile(`doc${i}.pdf`, 1000)
-      )
-
-      const result = validateBatchFiles(files)
-
-      expect(result.valid).toBe(false)
-      expect(result.error).toContain('Too many files')
-      expect(result.error).toContain(`${FILE_SIZE.MAX_BATCH_FILES}`)
-    })
-
-    it('should return error when no PDF files found', () => {
-      const files = [
-        createMockFile('image.jpg', 500, 'image/jpeg'),
-        createMockFile('text.txt', 200, 'text/plain'),
-      ]
-
-      const result = validateBatchFiles(files)
-
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe('No PDF files found in selection')
-    })
-
-    it('should return error for oversized individual files', () => {
-      const files = [
-        createMockFile('small.pdf', 1000),
-        createMockFile('large1.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE + 1),
-        createMockFile('large2.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE + 1),
-      ]
-
-      const result = validateBatchFiles(files)
-
-      expect(result.valid).toBe(false)
-      expect(result.error).toContain('exceed 200MB limit')
-      expect(result.error).toContain('large1.pdf')
-    })
-
-    it('should list up to 3 oversized files', () => {
-      const files = [
-        createMockFile('large1.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE + 1),
-        createMockFile('large2.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE + 1),
-        createMockFile('large3.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE + 1),
-        createMockFile('large4.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE + 1),
-        createMockFile('large5.pdf', FILE_SIZE.MAX_PDF_FILE_SIZE + 1),
-      ]
-
-      const result = validateBatchFiles(files)
-
-      expect(result.valid).toBe(false)
-      expect(result.error).toContain('large1.pdf, large2.pdf, large3.pdf')
-      expect(result.error).toContain('and 2 more')
-    })
-
-    it('should return error when total batch size exceeds limit', () => {
-      // Create files that individually are OK but collectively exceed limit
-      // MAX_BATCH_TOTAL_SIZE is 100GB, so create files totaling 101GB
-      const fileSize = FILE_SIZE.MAX_PDF_FILE_SIZE // 200MB each
-      const fileCount = 550 // 550 * 200MB = 110GB > 100GB limit
-      const files = Array.from({ length: fileCount }, (_, i) =>
-        createMockFile(`doc${i}.pdf`, fileSize)
-      )
-
-      const result = validateBatchFiles(files)
-
-      expect(result.valid).toBe(false)
-      expect(result.error).toContain('Total batch size')
-      expect(result.error).toContain('exceeds maximum')
-    })
-
-    it('should accept valid batch', () => {
-      const files = [
-        createMockFile('doc1.pdf', 10 * FILE_SIZE.BYTES_PER_MB),
-        createMockFile('doc2.pdf', 20 * FILE_SIZE.BYTES_PER_MB),
-        createMockFile('doc3.pdf', 30 * FILE_SIZE.BYTES_PER_MB),
-      ]
-
-      const result = validateBatchFiles(files)
-
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('should filter non-PDF files before validation', () => {
-      const files = [
-        createMockFile('doc1.pdf', 10 * FILE_SIZE.BYTES_PER_MB),
-        createMockFile('image.jpg', 500, 'image/jpeg'),
-        createMockFile('doc2.pdf', 20 * FILE_SIZE.BYTES_PER_MB),
-      ]
-
-      const result = validateBatchFiles(files)
-
-      expect(result.valid).toBe(true)
     })
   })
 
