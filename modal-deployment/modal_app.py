@@ -169,45 +169,6 @@ def create_app():
     # In-memory job storage for this app instance
     app_jobs: Dict[str, Dict[str, Any]] = {}
     
-    async def run_conversion_async(
-        request_id: str,
-        pdf_bytes: bytes,
-        filename: str,
-        output_format: str,
-        langs: Optional[str],
-        paginate: bool,
-        extract_images: bool,
-    ):
-        """Run conversion asynchronously and update job status"""
-        try:
-            # Spawn the conversion as a background task (non-blocking)
-            # Modal's spawn returns a handle we can poll
-            call = convert_pdf.spawn(
-                pdf_bytes=pdf_bytes,
-                filename=filename,
-                output_format=output_format,
-                langs=langs,
-                paginate=paginate,
-                extract_images=extract_images,
-            )
-            
-            # Get the result in a thread pool to avoid blocking the event loop
-            # This allows the endpoint to return immediately while conversion runs
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(call.get)
-                result = future.result()  # This will block the thread, not the event loop
-            
-            if result.get("success"):
-                app_jobs[request_id]["status"] = "complete"
-                app_jobs[request_id]["markdown"] = result.get("markdown", "")
-            else:
-                app_jobs[request_id]["status"] = "error"
-                app_jobs[request_id]["error"] = result.get("error", "Conversion failed")
-        except Exception as e:
-            app_jobs[request_id]["status"] = "error"
-            app_jobs[request_id]["error"] = f"Conversion error: {str(e)}"
-    
     @web_app.post("/marker")
     async def marker_endpoint(
         file: UploadFile = File(...),
@@ -262,23 +223,42 @@ def create_app():
         paginate_bool = str_to_bool(paginate)
         disable_image_extraction_bool = str_to_bool(disable_image_extraction)
         
-        # Start conversion asynchronously (non-blocking)
-        asyncio.create_task(
-            run_conversion_async(
-                request_id,
-                content,
-                file.filename,
-                output_format,
-                langs,
-                paginate_bool,
-                not disable_image_extraction_bool,
-            )
-        )
+        # Start conversion in background thread to ensure it doesn't block
+        # Use threading instead of asyncio to ensure true non-blocking behavior
+        import threading
+        def run_conversion_thread():
+            try:
+                # Spawn the conversion
+                call = convert_pdf.spawn(
+                    pdf_bytes=content,
+                    filename=file.filename,
+                    output_format=output_format,
+                    langs=langs,
+                    paginate=paginate_bool,
+                    extract_images=not disable_image_extraction_bool,
+                )
+                
+                # Get result in thread pool
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(call.get)
+                    result = future.result()
+                
+                if result.get("success"):
+                    app_jobs[request_id]["status"] = "complete"
+                    app_jobs[request_id]["markdown"] = result.get("markdown", "")
+                else:
+                    app_jobs[request_id]["status"] = "error"
+                    app_jobs[request_id]["error"] = result.get("error", "Conversion failed")
+            except Exception as e:
+                app_jobs[request_id]["status"] = "error"
+                app_jobs[request_id]["error"] = f"Conversion error: {str(e)}"
+        
+        # Start thread (truly non-blocking)
+        thread = threading.Thread(target=run_conversion_thread, daemon=True)
+        thread.start()
         
         # Return immediately with request_id for polling
-        # Construct the full URL for the status endpoint
-        # Modal provides the endpoint URL, but we need to construct it from the current request
-        # For now, use a relative URL that the frontend will handle
         return JSONResponse(content={
             "success": True,
             "request_id": request_id,
