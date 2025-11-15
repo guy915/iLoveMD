@@ -79,6 +79,7 @@ def convert_pdf(
         input_file.write_bytes(pdf_bytes)
 
         # Build marker_single command
+        # Note: marker_single CLI has limited options - check with 'marker_single --help'
         cmd = [
             "marker_single",
             str(input_file),
@@ -86,15 +87,18 @@ def convert_pdf(
             "--output_format", output_format,
         ]
 
-        # Add optional parameters
-        if langs:
-            cmd.extend(["--langs", langs])
-        if force_ocr:
-            cmd.append("--force_ocr")
+        # Add optional parameters (only supported ones)
+        # Note: --langs and --force_ocr may not be supported in all versions
         if paginate:
             cmd.append("--paginate")
         if not extract_images:
             cmd.append("--disable_image_extraction")
+        
+        # Set environment variables for language if needed
+        env = os.environ.copy()
+        if langs:
+            # Some versions use environment variable instead of CLI flag
+            env["MARKER_LANGS"] = langs
 
         # Run marker conversion
         result = subprocess.run(
