@@ -124,6 +124,8 @@ async def convert_pdf(
         cmd.append("--paginate")
     if disable_image_extraction_bool:
         cmd.append("--disable_image_extraction")
+    if use_llm_bool:
+        cmd.append("--use_llm")
 
     # Set environment variables for LLM
     env = os.environ.copy()
