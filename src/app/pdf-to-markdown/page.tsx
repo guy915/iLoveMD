@@ -12,14 +12,14 @@ import { filterPdfFiles, filterImmediateFolderFiles, getFolderName, type BatchPr
 import { useLogs } from '@/contexts/LogContext'
 
 export default function PdfToMarkdownPage() {
-  // Mode state - 'cloud' uses Marker API, 'local' uses local Marker instance
-  // Start with 'local' to match SSR, then load from localStorage after mount
-  const [mode, setMode] = useState<'cloud' | 'local'>('local')
+  // Mode state - 'paid' uses Marker API, 'free' uses Modal serverless GPU
+  // Start with 'free' to match SSR, then load from localStorage after mount
+  const [mode, setMode] = useState<'free' | 'paid'>('free')
   const [mounted, setMounted] = useState(false)
 
   // API keys
-  const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (cloud mode)
-  const [geminiApiKey, setGeminiApiKey] = useState('') // Gemini API key (local mode with LLM)
+  const [apiKey, setApiKey] = useState('w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ') // Marker API key (paid mode)
+  const [geminiApiKey, setGeminiApiKey] = useState('') // Gemini API key (free mode with LLM)
 
   // File state - supports both single and batch
   const [files, setFiles] = useState<File[]>([])
@@ -77,9 +77,14 @@ export default function PdfToMarkdownPage() {
   useEffect(() => {
     setMounted(true)
 
-    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'cloud' | 'local' | null
-    if (savedMode === 'cloud' || savedMode === 'local') {
+    const savedMode = storageService.getItem(STORAGE_KEYS.MARKER_MODE) as 'free' | 'paid' | 'local' | 'cloud' | null
+    // Support old mode names for backwards compatibility
+    if (savedMode === 'free' || savedMode === 'paid') {
       setMode(savedMode)
+    } else if (savedMode === 'local') {
+      setMode('free') // Old 'local' → new 'free'
+    } else if (savedMode === 'cloud') {
+      setMode('paid') // Old 'cloud' → new 'paid'
     }
 
     const savedGeminiKey = storageService.getItem(STORAGE_KEYS.GEMINI_API_KEY)
@@ -289,18 +294,18 @@ export default function PdfToMarkdownPage() {
 
   const handleConvert = useCallback(async () => {
     // Mode-based validation
-    if (mode === 'cloud') {
-      // Validate Marker API key for cloud mode
+    if (mode === 'paid') {
+      // Validate Marker API key for paid mode
       if (!apiKey.trim()) {
         setError('Please enter your Marker API key')
         addLog('error', 'Conversion blocked: No Marker API key provided')
         return
       }
-    } else if (mode === 'local') {
-      // Validate Gemini API key for local mode with LLM
+    } else if (mode === 'free') {
+      // Validate Gemini API key for free mode with LLM
       if (options.use_llm && !geminiApiKey.trim()) {
-        setError('Please enter your Gemini API key to use LLM enhancement in local mode')
-        addLog('error', 'Conversion blocked: No Gemini API key provided for local LLM mode')
+        setError('Please enter your Gemini API key to use LLM enhancement in free mode')
+        addLog('error', 'Conversion blocked: No Gemini API key provided for free LLM mode')
         return
       }
     }
@@ -331,8 +336,8 @@ export default function PdfToMarkdownPage() {
       if (isBatch) {
         // Batch conversion
         // NOTE: Batch mode only supports cloud API for now (local batch will be added in future PR if needed)
-        if (mode === 'local') {
-          throw new Error('Batch conversion is not yet supported in local mode. Please switch to Cloud API mode or convert files individually.')
+        if (mode === 'free') {
+          throw new Error('Batch conversion is not yet supported in free mode. Please switch to Paid mode or convert files individually.')
         }
 
         setStatus('Processing batch...')
@@ -377,7 +382,7 @@ export default function PdfToMarkdownPage() {
       } else {
         // Single file conversion
         const file = files[0]
-        setStatus(mode === 'cloud' ? 'Submitting to Marker API...' : 'Submitting to local Marker...')
+        setStatus(mode === 'paid' ? 'Submitting to Marker API...' : 'Submitting to local Marker...')
 
         const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
           if (!isMountedRef.current) return
@@ -386,7 +391,7 @@ export default function PdfToMarkdownPage() {
         }
 
         // Call appropriate conversion function based on mode
-        const result = mode === 'cloud'
+        const result = mode === 'paid'
           ? await convertPdfToMarkdown(
               file,
               apiKey,
@@ -583,44 +588,50 @@ export default function PdfToMarkdownPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => {
-                  setMode('local')
-                  addLog('info', 'Switched to Local Marker mode')
+                  setMode('free')
+                  addLog('info', 'Switched to Free mode (Modal GPU)')
                 }}
                 disabled={processing}
                 className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
-                  mode === 'local'
+                  mode === 'free'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                aria-pressed={mode === 'local'}
+                aria-pressed={mode === 'free'}
               >
-                Local Marker
+                <div className="flex flex-col items-center">
+                  <span className="font-semibold">Free</span>
+                  <span className="text-xs opacity-90">(Slow)</span>
+                </div>
               </button>
               <button
                 onClick={() => {
-                  setMode('cloud')
-                  addLog('info', 'Switched to Cloud API mode')
+                  setMode('paid')
+                  addLog('info', 'Switched to Paid mode (Marker API)')
                 }}
                 disabled={processing}
                 className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
-                  mode === 'cloud'
+                  mode === 'paid'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                aria-pressed={mode === 'cloud'}
+                aria-pressed={mode === 'paid'}
               >
-                Cloud API
+                <div className="flex flex-col items-center">
+                  <span className="font-semibold">Paid</span>
+                  <span className="text-xs opacity-90">(Fast)</span>
+                </div>
               </button>
             </div>
             <p className="mt-3 text-sm text-gray-600">
-              {mode === 'local'
-                ? 'Use local Marker instance (requires Docker, more options available)'
-                : 'Use Marker cloud API (requires API key, easier setup)'}
+              {mode === 'free'
+                ? 'Free cloud processing (~a few minutes per PDF)'
+                : 'Marker API (~a few seconds per PDF, requires API key)'}
             </p>
           </div>
 
-          {/* API Key Section - Cloud Mode */}
-          {mode === 'cloud' && (
+          {/* API Key Section - Paid Mode */}
+          {mode === 'paid' && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <label htmlFor="api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
             Marker API Key
@@ -650,8 +661,8 @@ export default function PdfToMarkdownPage() {
         </div>
       )}
 
-      {/* Gemini API Key Section - Local Mode */}
-      {mode === 'local' && (
+      {/* Gemini API Key Section - Free Mode */}
+      {mode === 'free' && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <label htmlFor="gemini-api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
             Gemini API Key
@@ -669,7 +680,7 @@ export default function PdfToMarkdownPage() {
           <p className="mt-2 text-sm text-gray-500">
             {options.use_llm ? (
               <>
-                Required when using LLM enhancement in local mode.{' '}
+                Required when using LLM enhancement in free mode.{' '}
                 <a
                   href="https://aistudio.google.com/app/apikey"
                   target="_blank"
@@ -801,7 +812,7 @@ export default function PdfToMarkdownPage() {
           </label>
 
           {/* Local mode only options */}
-          {mode === 'local' && (
+          {mode === 'free' && (
             <label className="flex items-start">
               <input
                 type="checkbox"
@@ -909,8 +920,8 @@ export default function PdfToMarkdownPage() {
             disabled={
               processing ||
               files.length === 0 ||
-              (mode === 'cloud' && !apiKey.trim()) ||
-              (mode === 'local' && options.use_llm && !geminiApiKey.trim())
+              (mode === 'paid' && !apiKey.trim()) ||
+              (mode === 'free' && options.use_llm && !geminiApiKey.trim())
             }
             loading={processing}
             loadingText="Converting..."
@@ -946,7 +957,7 @@ export default function PdfToMarkdownPage() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
           How it works
         </h2>
-        {mode === 'cloud' ? (
+        {mode === 'paid' ? (
           <>
             <ul className="space-y-2 text-gray-600">
               <li>1. Enter your Marker API key (test key provided by default)</li>
@@ -969,20 +980,21 @@ export default function PdfToMarkdownPage() {
         ) : (
           <>
             <ul className="space-y-2 text-gray-600">
-              <li>1. Set up local Marker instance (Docker recommended)</li>
+              <li>1. Select &quot;Free&quot; mode (GPU-powered via Modal)</li>
               <li>2. If using LLM enhancement, enter your Gemini API key</li>
-              <li>3. Upload PDF file(s) or select a folder</li>
-              <li>4. Configure conversion options (more options available in local mode)</li>
+              <li>3. Upload PDF file(s)</li>
+              <li>4. Configure conversion options</li>
               <li>5. Click &quot;Convert to Markdown&quot;</li>
-              <li>6. Click &quot;Download&quot; to save your file(s)</li>
+              <li>6. Wait 30-90 seconds (first run may take longer)</li>
+              <li>7. Click &quot;Download&quot; to save your file</li>
             </ul>
             <p className="mt-4 text-sm text-gray-500">
-              <strong>Local Mode:</strong> Requires a local Marker instance running (typically via Docker on http://localhost:8000).
-              Provides additional conversion options not available in cloud mode.
-              All processing happens locally - no data sent to external servers (except Gemini API if using LLM).
+              <strong>Free Mode:</strong> Uses Modal.com serverless GPU (NVIDIA T4) with $30/month in free credits.
+              Processing takes 30-90 seconds per PDF. May have a 20-30 second &quot;cold start&quot; if the service was idle.
+              Free tier covers ~100-200 PDFs/month, no API key required!
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              <strong>Note:</strong> Batch conversion is not yet supported in local mode. Please convert files individually or switch to Cloud API mode for batch processing.
+              <strong>Note:</strong> Batch conversion is not yet supported in free mode. Please convert files individually or switch to Paid mode for batch processing.
             </p>
           </>
         )}

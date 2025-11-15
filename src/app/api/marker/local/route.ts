@@ -230,8 +230,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
           method: 'POST',
           body: markerFormData,
         },
-        30000
-      ) // 30 second timeout
+        300000
+      ) // 5 minute timeout (Modal cold starts + initial response can take time)
     } catch (fetchError) {
       const errorType = getNetworkErrorType(fetchError)
       const errorMessage = getNetworkErrorMessage(errorType, true)
@@ -314,11 +314,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
+    // Construct full URL for status checking (Modal returns relative URL like "/status/{id}")
+    const statusUrl = data.request_check_url.startsWith('http')
+      ? data.request_check_url
+      : `${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}${data.request_check_url}`
+
     // Return the request_check_url for polling
     return NextResponse.json({
       success: true,
       request_id: data.request_id,
-      request_check_url: data.request_check_url,
+      request_check_url: statusUrl,
     })
 
   } catch (error) {
@@ -359,7 +364,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
     try {
       response = await fetchWithTimeout(checkUrl, {
         method: 'GET',
-      }, 30000) // 30 second timeout
+      }, 60000) // 60 second timeout (Modal status checks can take time)
     } catch (fetchError) {
       const errorType = getNetworkErrorType(fetchError)
       const errorMessage = getNetworkErrorMessage(errorType, true)

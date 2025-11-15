@@ -54,17 +54,20 @@ export const TOOL_CARDS: readonly ToolCard[] = [
 // API endpoints
 export const API_ENDPOINTS = {
   MARKER: '/api/marker',
-  MARKER_LOCAL: '/api/marker/local',
+  MARKER_LOCAL: '/api/marker/local', // Proxies to free Modal serverless function
   MARKER_EXTERNAL: 'https://www.datalab.to/api/v1/marker',
-  // Local Marker instance endpoint (Docker default)
-  LOCAL_MARKER_INSTANCE: 'http://localhost:8000',
+  // Free Marker instance (Modal.com with free GPU - $30/month credits)
+  // TODO: Replace with your Modal endpoint URL after deployment
+  // Get this from: modal deploy modal_app.py
+  LOCAL_MARKER_INSTANCE: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run',
 } as const
 
 // LocalStorage keys
 export const STORAGE_KEYS = {
   MARKER_OPTIONS: 'markerOptions',
-  MARKER_MODE: 'markerMode', // 'cloud' | 'local'
-  GEMINI_API_KEY: 'geminiApiKey', // For local mode with LLM
+  MARKER_MODE: 'markerMode', // 'free' | 'paid' (was 'local' | 'cloud')
+  GEMINI_API_KEY: 'geminiApiKey', // For free mode with LLM enhancement
+  MARKER_API_KEY: 'markerApiKey', // For paid mode (Marker API)
 } as const
 
 // Marker API configuration
@@ -83,8 +86,8 @@ export const MARKER_CONFIG = {
   // Polling configuration
   POLLING: {
     INTERVAL_MS: 2000, // Poll every 2 seconds
-    MAX_ATTEMPTS: 150, // 5 minutes max (150 * 2 seconds)
-    TIMEOUT_DURATION_MS: 300000, // 5 minutes in milliseconds
+    MAX_ATTEMPTS: 900, // 30 minutes max (900 * 2 seconds = 1800 seconds)
+    TIMEOUT_DURATION_MS: 1800000, // 30 minutes in milliseconds
   },
 
   // Batch processing configuration
