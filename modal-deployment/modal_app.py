@@ -100,9 +100,10 @@ def convert_pdf(
             # Some versions use environment variable instead of CLI flag
             env["MARKER_LANGS"] = langs
 
-        # Run marker conversion
+        # Run marker conversion with environment variables
         result = subprocess.run(
             cmd,
+            env=env,
             capture_output=True,
             text=True,
             timeout=550,  # Slightly less than function timeout
