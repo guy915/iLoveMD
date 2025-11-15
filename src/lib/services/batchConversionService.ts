@@ -399,8 +399,9 @@ export async function convertBatchPdfToMarkdown(
 }
 
 /**
- * Convert multiple PDF files to markdown in parallel with retry logic (free mode)
+ * Convert multiple PDF files to markdown sequentially (one at a time) (free mode)
  * Uses Modal serverless GPU instead of Marker API
+ * Processes files one at a time to avoid issues with parallel execution
  */
 export async function convertBatchPdfToMarkdownLocal(
   files: File[],
@@ -409,7 +410,6 @@ export async function convertBatchPdfToMarkdownLocal(
   const {
     geminiApiKey,
     markerOptions,
-    maxConcurrent = 10, // Lower concurrency for free mode (Modal GPU limits)
     maxRetries = MARKER_CONFIG.BATCH.MAX_RETRIES,
     onProgress,
     signal
@@ -437,80 +437,52 @@ export async function convertBatchPdfToMarkdownLocal(
     onProgress?.(progress)
   }
 
-  // Create file-to-index map for O(1) lookups instead of O(n) indexOf
-  const fileIndexMap = new Map(files.map((file, index) => [file, index]))
-
-  // Queue of files to process
-  const queue = [...files]
-  const inProgress = new Set<Promise<void>>()
-
-  // Process files with concurrency control
-  while (queue.length > 0 || inProgress.size > 0) {
+  // Process files sequentially (one at a time)
+  for (let i = 0; i < files.length; i++) {
     // Check if cancelled
     if (signal?.aborted) {
       break
     }
 
-    // Start new conversions up to concurrency limit
-    while (queue.length > 0 && inProgress.size < maxConcurrent) {
-      const file = queue.shift()!
-      const resultIndex = fileIndexMap.get(file)!
+    const file = files[i]
+    const resultIndex = i
 
-      // Mark as in progress
-      results[resultIndex].status = 'processing'
-      progress.inProgress++
+    // Mark as in progress
+    results[resultIndex].status = 'processing'
+    progress.inProgress = 1
+    updateProgress()
+
+    try {
+      // Convert file with retry logic (sequential - one at a time)
+      const result = await convertFileWithRetryLocal(
+        file,
+        geminiApiKey,
+        markerOptions,
+        maxRetries,
+        signal
+      )
+
+      // Update result
+      results[resultIndex] = result
+
+      // Update counters
+      progress.inProgress = 0
+      if (result.status === 'complete') {
+        progress.completed++
+      } else if (result.status === 'failed') {
+        progress.failed++
+      }
+
       updateProgress()
-
-      // Start conversion - create wrapper function to handle cleanup
-      const conversionPromise = (async () => {
-        try {
-          const result = await convertFileWithRetryLocal(
-            file,
-            geminiApiKey,
-            markerOptions,
-            maxRetries,
-            signal
-          )
-
-          // Update result
-          results[resultIndex] = result
-
-          // Update counters
-          progress.inProgress--
-          if (result.status === 'complete') {
-            progress.completed++
-          } else if (result.status === 'failed') {
-            progress.failed++
-          }
-
-          updateProgress()
-        } catch (error) {
-          // Handle unexpected errors
-          results[resultIndex].status = 'failed'
-          results[resultIndex].error = error instanceof Error ? error.message : 'Unknown error'
-          progress.inProgress--
-          progress.failed++
-          updateProgress()
-        }
-      })()
-
-      // Add to tracking set
-      inProgress.add(conversionPromise)
-
-      // Remove from tracking when complete
-      conversionPromise.finally(() => {
-        inProgress.delete(conversionPromise)
-      })
-    }
-
-    // Wait for at least one conversion to complete before continuing
-    if (inProgress.size > 0) {
-      await Promise.race(inProgress)
+    } catch (error) {
+      // Handle unexpected errors
+      results[resultIndex].status = 'failed'
+      results[resultIndex].error = error instanceof Error ? error.message : 'Unknown error'
+      progress.inProgress = 0
+      progress.failed++
+      updateProgress()
     }
   }
-
-  // Wait for all remaining conversions to complete
-  await Promise.all(inProgress)
 
   // Separate completed and failed results
   const completed = results.filter(r => r.status === 'complete')
