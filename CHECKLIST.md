@@ -437,6 +437,33 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-15 - Add Icons to Tool Cards and Update Design
+- **Added**:
+  - Created custom SVG icons for tool cards (pdf-icon.svg, merge-icon.svg)
+  - Updated tool card design to match iLovePDF style with icons at top
+  - Changed layout to center-aligned with icon, title, and short description
+- **Changed**:
+  - Shortened tool descriptions from paragraphs to single sentences
+  - "PDF to Markdown": "Convert PDF files to clean markdown optimized for LLMs"
+  - "Merge Markdown": "Combine multiple markdown files into a single file"
+  - Updated ToolCard interface to include icon property
+  - Updated ToolTile component to display icons using Next.js Image
+- **Why**:
+  - User requested icons for PDF and Merge Markdown cards
+  - Requested design to match iLovePDF's clean, minimal style
+  - Requested short sentences instead of long paragraph descriptions
+  - Ensures all cards are the exact same size
+- **Technical**:
+  - Created two SVG icon files in public folder
+  - Added icon property to ToolCard type
+  - Updated TOOL_CARDS constant with icon paths and new descriptions
+  - Modified ToolTile component with center alignment and icon display
+- **Impact**: Homepage tool cards now have a professional, clean design with icons matching iLovePDF style
+- **Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped)
+- **Files Created**: 2 (public/pdf-icon.svg, public/merge-icon.svg)
+- **Files Modified**: 4 (src/types/index.ts, src/lib/constants.ts, src/components/home/ToolTile.tsx, src/app/page.tsx)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-15 - Add Favicon and Logo
 - **Added**:
   - Created public folder for static assets

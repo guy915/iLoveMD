@@ -29,6 +29,7 @@ export default function Home() {
               title={tool.title}
               description={tool.description}
               href={tool.href}
+              icon={tool.icon}
             />
           </div>
         ))}

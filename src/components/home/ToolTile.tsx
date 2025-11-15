@@ -1,6 +1,7 @@
 'use client'
 
 import { memo, useCallback } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useLogs } from '@/contexts/LogContext'
 
@@ -14,13 +15,16 @@ interface ToolTileProps {
   description: string
   /** Link to tool page */
   href: string
+  /** Icon path (SVG file in public folder) */
+  icon: string
 }
 
 /**
  * ToolTile component for displaying tool cards on the homepage
  * Memoized to prevent unnecessary re-renders
+ * Designed with iLovePDF-style layout: icon at top, title, and short description
  */
-const ToolTile = memo(function ToolTile({ title, description, href }: ToolTileProps) {
+const ToolTile = memo(function ToolTile({ title, description, href, icon }: ToolTileProps) {
   const { addLog } = useLogs()
 
   const handleClick = useCallback(() => {
@@ -30,11 +34,24 @@ const ToolTile = memo(function ToolTile({ title, description, href }: ToolTilePr
   return (
     <Link
       href={href}
-      className="flex flex-col h-full p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
+      className="flex flex-col items-center text-center h-full p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
       onClick={handleClick}
     >
-      <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-gray-600 flex-1">{description}</p>
+      {/* Icon */}
+      <div className="mb-4">
+        <Image
+          src={icon}
+          alt={`${title} icon`}
+          width={80}
+          height={80}
+        />
+      </div>
+
+      {/* Title */}
+      <h3 className="text-xl font-semibold mb-3">{title}</h3>
+
+      {/* Description */}
+      <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
     </Link>
   )
 })
