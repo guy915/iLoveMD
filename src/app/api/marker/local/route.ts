@@ -314,11 +314,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
+    // Construct full URL for status checking (Modal returns relative URL like "/status/{id}")
+    const statusUrl = data.request_check_url.startsWith('http')
+      ? data.request_check_url
+      : `${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}${data.request_check_url}`
+
     // Return the request_check_url for polling
     return NextResponse.json({
       success: true,
       request_id: data.request_id,
-      request_check_url: data.request_check_url,
+      request_check_url: statusUrl,
     })
 
   } catch (error) {
