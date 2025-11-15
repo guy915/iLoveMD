@@ -360,7 +360,7 @@ describe('batchConversionService', () => {
       expect(result.failed).toHaveLength(1)
       expect(result.failed[0].status).toBe('failed')
       expect(result.failed[0].attempts).toBe(3)
-      expect(result.error).toBe('All conversions failed')
+      expect(result.error).toBe('All conversions failed. Errors: Conversion failed')
     })
 
     it('should respect concurrency limit', async () => {
@@ -580,7 +580,7 @@ describe('batchConversionService', () => {
       expect(result.success).toBe(false)
       expect(result.completed).toHaveLength(0)
       expect(result.failed).toHaveLength(2)
-      expect(result.error).toBe('All conversions failed')
+      expect(result.error).toBe('All conversions failed. Errors: All failed; All failed')
       expect(result.zipBlob).toBeUndefined()
     })
 
