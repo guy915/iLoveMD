@@ -335,48 +335,98 @@ export default function PdfToMarkdownPage() {
 
       if (isBatch) {
         // Batch conversion
-        // NOTE: Batch mode only supports cloud API for now (local batch will be added in future PR if needed)
         if (mode === 'free') {
-          throw new Error('Batch conversion is not yet supported in free mode. Please switch to Paid mode or convert files individually.')
-        }
+          // Free mode: use batch service with parallel processing (up to 10 concurrent)
+          setStatus('Processing batch...')
 
-        setStatus('Processing batch...')
+          const { convertBatchPdfToMarkdownLocal } = await import('@/lib/services/batchConversionService')
 
-        // Dynamically import batch service
-        const { convertBatchPdfToMarkdown } = await import('@/lib/services/batchConversionService')
+          const result = await convertBatchPdfToMarkdownLocal(files, {
+            geminiApiKey: options.use_llm ? geminiApiKey : null,
+            markerOptions: options,
+            onProgress: (progress: BatchProgress) => {
+              if (isMountedRef.current) {
+                setBatchProgress(progress)
+                setStatus(`Processing... ${progress.completed}/${progress.total} complete (${progress.inProgress} in progress)`)
+              }
+            },
+            signal: abortControllerRef.current.signal
+          })
 
-        const result = await convertBatchPdfToMarkdown(files, {
-          apiKey,
-          markerOptions: options,
-          onProgress: (progress) => {
-            if (isMountedRef.current) {
-              setBatchProgress(progress)
-              setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+          if (!result.success || !result.zipBlob) {
+            const errorMsg = result.error || 'Batch conversion failed'
+            const failedCount = result.failed?.length || 0
+            const totalCount = files.length
+            
+            if (failedCount > 0 && failedCount < totalCount) {
+              throw new Error(`${errorMsg}. ${result.completed?.length || 0}/${totalCount} files converted successfully.`)
+            } else {
+              throw new Error(errorMsg)
             }
-          },
-          signal: abortControllerRef.current.signal
-        })
+          }
 
-        if (!result.success || !result.zipBlob) {
-          throw new Error(result.error || 'Batch conversion failed')
-        }
+          const zipName = folderName
+            ? `${folderName}_markdown.zip`
+            : `converted_markdowns_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.zip`
 
-        // Generate ZIP filename
-        const zipName = folderName
-          ? `${folderName}_markdown.zip`
-          : `converted_markdowns_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.zip`
+          addLog('success', `Batch conversion complete!`, {
+            completed: result.completed.length,
+            failed: result.failed.length,
+            zipName
+          })
 
-        addLog('success', `Batch conversion complete!`, {
-          completed: result.completed.length,
-          failed: result.failed.length,
-          zipName
-        })
+          if (isMountedRef.current) {
+            setBatchZipBlob(result.zipBlob)
+            setBatchZipFilename(zipName)
+            setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted. Click Download.`)
+            setProcessing(false)
+          }
+        } else {
+          // Paid mode - use batch service
+          setStatus('Processing batch...')
 
-        if (isMountedRef.current) {
-          setBatchZipBlob(result.zipBlob)
-          setBatchZipFilename(zipName)
-          setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted. Click Download.`)
-          setProcessing(false)
+          const { convertBatchPdfToMarkdown } = await import('@/lib/services/batchConversionService')
+
+          const result = await convertBatchPdfToMarkdown(files, {
+            apiKey,
+            markerOptions: options,
+            onProgress: (progress: BatchProgress) => {
+              if (isMountedRef.current) {
+                setBatchProgress(progress)
+                setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+              }
+            },
+            signal: abortControllerRef.current.signal
+          })
+
+          if (!result.success || !result.zipBlob) {
+            const errorMsg = result.error || 'Batch conversion failed'
+            const failedCount = result.failed?.length || 0
+            const totalCount = files.length
+            
+            if (failedCount > 0 && failedCount < totalCount) {
+              throw new Error(`${errorMsg}. ${result.completed?.length || 0}/${totalCount} files converted successfully.`)
+            } else {
+              throw new Error(errorMsg)
+            }
+          }
+
+          const zipName = folderName
+            ? `${folderName}_markdown.zip`
+            : `converted_markdowns_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.zip`
+
+          addLog('success', `Batch conversion complete!`, {
+            completed: result.completed.length,
+            failed: result.failed.length,
+            zipName
+          })
+
+          if (isMountedRef.current) {
+            setBatchZipBlob(result.zipBlob)
+            setBatchZipFilename(zipName)
+            setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted. Click Download.`)
+            setProcessing(false)
+          }
         }
 
       } else {
@@ -881,13 +931,29 @@ export default function PdfToMarkdownPage() {
       {/* Single File Status - unified for processing and completion */}
       {!isBatch && (processing || status) && (
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {processing && (
+                <span className="text-blue-600 animate-spin text-2xl">⟳</span>
+              )}
+              <p className="text-base font-semibold text-gray-900">
+                {status || 'Converting PDF to Markdown...'}
+              </p>
+            </div>
             {processing && (
-              <span className="text-blue-600 animate-spin text-2xl">⟳</span>
+              <button
+                onClick={() => {
+                  if (abortControllerRef.current) {
+                    abortControllerRef.current.abort()
+                    setStatus('Cancelling...')
+                    setProcessing(false)
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                Cancel
+              </button>
             )}
-            <p className="text-base font-semibold text-gray-900">
-              {status || 'Converting PDF to Markdown...'}
-            </p>
           </div>
         </div>
       )}
@@ -895,15 +961,31 @@ export default function PdfToMarkdownPage() {
       {/* Batch Progress - unified for processing and completion */}
       {isBatch && (processing || status) && (
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {processing && (
+                <span className="text-blue-600 animate-spin text-2xl">⟳</span>
+              )}
+              <p className="text-base font-semibold text-gray-900">
+                {batchProgress && processing
+                  ? `Converting ${batchProgress.completed}/${batchProgress.total} files`
+                  : status}
+              </p>
+            </div>
             {processing && (
-              <span className="text-blue-600 animate-spin text-2xl">⟳</span>
+              <button
+                onClick={() => {
+                  if (abortControllerRef.current) {
+                    abortControllerRef.current.abort()
+                    setStatus('Cancelling...')
+                    setProcessing(false)
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                Cancel
+              </button>
             )}
-            <p className="text-base font-semibold text-gray-900">
-              {batchProgress && processing
-                ? `Converting ${batchProgress.completed}/${batchProgress.total} files`
-                : status}
-            </p>
           </div>
           {batchProgress && batchProgress.failed > 0 && (
             <p className="text-sm text-red-600 ml-11 mt-2">Failed: {batchProgress.failed}</p>
@@ -994,7 +1076,9 @@ export default function PdfToMarkdownPage() {
               Free tier covers ~100-200 PDFs/month, no API key required!
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              <strong>Note:</strong> Batch conversion is not yet supported in free mode. Please convert files individually or switch to Paid mode for batch processing.
+              <strong>Batch Processing:</strong> Select multiple files or folders for automatic batch conversion.
+              Output is a ZIP file containing all converted markdowns.
+              Free mode processes up to 10 files concurrently (slower but free).
             </p>
           </>
         )}
