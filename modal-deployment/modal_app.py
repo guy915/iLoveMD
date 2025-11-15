@@ -134,10 +134,33 @@ def convert_pdf(
         time.sleep(random.uniform(0, 5.0))
         
         print(f"[DIAGNOSTIC] About to initialize models (after delay)")
-        with _model_init_lock:
-            print(f"[DIAGNOSTIC] Acquired lock, initializing models...")
-            artifact_dict = create_model_dict()
-            print(f"[DIAGNOSTIC] Models initialized successfully")
+        
+        # Retry logic for meta tensor error (bug in surya library)
+        # The surya library sometimes loads models in meta mode incorrectly when multiple containers initialize simultaneously
+        max_retries = 3
+        artifact_dict = None
+        for attempt in range(max_retries):
+            try:
+                with _model_init_lock:
+                    print(f"[DIAGNOSTIC] Attempt {attempt + 1}: Acquired lock, initializing models...")
+                    artifact_dict = create_model_dict()
+                    print(f"[DIAGNOSTIC] Models initialized successfully")
+                    break  # Success, exit retry loop
+            except Exception as e:
+                error_msg = str(e)
+                if "meta tensor" in error_msg.lower() and attempt < max_retries - 1:
+                    # Exponential backoff: 2s, 4s, 8s
+                    wait_time = 2 ** (attempt + 1)
+                    print(f"[DIAGNOSTIC] Meta tensor error on attempt {attempt + 1}, retrying in {wait_time}s...")
+                    print(f"[DIAGNOSTIC] Error: {error_msg}")
+                    time.sleep(wait_time)
+                else:
+                    # Not a meta tensor error, or last attempt - re-raise
+                    print(f"[DIAGNOSTIC] Failed after {attempt + 1} attempts")
+                    raise
+        
+        if artifact_dict is None:
+            raise RuntimeError("Failed to initialize models after all retries")
         
         converter = PdfConverter(
             artifact_dict=artifact_dict,
