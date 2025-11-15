@@ -254,24 +254,24 @@ describe('LogContext', () => {
       expect(result.current.logs).toHaveLength(2)
     })
 
-    it('should maintain max 500 logs (sliding window)', () => {
+    it('should maintain max 50 logs (sliding window)', () => {
       const { result } = renderHook(() => useLogs(), {
         wrapper: createWrapper()
       })
 
       act(() => {
-        // Add 501 logs
-        for (let i = 0; i < 501; i++) {
+        // Add 51 logs
+        for (let i = 0; i < 51; i++) {
           result.current.addLog('info', `Message ${i}`)
         }
       })
 
-      // Should keep only last 500
-      expect(result.current.logs).toHaveLength(500)
+      // Should keep only last 50
+      expect(result.current.logs).toHaveLength(50)
       // First log should be "Message 1" (Message 0 was dropped)
       expect(result.current.logs[0].message).toBe('Message 1')
-      // Last log should be "Message 500"
-      expect(result.current.logs[499].message).toBe('Message 500')
+      // Last log should be "Message 50"
+      expect(result.current.logs[49].message).toBe('Message 50')
     })
 
     it('should save logs to sessionStorage after debounce delay', async () => {
