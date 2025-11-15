@@ -78,61 +78,33 @@ def convert_pdf(
         # Write PDF bytes to file
         input_file.write_bytes(pdf_bytes)
 
-        # Build marker_single command
-        # Note: marker_single CLI has limited options - check with 'marker_single --help'
-        cmd = [
-            "marker_single",
-            str(input_file),
-            str(output_dir),
-            "--output_format", output_format,
-        ]
-
-        # Add optional parameters (only supported ones)
-        # Note: --langs and --force_ocr may not be supported in all versions
-        if paginate:
-            cmd.append("--paginate")
-        if not extract_images:
-            cmd.append("--disable_image_extraction")
+        # Use Marker Python API directly instead of CLI
+        from marker.convert import convert_single_pdf
+        from marker.models import load_all_models
         
-        # Set environment variables for language if needed
-        env = os.environ.copy()
-        if langs:
-            # Some versions use environment variable instead of CLI flag
-            env["MARKER_LANGS"] = langs
-
-        # Run marker conversion with environment variables
-        result = subprocess.run(
-            cmd,
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=550,  # Slightly less than function timeout
+        # Load models (this is cached, so it's fast on subsequent calls)
+        model_lst = load_all_models()
+        
+        # Convert PDF using Python API
+        # The API returns a dictionary with the markdown content
+        full_text, images, out_meta = convert_single_pdf(
+            str(input_file),
+            model_lst,
+            output_format=output_format,
+            langs=langs.split(",") if langs else None,
+            batch_multiplier=1,
+            no_image_extraction=not extract_images,
         )
+        
+        # Get markdown content
+        if output_format == "markdown":
+            markdown_content = full_text
+        else:
+            # For other formats, full_text might be in different format
+            markdown_content = str(full_text)
 
-        if result.returncode != 0:
-            return {
-                "success": False,
-                "error": f"Marker conversion failed: {result.stderr}",
-                "request_id": request_id,
-            }
-
-        # Read the output markdown file
-        output_files = list(output_dir.glob("*.md"))
-        if not output_files:
-            return {
-                "success": False,
-                "error": "No markdown file generated",
-                "request_id": request_id,
-            }
-
-        markdown_content = output_files[0].read_text(encoding="utf-8")
-
-        # Read metadata if available
-        metadata = {}
-        meta_file = output_dir / f"{input_file.stem}_meta.json"
-        if meta_file.exists():
-            import json
-            metadata = json.loads(meta_file.read_text())
+        # Use metadata from API response
+        metadata = out_meta if out_meta else {}
 
         return {
             "success": True,
@@ -142,12 +114,15 @@ def convert_pdf(
             "metadata": metadata,
         }
 
-    except subprocess.TimeoutExpired:
-        return {
-            "success": False,
-            "error": "Conversion timed out (>9 minutes)",
-            "request_id": request_id,
-        }
+    except Exception as e:
+        # Catch all exceptions including timeouts
+        error_msg = str(e)
+        if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+            return {
+                "success": False,
+                "error": "Conversion timed out (>9 minutes)",
+                "request_id": request_id,
+            }
     except Exception as e:
         return {
             "success": False,
