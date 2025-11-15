@@ -1,4 +1,4 @@
-# Local Marker Setup Guide
+# Modal Setup Guide
 
 Run Marker PDF conversion locally on your machine - no Docker required!
 
@@ -20,7 +20,7 @@ python marker_server.py
 
 You should see:
 ```
-🚀 Local Marker Server Starting...
+🚀 Modal Server Starting...
 📍 Server: http://localhost:8000
 🌐 Website: http://localhost:3000
 ✅ Keep this terminal open!
@@ -29,7 +29,7 @@ You should see:
 ### 3. Use the Website
 
 1. Open http://localhost:3000/pdf-to-markdown
-2. Select **"Local Marker"** mode
+2. Select **"Modal"** mode
 3. Upload a PDF and convert!
 
 **That's it!** The website sends files to your local server, which runs Marker CLI commands.

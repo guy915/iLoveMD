@@ -432,7 +432,7 @@ export default function PdfToMarkdownPage() {
       } else {
         // Single file conversion
         const file = files[0]
-        setStatus(mode === 'paid' ? 'Submitting to Marker API...' : 'Submitting to local Marker...')
+        setStatus(mode === 'paid' ? 'Submitting to Marker API...' : 'Submitting to Modal...')
 
         const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
           if (!isMountedRef.current) return

@@ -217,11 +217,11 @@ export function validatePdfFile(file: File): { valid: boolean; error?: string } 
 }
 
 // ============================================================================
-// LOCAL MARKER FUNCTIONS
+// MODAL (FREE MODE) FUNCTIONS
 // ============================================================================
 
 /**
- * Submit a PDF file for conversion to local Marker instance
+ * Submit a PDF file for conversion to Modal instance
  *
  * @param file - The PDF file to convert
  * @param geminiApiKey - The Gemini API key (required if use_llm is enabled)
@@ -255,7 +255,7 @@ export async function submitPdfConversionLocal(
 }
 
 /**
- * Poll for conversion status from local Marker instance
+ * Poll for conversion status from Modal instance
  *
  * @param checkUrl - The status check URL from submit response
  * @returns Poll response with status and markdown (if complete)
@@ -277,7 +277,7 @@ export async function pollConversionStatusLocal(
 }
 
 /**
- * Convert a PDF file to Markdown using local Marker instance with automatic polling
+ * Convert a PDF file to Markdown using Modal instance with automatic polling
  *
  * This is a high-level function that handles the entire conversion flow:
  * 1. Submit file
@@ -308,7 +308,7 @@ export async function convertPdfToMarkdownLocal(
     const submitResponse = await submitPdfConversionLocal(file, geminiApiKey, options)
 
     if (!submitResponse.request_check_url) {
-      return { success: false, error: 'No status check URL returned from local Marker' }
+      return { success: false, error: 'No status check URL returned from Modal' }
     }
 
     // Poll for results
@@ -340,14 +340,14 @@ export async function convertPdfToMarkdownLocal(
       // Check if complete
       if (pollResponse.status === 'complete') {
         if (!pollResponse.markdown) {
-          return { success: false, error: 'No content received from local Marker' }
+          return { success: false, error: 'No content received from Modal' }
         }
         return { success: true, markdown: pollResponse.markdown }
       }
 
       // Check if error
       if (pollResponse.status === 'error') {
-        return { success: false, error: 'Conversion failed on local Marker' }
+        return { success: false, error: 'Conversion failed on Modal' }
       }
 
       // Wait before next poll (unless this is the last attempt)
