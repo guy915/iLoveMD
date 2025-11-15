@@ -102,10 +102,8 @@ def convert_pdf(
         from marker.config.parser import ConfigParser
         
         # Set GEMINI_API_KEY environment variable if LLM is enabled
-        import os
         if use_llm and api_key:
             os.environ["GEMINI_API_KEY"] = api_key
-            print(f"[convert_pdf] GEMINI_API_KEY environment variable set (length: {len(api_key)})")
         elif use_llm and not api_key:
             print(f"[convert_pdf] WARNING: use_llm=True but no api_key provided")
         
@@ -128,19 +126,8 @@ def convert_pdf(
             config_dict["use_llm"] = True
             if api_key:
                 config_dict["gemini_api_key"] = api_key
-                print(f"[convert_pdf] LLM enhancement enabled in config with API key (length: {len(api_key)})")
-                print(f"[convert_pdf] DEBUG: config_dict keys: {list(config_dict.keys())}")
-                print(f"[convert_pdf] DEBUG: gemini_api_key in config_dict: {'gemini_api_key' in config_dict}")
-            else:
-                print(f"[convert_pdf] LLM enhancement enabled in config but no API key provided")
         
         config_parser = ConfigParser(config_dict)
-        
-        # Debug: Check what ConfigParser generates
-        if use_llm:
-            generated_config = config_parser.generate_config_dict()
-            print(f"[convert_pdf] DEBUG: Generated config keys: {list(generated_config.keys())}")
-            print(f"[convert_pdf] DEBUG: gemini_api_key in generated_config: {'gemini_api_key' in generated_config}")
         
         # DIAGNOSTIC: Check cache locations and container info
         cache_locations = {
@@ -190,12 +177,12 @@ def convert_pdf(
         if artifact_dict is None:
             raise RuntimeError("Failed to initialize models after all retries")
         
-        # Get generated config
+        # Get generated config (generate once and reuse)
         generated_config = config_parser.generate_config_dict()
         
         # Ensure gemini_api_key is in the config if LLM is enabled
+        # ConfigParser may filter it out, so we add it manually as a safety measure
         if use_llm and api_key and "gemini_api_key" not in generated_config:
-            print(f"[convert_pdf] WARNING: gemini_api_key not in generated_config, adding it manually")
             generated_config["gemini_api_key"] = api_key
         
         converter = PdfConverter(
