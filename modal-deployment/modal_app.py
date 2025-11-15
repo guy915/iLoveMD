@@ -152,9 +152,19 @@ def convert_pdf(
 def create_app():
     from fastapi import FastAPI, File, UploadFile, Form
     from fastapi.responses import JSONResponse
+    from fastapi.middleware.cors import CORSMiddleware
     import asyncio
     
     web_app = FastAPI()
+    
+    # Enable CORS for all origins (since this is a public API)
+    web_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     
     # In-memory job storage for this app instance
     app_jobs: Dict[str, Dict[str, Any]] = {}
