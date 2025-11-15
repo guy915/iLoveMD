@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Complete Remaining Checklist Items** (2025-11-15):
+  - **Completed all automated testing and validation tasks** from Phase 5:
+    - Ran full test suite: 413 tests passing, 6 skipped (73.09% coverage exceeds 70% threshold)
+    - Ran production build: No errors or warnings, all routes generated successfully
+    - Ran lint checks: No errors or warnings
+    - Checked bundle sizes: Homepage (105kB), Merge Markdown (224kB), PDF to Markdown (99.7kB)
+    - Reviewed accessibility: aria-labels, keyboard navigation, focus indicators verified
+  - **Updated CHECKLIST.md** with completion status:
+    - Marked accessibility items complete (keyboard nav, aria-labels, focus indicators)
+    - Marked performance items complete (bundle size checked)
+    - Marked final testing items complete (tests passing, no errors, validation working)
+  - **Test coverage details**:
+    - Statements: 73.09%
+    - Branches: 93.2%
+    - Functions: 82.37%
+  - **Accessibility audit findings**:
+    - aria-labels present on Header, Button, FileUpload components
+    - Keyboard navigation with tabIndex and Enter/Space key handlers
+    - Semantic HTML throughout
+    - ARIA attributes (aria-expanded, aria-busy, aria-hidden) properly used
+    - External links indicate new tab for screen readers
+  - **Remaining items**: Manual testing (responsive, cross-browser, Lighthouse, screen reader), deployment tasks
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped) | Coverage: 73.09%
+
 ### Added
 - **Added Icons to Tool Cards and Updated Design** (2025-11-15):
   - **Created custom SVG icons for tool cards**:
