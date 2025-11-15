@@ -401,7 +401,7 @@ export async function convertBatchPdfToMarkdown(
 /**
  * Convert multiple PDF files to markdown sequentially (one at a time) (free mode)
  * Uses Modal serverless GPU instead of Marker API
- * Processes files one at a time to avoid issues with parallel execution
+ * Processes files one at a time using the exact same function as single mode
  */
 export async function convertBatchPdfToMarkdownLocal(
   files: File[],
@@ -410,10 +410,12 @@ export async function convertBatchPdfToMarkdownLocal(
   const {
     geminiApiKey,
     markerOptions,
-    maxRetries = MARKER_CONFIG.BATCH.MAX_RETRIES,
     onProgress,
     signal
   } = options
+
+  // Import the same function used for single file conversion
+  const { convertPdfToMarkdownLocal } = await import('./markerApiService')
 
   // Initialize results array
   const results: FileConversionResult[] = files.map(file => ({
@@ -437,7 +439,7 @@ export async function convertBatchPdfToMarkdownLocal(
     onProgress?.(progress)
   }
 
-  // Process files sequentially (one at a time)
+  // Process files sequentially (one at a time) - exactly like single mode
   for (let i = 0; i < files.length; i++) {
     // Check if cancelled
     if (signal?.aborted) {
@@ -453,31 +455,56 @@ export async function convertBatchPdfToMarkdownLocal(
     updateProgress()
 
     try {
-      // Convert file with retry logic (sequential - one at a time)
-      const result = await convertFileWithRetryLocal(
+      // Use the EXACT same function as single mode - no wrapper, no retry logic
+      const conversionResult = await convertPdfToMarkdownLocal(
         file,
         geminiApiKey,
         markerOptions,
-        maxRetries,
+        undefined, // No progress callback for individual files in batch
         signal
       )
 
-      // Update result
-      results[resultIndex] = result
-
-      // Update counters
-      progress.inProgress = 0
-      if (result.status === 'complete') {
+      // Convert to FileConversionResult format
+      if (conversionResult.success && conversionResult.markdown) {
+        results[resultIndex] = {
+          file,
+          filename: file.name,
+          status: 'complete',
+          markdown: conversionResult.markdown,
+          attempts: 1,
+          startTime: Date.now(),
+          endTime: Date.now(),
+          duration: 0
+        }
         progress.completed++
-      } else if (result.status === 'failed') {
+      } else {
+        results[resultIndex] = {
+          file,
+          filename: file.name,
+          status: 'failed',
+          error: conversionResult.error || 'Conversion failed',
+          attempts: 1,
+          startTime: Date.now(),
+          endTime: Date.now(),
+          duration: 0
+        }
         progress.failed++
       }
 
+      progress.inProgress = 0
       updateProgress()
     } catch (error) {
       // Handle unexpected errors
-      results[resultIndex].status = 'failed'
-      results[resultIndex].error = error instanceof Error ? error.message : 'Unknown error'
+      results[resultIndex] = {
+        file,
+        filename: file.name,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        attempts: 1,
+        startTime: Date.now(),
+        endTime: Date.now(),
+        duration: 0
+      }
       progress.inProgress = 0
       progress.failed++
       updateProgress()
