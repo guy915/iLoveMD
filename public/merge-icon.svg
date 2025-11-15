@@ -6,11 +6,11 @@
   <path d="M44 22C44 20.3431 45.3431 19 47 19H62L70 27V65C70 66.6569 68.6569 68 67 68H47C45.3431 68 44 66.6569 44 65V22Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
 
   <!-- X-shaped arrows indicating merge -->
-  <!-- Top-left to bottom-right diagonal -->
-  <path d="M30 32L50 48" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M47 51L50 48L47 45" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Top-left to bottom-right arrow -->
+  <line x1="30" y1="33" x2="50" y2="47" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M48 50L50 47L47 45" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-  <!-- Bottom-left to top-right diagonal -->
-  <path d="M30 48L50 32" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M47 29L50 32L53 29" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom-left to top-right arrow -->
+  <line x1="30" y1="47" x2="50" y2="33" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M53 35L50 33L48 30" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>
