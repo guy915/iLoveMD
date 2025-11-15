@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import ToolTile from '@/components/home/ToolTile'
 import { TOOL_CARDS } from '@/lib/constants'
 
@@ -6,7 +7,15 @@ export default function Home() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Hero Section */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">iLoveLLM</h1>
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/logo.svg"
+            alt="iLoveLLM"
+            width={300}
+            height={100}
+            priority
+          />
+        </div>
         <p className="text-xl text-gray-600">
           Prepare your documents for LLMs
         </p>
