@@ -195,7 +195,6 @@ export default function PdfToMarkdownPage() {
    */
   const generateUniqueFilename = useCallback((
     file: File,
-    existingFiles: File[],
     existingMap: Map<File, string>
   ): string => {
     const baseName = file.name.replace(/\.pdf$/i, '')
@@ -246,29 +245,23 @@ export default function PdfToMarkdownPage() {
 
     // Accumulate ALL files - allow duplicates by name
     // Generate unique output filenames with numerical suffixes for duplicates
-    setFiles(prevFiles => {
-      const allFiles = [...prevFiles, ...pdfFiles]
+    const allFiles = [...files, ...pdfFiles]
+    const newMap = new Map(filenameMap)
 
-      // Update filename map with unique names
-      setFilenameMap(prevMap => {
-        const newMap = new Map(prevMap)
+    // Generate unique names for new files
+    for (const file of pdfFiles) {
+      const uniqueName = generateUniqueFilename(file, newMap)
+      newMap.set(file, uniqueName)
 
-        // Generate unique names for new files
-        for (const file of pdfFiles) {
-          const uniqueName = generateUniqueFilename(file, allFiles, newMap)
-          newMap.set(file, uniqueName)
+      // Log if file was renamed (has numerical suffix)
+      if (uniqueName !== file.name.replace(/\.pdf$/i, '.md')) {
+        addLog('info', `Renamed duplicate file: "${file.name}" → "${uniqueName}"`)
+      }
+    }
 
-          // Log if file was renamed (has numerical suffix)
-          if (uniqueName !== file.name.replace(/\.pdf$/i, '.md')) {
-            addLog('info', `Renamed duplicate file: "${file.name}" → "${uniqueName}"`)
-          }
-        }
-
-        return newMap
-      })
-
-      return allFiles
-    })
+    // Update both states
+    setFiles(allFiles)
+    setFilenameMap(newMap)
 
     // Update folder name if this is first selection or if single folder
     if (files.length === 0 && folderNameDetected) {
@@ -283,7 +276,7 @@ export default function PdfToMarkdownPage() {
     setBatchProgress(null)
     setBatchZipBlob(null)
     setBatchZipFilename(null)
-  }, [addLog, files.length, generateUniqueFilename])
+  }, [addLog, files, filenameMap, generateUniqueFilename])
 
   const handleClearFiles = useCallback(() => {
     setFiles([])
