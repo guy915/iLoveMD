@@ -399,9 +399,9 @@ export async function convertBatchPdfToMarkdown(
 }
 
 /**
- * Convert multiple PDF files to markdown sequentially (one at a time) (free mode)
+ * Convert multiple PDF files to markdown concurrently (up to 10 at a time) (free mode)
  * Uses Modal serverless GPU instead of Marker API
- * Processes files one at a time using the exact same function as single mode
+ * Processes files in parallel with a concurrency limit of 10, using the same function as single mode
  */
 export async function convertBatchPdfToMarkdownLocal(
   files: File[],
@@ -456,74 +456,38 @@ export async function convertBatchPdfToMarkdownLocal(
     progress.inProgress = activePromises.size
     updateProgress()
 
-    const startTime = Date.now()
+    // Use retry logic if maxRetries is specified, otherwise single attempt
+    const maxRetries = options.maxRetries ?? 0
+    const result = await convertFileWithRetryLocal(
+      file,
+      geminiApiKey,
+      markerOptions,
+      maxRetries,
+      signal
+    )
 
-    try {
-      const conversionResult = await convertPdfToMarkdownLocal(
-        file,
-        geminiApiKey,
-        markerOptions,
-        undefined, // No progress callback for individual files in batch
-        signal
-      )
-
-      const endTime = Date.now()
-      const duration = endTime - startTime
-
-      if (conversionResult.success && conversionResult.markdown) {
-        results[index] = {
-          file,
-          filename: file.name,
-          status: 'complete',
-          markdown: conversionResult.markdown,
-          attempts: 1,
-          startTime,
-          endTime,
-          duration
-        }
-        progress.completed++
-      } else {
-        results[index] = {
-          file,
-          filename: file.name,
-          status: 'failed',
-          error: conversionResult.error || 'Conversion failed',
-          attempts: 1,
-          startTime,
-          endTime,
-          duration
-        }
-        progress.failed++
-      }
-    } catch (error) {
-      const endTime = Date.now()
-      results[index] = {
-        file,
-        filename: file.name,
-        status: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        attempts: 1,
-        startTime,
-        endTime,
-        duration: endTime - startTime
-      }
+    results[index] = result
+    
+    if (result.status === 'complete') {
+      progress.completed++
+    } else {
       progress.failed++
-    } finally {
-      // Remove this promise from active set
-      activePromises.delete(index)
-      progress.inProgress = activePromises.size
-      updateProgress()
+    }
+    
+    // Remove this promise from active set
+    activePromises.delete(index)
+    progress.inProgress = activePromises.size
+    updateProgress()
 
-      // Process next file if available
-      if (currentIndex < files.length && !signal?.aborted) {
-        const nextIndex = currentIndex++
-        const nextPromise = processFile(nextIndex)
-        activePromises.set(nextIndex, nextPromise)
-        allPromises.push(nextPromise)
-      }
+    // Process next file if available
+    if (currentIndex < files.length && !signal?.aborted) {
+      const nextIndex = currentIndex++
+      const nextPromise = processFile(nextIndex)
+      activePromises.set(nextIndex, nextPromise)
+      allPromises.push(nextPromise)
     }
   }
-
+  
   // Start initial batch of concurrent conversions
   const initialBatch = Math.min(MAX_CONCURRENT, files.length)
   
