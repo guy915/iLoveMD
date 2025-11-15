@@ -113,6 +113,19 @@ def convert_pdf(
         
         config_parser = ConfigParser(config_dict)
         
+        # DIAGNOSTIC: Check cache locations and container info
+        import os
+        cache_locations = {
+            "HF_HOME": os.environ.get("HF_HOME", "NOT SET"),
+            "HUGGINGFACE_HUB_CACHE": os.environ.get("HUGGINGFACE_HUB_CACHE", "NOT SET"),
+            "HOME": os.environ.get("HOME", "NOT SET"),
+            "default_cache": str(Path.home() / ".cache" / "huggingface"),
+            "container_id": os.environ.get("MODAL_CONTAINER_ID", "NOT SET"),
+        }
+        print(f"[DIAGNOSTIC] Cache locations: {cache_locations}")
+        print(f"[DIAGNOSTIC] Process ID: {os.getpid()}")
+        print(f"[DIAGNOSTIC] Thread ID: {threading.get_ident()}")
+        
         # Create converter with models - use lock + random delay to prevent concurrent initialization
         # 1. Threading lock prevents concurrent init within same container
         # 2. Random delay (0-5s) staggers cold starts across multiple containers
@@ -120,8 +133,11 @@ def convert_pdf(
         # Longer delay range ensures better staggering when multiple containers start simultaneously
         time.sleep(random.uniform(0, 5.0))
         
+        print(f"[DIAGNOSTIC] About to initialize models (after delay)")
         with _model_init_lock:
+            print(f"[DIAGNOSTIC] Acquired lock, initializing models...")
             artifact_dict = create_model_dict()
+            print(f"[DIAGNOSTIC] Models initialized successfully")
         
         converter = PdfConverter(
             artifact_dict=artifact_dict,
