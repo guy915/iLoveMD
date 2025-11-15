@@ -192,13 +192,15 @@ def create_app():
         return None
     
     def save_job(request_id: str, job_data: Dict[str, Any]):
-        """Save job to persistent storage"""
+        """Save job to persistent storage with sync to ensure visibility"""
         import json
         import os
         job_path = get_job_path(request_id)
         os.makedirs(os.path.dirname(job_path), exist_ok=True)
         with open(job_path, 'w') as f:
             json.dump(job_data, f)
+            f.flush()  # Flush to ensure data is written
+            os.fsync(f.fileno())  # Force sync to disk for Modal Volume
     
     def delete_job(request_id: str):
         """Delete job from persistent storage"""
@@ -247,13 +249,6 @@ def create_app():
         # Generate request ID
         request_id = str(uuid.uuid4())
         
-        # Store job info in persistent storage (Modal Volume)
-        job_data = {
-            "status": "processing",
-            "filename": file.filename,
-        }
-        save_job(request_id, job_data)
-        
         # Parse boolean options
         def str_to_bool(v: str) -> bool:
             return v.lower() in ('true', '1', 'yes', 'on')
@@ -261,12 +256,18 @@ def create_app():
         paginate_bool = str_to_bool(paginate)
         disable_image_extraction_bool = str_to_bool(disable_image_extraction)
         
-        # Start conversion in background thread to ensure it doesn't block
-        # Use threading instead of asyncio to ensure true non-blocking behavior
-        import threading
-        def run_conversion_thread():
+        # Store job info in persistent storage (Modal Volume) BEFORE starting conversion
+        # This ensures the job exists when status is checked
+        job_data = {
+            "status": "processing",
+            "filename": file.filename,
+        }
+        save_job(request_id, job_data)
+        
+        # Start conversion in background using asyncio.create_task (better for FastAPI)
+        async def run_conversion_async():
             try:
-                # Spawn the conversion
+                # Spawn the conversion (non-blocking)
                 call = convert_pdf.spawn(
                     pdf_bytes=content,
                     filename=file.filename,
@@ -276,13 +277,10 @@ def create_app():
                     extract_images=not disable_image_extraction_bool,
                 )
                 
-                # Get result in thread pool
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(call.get)
-                    result = future.result()
+                # Wait for result (this will block the async task, not the endpoint)
+                result = await asyncio.to_thread(call.get)
                 
-                # Load current job data
+                # Update job data
                 job_data = load_job(request_id) or {"status": "processing"}
                 
                 if result.get("success"):
@@ -295,14 +293,14 @@ def create_app():
                 # Save updated job data
                 save_job(request_id, job_data)
             except Exception as e:
+                # Update job with error
                 job_data = load_job(request_id) or {"status": "processing"}
                 job_data["status"] = "error"
                 job_data["error"] = f"Conversion error: {str(e)}"
                 save_job(request_id, job_data)
         
-        # Start thread (truly non-blocking)
-        thread = threading.Thread(target=run_conversion_thread, daemon=True)
-        thread.start()
+        # Start async task (non-blocking, better than threading for FastAPI)
+        asyncio.create_task(run_conversion_async())
         
         # Return immediately with request_id for polling
         return JSONResponse(content={
@@ -313,10 +311,21 @@ def create_app():
     
     @web_app.get("/status/{request_id}")
     async def check_status(request_id: str):
-        """Check conversion status"""
+        """Check conversion status with retry for eventual consistency"""
         from fastapi import HTTPException
+        import time
         
-        job = load_job(request_id)
+        # Retry loading job (Modal Volumes may have eventual consistency)
+        max_retries = 3
+        retry_delay = 0.1  # 100ms
+        
+        for attempt in range(max_retries):
+            job = load_job(request_id)
+            if job:
+                break
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+        
         if not job:
             raise HTTPException(status_code=404, detail="Request ID not found")
         
