@@ -68,7 +68,7 @@ export interface BatchConversionOptions {
 }
 
 /**
- * Options for batch conversion (free mode)
+ * Options for batch conversion (Modal free mode)
  */
 export interface BatchConversionOptionsLocal {
   geminiApiKey: string | null
@@ -165,7 +165,7 @@ async function convertFileWithRetry(
 }
 
 /**
- * Convert a single file with retry logic (free mode)
+ * Convert a single file with retry logic (Modal free mode)
  */
 async function convertFileWithRetryLocal(
   file: File,
@@ -399,7 +399,7 @@ export async function convertBatchPdfToMarkdown(
 }
 
 /**
- * Convert multiple PDF files to markdown concurrently (up to 10 at a time) (free mode)
+ * Convert multiple PDF files to markdown concurrently (up to 10 at a time) (Modal free mode)
  * Uses Modal serverless GPU instead of Marker API
  * Processes files in parallel with a concurrency limit of 10, using the same function as single mode
  */
