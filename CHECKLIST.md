@@ -823,6 +823,53 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ---
 
+### 2025-11-15 - Batch Processing Support for Free Mode
+
+**What Changed**:
+- Enabled batch conversion in free mode (Modal GPU)
+- Previously, batch processing was only available in paid mode (Marker API)
+- Free mode now supports the same batch processing capabilities as paid mode
+
+**Implementation Details**:
+- **Updated batch conversion service** (`batchConversionService.ts`):
+  - Added `mode` parameter ('free' | 'paid') to BatchConversionOptions
+  - Added `geminiApiKey` parameter for free mode with LLM enhancement
+  - Modified `convertFileWithRetry()` to call appropriate function based on mode
+  - Calls `convertPdfToMarkdown()` for paid mode
+  - Calls `convertPdfToMarkdownLocal()` for free mode
+  - Unified batch processing logic for both modes
+- **Updated PDF to Markdown page** (`page.tsx`):
+  - Removed guard that blocked batch conversions in free mode
+  - Updated `convertBatchPdfToMarkdown()` call to include mode and geminiApiKey
+  - Updated "How it works" section to reflect batch support in free mode
+  - Changed instructions from "convert files individually" to showing batch support
+- **Updated tests** (`batchConversionService.test.ts`):
+  - Added `convertPdfToMarkdownLocal` to mocked functions
+  - Updated all BatchConversionOptions test objects to include `mode: 'paid'`
+  - All 413 tests passing with maintained coverage
+
+**Features**:
+- Same limits as paid mode: up to 10,000 files or 100GB total
+- ZIP file output for batch conversions
+- Progress tracking with real-time updates
+- Exponential backoff retry for failed conversions
+- Concurrent processing (up to 200 files in parallel)
+
+**Why This Matters**:
+- Users can now batch process PDFs without needing a paid Marker API subscription
+- Free tier Modal GPU processing now matches paid tier functionality
+- Consistent user experience across both modes
+- Removes friction for users wanting to process multiple files
+
+**Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped) | Coverage: Maintained
+
+**Files Modified**: 3
+- Updated: `src/lib/services/batchConversionService.ts`, `src/app/pdf-to-markdown/page.tsx`, `src/lib/services/batchConversionService.test.ts`
+
+**Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
+---
+
 ### 2025-11-14 - Header Navigation Update
 
 **What Changed**:
@@ -964,7 +1011,7 @@ Track ideas for future versions:
 - [ ] Add dark mode
 - [ ] Add token counter tool
 - [ ] Add markdown splitter tool
-- [ ] Implement batch processing
+- [x] Implement batch processing (completed for both free and paid modes - 2025-11-15)
 - [ ] Add progress percentage for PDF
 - [ ] Add preview before download
 - [ ] Improve mobile experience

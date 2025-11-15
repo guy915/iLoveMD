@@ -334,19 +334,16 @@ export default function PdfToMarkdownPage() {
       abortControllerRef.current = new AbortController()
 
       if (isBatch) {
-        // Batch conversion
-        // NOTE: Batch mode only supports cloud API for now (local batch will be added in future PR if needed)
-        if (mode === 'free') {
-          throw new Error('Batch conversion is not yet supported in free mode. Please switch to Paid mode or convert files individually.')
-        }
-
+        // Batch conversion (supports both paid and free modes)
         setStatus('Processing batch...')
 
         // Dynamically import batch service
         const { convertBatchPdfToMarkdown } = await import('@/lib/services/batchConversionService')
 
         const result = await convertBatchPdfToMarkdown(files, {
+          mode,
           apiKey,
+          geminiApiKey: options.use_llm ? geminiApiKey : null,
           markerOptions: options,
           onProgress: (progress) => {
             if (isMountedRef.current) {
@@ -982,11 +979,11 @@ export default function PdfToMarkdownPage() {
             <ul className="space-y-2 text-gray-600">
               <li>1. Select &quot;Free&quot; mode (GPU-powered via Modal)</li>
               <li>2. If using LLM enhancement, enter your Gemini API key</li>
-              <li>3. Upload PDF file(s)</li>
+              <li>3. Upload PDF file(s) or select a folder</li>
               <li>4. Configure conversion options</li>
               <li>5. Click &quot;Convert to Markdown&quot;</li>
-              <li>6. Wait 30-90 seconds (first run may take longer)</li>
-              <li>7. Click &quot;Download&quot; to save your file</li>
+              <li>6. Wait 30-90 seconds per PDF (first run may take longer)</li>
+              <li>7. Click &quot;Download&quot; to save your file(s)</li>
             </ul>
             <p className="mt-4 text-sm text-gray-500">
               <strong>Free Mode:</strong> Uses Modal.com serverless GPU (NVIDIA T4) with $30/month in free credits.
@@ -994,7 +991,8 @@ export default function PdfToMarkdownPage() {
               Free tier covers ~100-200 PDFs/month, no API key required!
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              <strong>Note:</strong> Batch conversion is not yet supported in free mode. Please convert files individually or switch to Paid mode for batch processing.
+              <strong>Batch Processing:</strong> Now supported in free mode! Select multiple files or folders for automatic batch conversion.
+              Output is a ZIP file containing all converted markdowns. Same limits as paid mode (up to 10,000 files or 100GB total).
             </p>
           </>
         )}

@@ -15,6 +15,7 @@ import type { MarkerConversionResult } from '@/types'
 // Mock dependencies
 vi.mock('./markerApiService', () => ({
   convertPdfToMarkdown: vi.fn(),
+  convertPdfToMarkdownLocal: vi.fn(),
 }))
 
 vi.mock('@/lib/utils/downloadUtils', () => ({
@@ -22,7 +23,7 @@ vi.mock('@/lib/utils/downloadUtils', () => ({
 }))
 
 // Import mocked functions
-import { convertPdfToMarkdown } from './markerApiService'
+import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from './markerApiService'
 
 // Helper to create mock File with custom properties
 function createMockFile(
@@ -297,6 +298,7 @@ describe('batchConversionService', () => {
     it('should convert single file successfully', async () => {
       const file = createMockFile('doc.pdf', 1000)
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
       }
@@ -334,6 +336,7 @@ describe('batchConversionService', () => {
     it('should handle conversion failure with retries', async () => {
       const file = createMockFile('doc.pdf', 1000)
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
         maxRetries: 2,
@@ -369,6 +372,7 @@ describe('batchConversionService', () => {
       )
 
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
         maxConcurrent: 3,
@@ -412,6 +416,7 @@ describe('batchConversionService', () => {
       })
 
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
         onProgress,
@@ -447,6 +452,7 @@ describe('batchConversionService', () => {
       const abortController = new AbortController()
 
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
         signal: abortController.signal,
@@ -487,6 +493,7 @@ describe('batchConversionService', () => {
     it('should calculate retry delays with exponential backoff', async () => {
       const file = createMockFile('doc.pdf', 1000)
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
         maxRetries: 3,
@@ -534,6 +541,7 @@ describe('batchConversionService', () => {
     it('should track conversion duration', async () => {
       const file = createMockFile('doc.pdf', 1000)
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
       }
@@ -563,6 +571,7 @@ describe('batchConversionService', () => {
       ]
 
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
         maxRetries: 0,
@@ -587,6 +596,7 @@ describe('batchConversionService', () => {
     it('should handle unexpected errors in conversion', async () => {
       const file = createMockFile('doc.pdf', 1000)
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
         maxRetries: 0,
@@ -613,6 +623,7 @@ describe('batchConversionService', () => {
 
       const progressUpdates: BatchProgress[] = []
       const options: BatchConversionOptions = {
+        mode: 'paid',
         apiKey: 'test-key',
         markerOptions: {},
         onProgress: (progress) => progressUpdates.push({ ...progress }),

@@ -2,19 +2,22 @@
  * Batch Conversion Service - Handles parallel PDF to Markdown conversion
  *
  * Features:
- * - Parallel processing with configurable concurrency (up to 200 per Marker API limits)
+ * - Parallel processing with configurable concurrency (up to 200)
  * - Exponential backoff retry for failed conversions (3 retries with delays: 1s, 2s, 4s)
  * - Progress tracking with real-time updates
  * - Defensive programming for memory management
  * - Graceful degradation on errors
  * - ZIP file generation for batch results
+ * - Support for both paid (Marker API) and free (Modal GPU) modes
  *
- * Marker API Limits:
+ * Limits:
  * - 200MB maximum per individual PDF file
  * - 200 concurrent API requests maximum
+ * - 10,000 files maximum per batch
+ * - 100GB total batch size maximum
  */
 
-import { convertPdfToMarkdown } from './markerApiService'
+import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from './markerApiService'
 import { replaceExtension } from '@/lib/utils/downloadUtils'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
@@ -59,7 +62,9 @@ export type BatchProgressCallback = (progress: BatchProgress) => void
  * Options for batch conversion
  */
 export interface BatchConversionOptions {
-  apiKey: string
+  mode: 'free' | 'paid'
+  apiKey: string // Marker API key for paid mode
+  geminiApiKey?: string | null // Gemini API key for free mode (when use_llm is enabled)
   markerOptions: MarkerOptions
   maxConcurrent?: number
   maxRetries?: number
@@ -98,7 +103,9 @@ function getRetryDelay(attempt: number): number {
  */
 async function convertFileWithRetry(
   file: File,
+  mode: 'free' | 'paid',
   apiKey: string,
+  geminiApiKey: string | null | undefined,
   markerOptions: MarkerOptions,
   maxRetries: number,
   signal?: AbortSignal
@@ -122,7 +129,10 @@ async function convertFileWithRetry(
 
     try {
       // Forward abort signal to individual conversion
-      const conversionResult = await convertPdfToMarkdown(file, apiKey, markerOptions, undefined, signal)
+      // Call appropriate conversion function based on mode
+      const conversionResult = mode === 'paid'
+        ? await convertPdfToMarkdown(file, apiKey, markerOptions, undefined, signal)
+        : await convertPdfToMarkdownLocal(file, geminiApiKey || null, markerOptions, undefined, signal)
 
       if (conversionResult.success && conversionResult.markdown) {
         result.markdown = conversionResult.markdown
@@ -160,7 +170,9 @@ export async function convertBatchPdfToMarkdown(
   options: BatchConversionOptions
 ): Promise<BatchConversionResult> {
   const {
+    mode,
     apiKey,
+    geminiApiKey,
     markerOptions,
     maxConcurrent = MARKER_CONFIG.BATCH.MAX_CONCURRENT,
     maxRetries = MARKER_CONFIG.BATCH.MAX_RETRIES,
@@ -219,7 +231,9 @@ export async function convertBatchPdfToMarkdown(
         try {
           const result = await convertFileWithRetry(
             file,
+            mode,
             apiKey,
+            geminiApiKey,
             markerOptions,
             maxRetries,
             signal

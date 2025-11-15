@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Batch Processing Support for Free Mode** (2025-11-15):
+  - **Enabled batch conversion in free mode** (Modal GPU):
+    - Previously, batch processing was only available in paid mode (Marker API)
+    - Free mode now supports processing multiple PDFs in parallel
+    - Same limits as paid mode: up to 10,000 files or 100GB total
+    - ZIP file output for batch conversions in both modes
+  - **Updated batch conversion service**:
+    - Added `mode` parameter ('free' | 'paid') to BatchConversionOptions
+    - Added `geminiApiKey` parameter for free mode with LLM enhancement
+    - Service now calls appropriate conversion function based on mode
+    - Unified batch processing logic for both paid and free modes
+  - **Updated UI messaging**:
+    - Removed "batch not supported in free mode" error message
+    - Updated "How it works" section to reflect batch support
+    - Added batch processing info to free mode instructions
+  - **Updated tests**:
+    - Added `convertPdfToMarkdownLocal` to mocks
+    - Updated all BatchConversionOptions in tests to include mode parameter
+    - All 413 tests passing with maintained coverage
+  - **Files Modified**:
+    - Updated: `src/lib/services/batchConversionService.ts`, `src/app/pdf-to-markdown/page.tsx`, `src/lib/services/batchConversionService.test.ts`
+  - Build: ✅ | Lint: ✅ | Tests: ✅ (413 passed, 6 skipped) | Coverage: Maintained
+
 ### Changed
 - **Updated Header Navigation Links** (2025-11-14):
   - **Replaced old navigation links** with new structure:
