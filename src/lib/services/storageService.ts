@@ -107,30 +107,3 @@ export function setJSON<T>(key: string, value: T): boolean {
     return false
   }
 }
-
-/**
- * Clear all items from localStorage
- * @returns True if successful, false otherwise
- */
-export function clear(): boolean {
-  if (!isStorageAvailable()) {
-    return false
-  }
-
-  try {
-    localStorage.clear()
-    return true
-  } catch (error) {
-    console.error('[StorageService] Failed to clear storage:', error)
-    return false
-  }
-}
-
-/**
- * Check if a key exists in localStorage
- * @param key - The storage key
- * @returns True if key exists, false otherwise
- */
-export function hasItem(key: string): boolean {
-  return getItem(key) !== null
-}
