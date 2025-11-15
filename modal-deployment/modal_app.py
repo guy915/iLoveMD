@@ -413,8 +413,9 @@ def create_app():
         import time
         
         # Retry loading job (Modal Volumes may have eventual consistency)
-        max_retries = 3
-        retry_delay = 0.1  # 100ms
+        # Increased retries and delay to handle volume eventual consistency
+        max_retries = 10
+        retry_delay = 0.5  # 500ms - longer delay for volume consistency
         
         for attempt in range(max_retries):
             job = load_job(request_id)
@@ -424,8 +425,9 @@ def create_app():
                 time.sleep(retry_delay)
         
         if not job:
-            print(f"[check_status] Job not found for request_id: {request_id}")
-            raise HTTPException(status_code=404, detail="Request ID not found")
+            print(f"[check_status] Job not found for request_id: {request_id} after {max_retries} attempts")
+            # Return processing status instead of 404 to allow polling to continue
+            return {"status": "processing"}
         
         status = job.get("status", "processing")
         print(f"[check_status] Job status for {request_id}: {status}")
