@@ -88,7 +88,12 @@ export default function PdfToMarkdownPage() {
     }
 
     const savedMarkerKey = storageService.getItem(STORAGE_KEYS.MARKER_API_KEY)
-    if (savedMarkerKey) {
+    // One-time migration: Remove old test key if found
+    const OLD_TEST_KEY = 'w4IU5bCYNudH_JZ0IKCUIZAo8ive3gc6ZPk6mzLtqxQ'
+    if (savedMarkerKey === OLD_TEST_KEY) {
+      storageService.removeItem(STORAGE_KEYS.MARKER_API_KEY)
+      addLog('info', 'Removed old test API key from localStorage')
+    } else if (savedMarkerKey) {
       setApiKey(savedMarkerKey)
       addLog('info', 'Loaded saved Marker API key from localStorage')
     }
