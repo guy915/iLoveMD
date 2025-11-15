@@ -65,6 +65,7 @@ export interface BatchConversionOptions {
   maxRetries?: number
   onProgress?: BatchProgressCallback
   signal?: AbortSignal
+  filenameMap?: Map<File, string> // Optional map for custom output filenames (handles duplicates)
 }
 
 /**
@@ -77,6 +78,7 @@ export interface BatchConversionOptionsLocal {
   maxRetries?: number
   onProgress?: BatchProgressCallback
   signal?: AbortSignal
+  filenameMap?: Map<File, string> // Optional map for custom output filenames (handles duplicates)
 }
 
 /**
@@ -370,7 +372,8 @@ export async function convertBatchPdfToMarkdown(
 
     for (const result of completed) {
       if (result.markdown) {
-        const outputFilename = replaceExtension(result.filename, 'md')
+        // Use custom filename from map if available, otherwise use default
+        const outputFilename = options.filenameMap?.get(result.file) || replaceExtension(result.filename, 'md')
         zip.file(outputFilename, result.markdown)
       }
     }
@@ -566,7 +569,8 @@ export async function convertBatchPdfToMarkdownLocal(
 
     for (const result of completed) {
       if (result.markdown) {
-        const outputFilename = replaceExtension(result.filename, 'md')
+        // Use custom filename from map if available, otherwise use default
+        const outputFilename = options.filenameMap?.get(result.file) || replaceExtension(result.filename, 'md')
         zip.file(outputFilename, result.markdown)
       }
     }

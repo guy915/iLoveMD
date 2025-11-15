@@ -437,6 +437,31 @@ Track your progress through each implementation phase. Update checkboxes as you 
 
 ## Session Notes (Current Session Only)
 
+### 2025-11-15 - Handle Duplicate Filenames in Batch Processing
+- **Changed**:
+  - Removed duplicate filename filtering - users can now upload files with same name
+  - Added auto-rename with numerical suffixes (like browsers): `PDF1.pdf`, `PDF1 (1).pdf`, `PDF1 (2).pdf`
+  - Added filenameMap state to track original file → unique output filename
+  - Added generateUniqueFilename function to create unique names with numerical suffixes
+  - Updated batch conversion service to accept and use filename map when creating ZIP
+  - Added diagnostic logging for renamed files
+- **Why**:
+  - User can upload PDFs from different folders with same filename without losing files
+  - User can intentionally upload same PDF multiple times if desired
+  - Familiar pattern (like browser downloads)
+  - All files are processed - no silent removal
+- **How It Works**:
+  - When files are selected, checks existing filenames in the map
+  - If duplicate name exists, adds numerical suffix: `filename (1).md`, `filename (2).md`, etc.
+  - Logs rename event: "Renamed duplicate file: 'PDF1.pdf' → 'PDF1 (1).md'"
+  - Batch conversion uses mapped names when creating ZIP entries
+- **Impact**: Users can now batch process files with duplicate names from different directories. All files are processed and renamed with clear numerical suffixes.
+- **Testing**: Build ✅ | Lint ✅ | Tests ✅ (413 passed, 6 skipped) | Coverage: 72.84%
+- **Files Modified**: 2
+  - Updated: src/app/pdf-to-markdown/page.tsx (filenameMap state, generateUniqueFilename, file selection logic)
+  - Updated: src/lib/services/batchConversionService.ts (filenameMap param, ZIP creation with custom names)
+- **Documentation Updated**: CHANGELOG.md, CHECKLIST.md
+
 ### 2025-11-15 - Add Icons to Tool Cards and Update Design
 - **Added**:
   - Created custom SVG icons for tool cards (pdf-icon.svg, merge-icon.svg)
