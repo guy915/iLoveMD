@@ -439,23 +439,25 @@ export async function convertBatchPdfToMarkdownLocal(
     onProgress?.(progress)
   }
 
-  // Process files sequentially (one at a time) - exactly like single mode
-  for (let i = 0; i < files.length; i++) {
-    // Check if cancelled
+  // Process files in parallel with concurrency limit (Modal allows up to 10 concurrent)
+  const MAX_CONCURRENT = 10
+  let currentIndex = 0
+  const activePromises = new Map<number, Promise<void>>()
+
+  // Process files with concurrency control
+  const processFile = async (index: number): Promise<void> => {
     if (signal?.aborted) {
-      break
+      return
     }
 
-    const file = files[i]
-    const resultIndex = i
-
-    // Mark as in progress
-    results[resultIndex].status = 'processing'
-    progress.inProgress = 1
+    const file = files[index]
+    results[index].status = 'processing'
+    progress.inProgress = activePromises.size
     updateProgress()
 
+    const startTime = Date.now()
+
     try {
-      // Use the EXACT same function as single mode - no wrapper, no retry logic
       const conversionResult = await convertPdfToMarkdownLocal(
         file,
         geminiApiKey,
@@ -464,52 +466,72 @@ export async function convertBatchPdfToMarkdownLocal(
         signal
       )
 
-      // Convert to FileConversionResult format
+      const endTime = Date.now()
+      const duration = endTime - startTime
+
       if (conversionResult.success && conversionResult.markdown) {
-        results[resultIndex] = {
+        results[index] = {
           file,
           filename: file.name,
           status: 'complete',
           markdown: conversionResult.markdown,
           attempts: 1,
-          startTime: Date.now(),
-          endTime: Date.now(),
-          duration: 0
+          startTime,
+          endTime,
+          duration
         }
         progress.completed++
       } else {
-        results[resultIndex] = {
+        results[index] = {
           file,
           filename: file.name,
           status: 'failed',
           error: conversionResult.error || 'Conversion failed',
           attempts: 1,
-          startTime: Date.now(),
-          endTime: Date.now(),
-          duration: 0
+          startTime,
+          endTime,
+          duration
         }
         progress.failed++
       }
-
-      progress.inProgress = 0
-      updateProgress()
     } catch (error) {
-      // Handle unexpected errors
-      results[resultIndex] = {
+      const endTime = Date.now()
+      results[index] = {
         file,
         filename: file.name,
         status: 'failed',
         error: error instanceof Error ? error.message : 'Unknown error',
         attempts: 1,
         startTime: Date.now(),
-        endTime: Date.now(),
-        duration: 0
+        endTime,
+        duration: endTime - startTime
       }
-      progress.inProgress = 0
       progress.failed++
+    } finally {
+      // Remove this promise from active set
+      activePromises.delete(index)
+      progress.inProgress = activePromises.size
       updateProgress()
+
+      // Process next file if available
+      if (currentIndex < files.length && !signal?.aborted) {
+        const nextIndex = currentIndex++
+        const nextPromise = processFile(nextIndex)
+        activePromises.set(nextIndex, nextPromise)
+      }
     }
   }
+
+  // Start initial batch of concurrent conversions
+  const initialBatch = Math.min(MAX_CONCURRENT, files.length)
+  for (let i = 0; i < initialBatch; i++) {
+    currentIndex = i + 1
+    const promise = processFile(i)
+    activePromises.set(i, promise)
+  }
+
+  // Wait for all conversions to complete
+  await Promise.all(Array.from(activePromises.values()))
 
   // Separate completed and failed results
   const completed = results.filter(r => r.status === 'complete')
