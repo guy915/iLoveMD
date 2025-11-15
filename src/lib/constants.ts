@@ -86,8 +86,8 @@ export const MARKER_CONFIG = {
   // Polling configuration
   POLLING: {
     INTERVAL_MS: 2000, // Poll every 2 seconds
-    MAX_ATTEMPTS: 3600, // 2 hours max (3600 * 2 seconds = 7200 seconds)
-    TIMEOUT_DURATION_MS: 7200000, // 2 hours in milliseconds
+    MAX_ATTEMPTS: 900, // 30 minutes max (900 * 2 seconds = 1800 seconds)
+    TIMEOUT_DURATION_MS: 1800000, // 30 minutes in milliseconds
   },
 
   // Batch processing configuration
