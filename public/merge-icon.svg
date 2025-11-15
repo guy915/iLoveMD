@@ -5,10 +5,7 @@
   <!-- Right document -->
   <path d="M44 22C44 20.3431 45.3431 19 47 19H62L70 27V65C70 66.6569 68.6569 68 67 68H47C45.3431 68 44 66.6569 44 65V22Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
 
-  <!-- X-shaped arrows indicating merge -->
-  <!-- Top-left to bottom-right diagonal with arrowhead -->
-  <path d="M30 33L50 47M50 47L47 44M50 47L47 50" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- Bottom-left to top-right diagonal with arrowhead -->
-  <path d="M30 47L50 33M50 33L47 36M50 33L53 36" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- X-shaped lines in the middle -->
+  <line x1="32" y1="34" x2="48" y2="46" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="32" y1="46" x2="48" y2="34" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
 </svg>
