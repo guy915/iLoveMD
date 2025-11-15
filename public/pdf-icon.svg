@@ -1,10 +1,10 @@
 <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Document shape -->
-  <path d="M20 10C20 7.79086 21.7909 6 24 6H46L60 20V70C60 72.2091 58.2091 74 56 74H24C21.7909 74 20 72.2091 20 70V10Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
+  <!-- Document shape - wider and shorter -->
+  <path d="M15 20C15 17.7909 16.7909 16 19 16H48L62 30V64C62 66.2091 60.2091 68 58 68H19C16.7909 68 15 66.2091 15 64V20Z" fill="#326eff" stroke="#326eff" stroke-width="2"/>
 
   <!-- Folded corner -->
-  <path d="M46 6V16C46 18.2091 47.7909 20 50 20H60L46 6Z" fill="#ffffff" fill-opacity="0.3"/>
+  <path d="M48 16V26C48 28.2091 49.7909 30 52 30H62L48 16Z" fill="#ffffff" fill-opacity="0.3"/>
 
   <!-- PDF text -->
-  <text x="40" y="48" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">PDF</text>
+  <text x="38.5" y="48" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">PDF</text>
 </svg>
