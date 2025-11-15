@@ -1,7 +1,7 @@
 import type { NavLink, ToolCard, MarkerOptions } from '@/types'
 
 /**
- * Shared constants for AI Doc Prep application
+ * Shared constants for iLoveLLM application
  */
 
 // File size constants - calculated once and reused

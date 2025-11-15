@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript type definitions for AI Doc Prep
+ * Shared TypeScript type definitions for iLoveLLM
  */
 
 // ===== Diagnostic Logging Types =====

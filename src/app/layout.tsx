@@ -6,7 +6,7 @@ import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { LogProvider } from '@/contexts/LogContext'
 
 export const metadata: Metadata = {
-  title: 'AI Doc Prep',
+  title: 'iLoveLLM',
   description: 'Prepare documents for LLMs - Convert PDFs, HTML, and merge markdown files',
 }
 
