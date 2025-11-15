@@ -33,8 +33,8 @@ volume = modal.Volume.from_name("marker-temp", create_if_missing=True)
     gpu="T4",  # Use NVIDIA T4 GPU (~$2/hour, scales to zero when idle)
     timeout=600,  # 10 minute timeout per conversion
     volumes={"/tmp/marker": volume},
-    allow_concurrent_inputs=10,  # Handle up to 10 concurrent requests
 )
+@modal.concurrent(10)  # Handle up to 10 concurrent requests
 def convert_pdf(
     pdf_bytes: bytes,
     filename: str,
@@ -156,46 +156,85 @@ def convert_pdf(
 
 
 # Create FastAPI web endpoint
+from fastapi import FastAPI, File, UploadFile, Form
+from fastapi.responses import JSONResponse
+
+web_app = FastAPI()
+
 @app.function(image=image)
-@modal.web_endpoint(method="POST")
-def marker_endpoint(
-    file: bytes = modal.web_endpoint.FileUpload(),
-    filename: str = "document.pdf",
-    output_format: str = "markdown",
-    langs: Optional[str] = None,
-    force_ocr: bool = False,
-    paginate: bool = False,
-    extract_images: bool = True,
+@modal.fastapi_endpoint(app=web_app, method="POST")
+async def marker_endpoint(
+    file: UploadFile = File(...),
+    output_format: str = Form("markdown"),
+    langs: Optional[str] = Form(None),
+    paginate: str = Form("false"),
+    format_lines: str = Form("false"),
+    use_llm: str = Form("false"),
+    disable_image_extraction: str = Form("false"),
+    redo_inline_math: str = Form("false"),
+    api_key: Optional[str] = Form(None),
 ):
     """
-    Web endpoint for PDF conversion.
-
-    POST to this endpoint with:
-    - file: PDF file (multipart/form-data)
-    - filename: Original filename
-    - output_format: markdown, json, or html
-    - langs: Language codes (comma-separated)
-    - force_ocr: Force OCR (boolean)
-    - paginate: Add page breaks (boolean)
-    - extract_images: Extract images (boolean)
+    Web endpoint for PDF conversion - matches HuggingFace API format.
     """
+    import tempfile
+    import shutil
+    from pathlib import Path
+    
+    # Validate file
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Only PDF files are supported"}
+        )
+    
+    # Read file content
+    content = await file.read()
+    
+    # Validate file size (200MB limit)
+    MAX_PDF_FILE_SIZE = 200 * 1024 * 1024
+    if len(content) > MAX_PDF_FILE_SIZE:
+        return JSONResponse(
+            status_code=413,
+            content={"error": f"PDF file size exceeds {MAX_PDF_FILE_SIZE // (1024 * 1024)} MB"}
+        )
+    
+    # Generate request ID
+    request_id = str(uuid.uuid4())
+    
+    # Parse boolean options
+    def str_to_bool(v: str) -> bool:
+        return v.lower() in ('true', '1', 'yes', 'on')
+    
+    paginate_bool = str_to_bool(paginate)
+    disable_image_extraction_bool = str_to_bool(disable_image_extraction)
+    
     # Call the GPU conversion function
     result = convert_pdf.remote(
-        pdf_bytes=file,
-        filename=filename,
+        pdf_bytes=content,
+        filename=file.filename,
         output_format=output_format,
         langs=langs,
-        force_ocr=force_ocr,
-        paginate=paginate,
-        extract_images=extract_images,
+        paginate=paginate_bool,
+        extract_images=not disable_image_extraction_bool,
     )
-
-    return result
+    
+    if result.get("success"):
+        return JSONResponse(content={
+            "success": True,
+            "request_id": request_id,
+            "request_check_url": f"/status/{request_id}",
+        })
+    else:
+        return JSONResponse(
+            status_code=500,
+            content={"error": result.get("error", "Conversion failed")}
+        )
 
 
 # Health check endpoint
-@app.function()
-@modal.web_endpoint(method="GET")
+@app.function(image=image)
+@modal.fastapi_endpoint(app=web_app, method="GET")
 def health():
     """Health check endpoint"""
     return {
