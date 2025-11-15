@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **Cleanup Unused Files and Deployment Artifacts** (2025-11-15):
+  - **Removed unused Hugging Face Space deployment**:
+    - Deleted huggingface-space/ directory (replaced by Modal deployment)
+    - Removed old Hugging Face deployment files: app.py, Dockerfile, DEPLOYMENT.md, README.md, requirements.txt
+  - **Removed duplicate/unused image files from root**:
+    - Removed "iLoveLLM Favicon.png" (29,270 bytes - unused variant)
+    - Removed "iLoveLLM Favicon (1).png" (29,215 bytes - duplicate of public/favicon.png)
+    - Removed "iLoveLLM Logo.svg" (3,214 bytes - unused variant)
+    - Removed "svgviewer-output (3).svg" (3,214 bytes - unused variant)
+    - Removed "svgviewer-output (4).svg" (3,214 bytes - unused variant)
+    - Removed "svgviewer-output (5).svg" (3,214 bytes - duplicate of public/logo.svg)
+  - **Current deployment structure**:
+    - Active images: public/favicon.png, public/logo.svg, public/pdf-icon.svg, public/merge-icon.svg
+    - Active deployment: modal-deployment/ (free tier with $30/month Modal credits)
+    - Local development: marker_server.py (for local testing without API costs)
+  - **Impact**: Cleaner repository structure, removed 7 unused files, no functional changes
+
 ### Changed
 - **Code Cleanup - Removed Unused Code and Duplicate Functions** (2025-11-15):
   - **Removed duplicate code**:
