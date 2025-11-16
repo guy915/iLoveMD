@@ -207,7 +207,13 @@ export default function MergeMarkdownPage() {
         const content = e.target?.result as string
         resolve(content || '')
       }
-      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.onerror = () => {
+        // Abort if method exists (not available in all environments/mocks)
+        if (typeof reader.abort === 'function') {
+          reader.abort()
+        }
+        reject(new Error('Failed to read file'))
+      }
       reader.readAsText(file)
     })
   }
@@ -643,10 +649,24 @@ export default function MergeMarkdownPage() {
                             blockquote: ({...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
                             a: ({href, ...props}) => {
                               // Filter out dangerous URL schemes for security
-                              const isSafe = href && !href.startsWith('javascript:') && !href.startsWith('data:')
-                              return isSafe
-                                ? <a className="text-blue-600" href={href} rel="noopener noreferrer" {...props} />
-                                : <span className="text-blue-600" {...props} />
+                              if (!href) {
+                                return <span className="text-blue-600" {...props} />
+                              }
+
+                              try {
+                                // Parse the URL to validate it
+                                const url = new URL(href, 'http://example.com')
+                                // Only allow safe protocols
+                                const safeProtocols = ['http:', 'https:', 'mailto:']
+                                const isSafe = safeProtocols.includes(url.protocol.toLowerCase())
+
+                                return isSafe
+                                  ? <a className="text-blue-600" href={href} rel="noopener noreferrer" {...props} />
+                                  : <span className="text-blue-600" {...props} />
+                              } catch {
+                                // If URL parsing fails, treat as unsafe
+                                return <span className="text-blue-600" {...props} />
+                              }
                             },
                             hr: ({...props}) => <hr className="my-1 border-gray-300" {...props} />,
                             // Don't render images - just show alt text to prevent 404 errors flooding logs
