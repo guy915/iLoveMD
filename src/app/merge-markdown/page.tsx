@@ -347,7 +347,7 @@ export default function MergeMarkdownPage() {
         blob = new Blob([mergedContent], { type: 'text/markdown' })
       } catch (blobError) {
         // Blob creation can fail due to memory constraints
-        if (blobError instanceof Error && (blobError.message?.includes('memory') || blobError.message?.includes('allocation'))) {
+        if (blobError instanceof Error && (blobError.message?.toLowerCase().includes('memory') || blobError.message?.toLowerCase().includes('allocation'))) {
           addLog('error', 'Out of memory while creating merged file')
           throw new Error('Merged file too large for browser memory. Try merging fewer files at once.')
         }
@@ -358,7 +358,7 @@ export default function MergeMarkdownPage() {
       try {
         url = URL.createObjectURL(blob)
       } catch (urlError) {
-        if (urlError instanceof Error && urlError.message?.includes('quota')) {
+        if (urlError instanceof Error && urlError.message?.toLowerCase().includes('quota')) {
           addLog('error', 'Too many blob URLs created')
           throw new Error('Browser URL quota exceeded. Please refresh the page and try again.')
         }

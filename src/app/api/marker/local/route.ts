@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { MARKER_CONFIG, FILE_SIZE, API_ENDPOINTS } from '@/lib/constants'
 import { formatBytesToMB } from '@/lib/utils/formatUtils'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
+import { ErrorCode } from '@/types'
 
 // Network error types for better error messaging
 type NetworkErrorType = 'timeout' | 'connection' | 'dns' | 'unknown'
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         {
           success: false,
           error: 'Invalid request format. Failed to parse multipart form data.',
-          details: { errorType: 'FORM_PARSE_ERROR' }
+          details: { errorType: ErrorCode.FORM_PARSE_ERROR }
         },
         { status: 400 }
       )
@@ -375,7 +376,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
         {
           success: false,
           error: 'Invalid request URL format',
-          details: { errorType: 'URL_PARSE_ERROR' }
+          details: { errorType: ErrorCode.URL_PARSE_ERROR }
         },
         { status: 400 }
       )

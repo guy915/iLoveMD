@@ -401,7 +401,7 @@ export default function PdfToMarkdownPage() {
           setStatus('Processing batch...')
 
           // Dynamically import batch service with error handling
-          let convertBatchPdfToMarkdownLocal
+          let convertBatchPdfToMarkdownLocal: typeof import('@/lib/services/batchConversionService').convertBatchPdfToMarkdownLocal
           try {
             const batchModule = await import('@/lib/services/batchConversionService')
             convertBatchPdfToMarkdownLocal = batchModule.convertBatchPdfToMarkdownLocal
@@ -458,7 +458,7 @@ export default function PdfToMarkdownPage() {
           setStatus('Processing batch...')
 
           // Dynamically import batch service with error handling
-          let convertBatchPdfToMarkdown
+          let convertBatchPdfToMarkdown: typeof import('@/lib/services/batchConversionService').convertBatchPdfToMarkdown
           try {
             const batchModule = await import('@/lib/services/batchConversionService')
             convertBatchPdfToMarkdown = batchModule.convertBatchPdfToMarkdown
@@ -625,7 +625,7 @@ export default function PdfToMarkdownPage() {
             return
           }
           // Check for quota/space errors
-          if (apiError.name === 'QuotaExceededError' || apiError.message?.includes('quota')) {
+          if (apiError.name === 'QuotaExceededError' || apiError.message?.toLowerCase().includes('quota')) {
             addLog('error', 'Insufficient disk space to save file')
             throw new Error('Insufficient disk space. Please free up space and try again.')
           }
@@ -645,7 +645,7 @@ export default function PdfToMarkdownPage() {
         } catch (downloadError) {
           // Check if it's an out-of-memory error
           if (downloadError instanceof Error &&
-              (downloadError.message?.includes('memory') || downloadError.message?.includes('allocation'))) {
+              (downloadError.message?.toLowerCase().includes('memory') || downloadError.message?.toLowerCase().includes('allocation'))) {
             addLog('error', 'Out of memory while creating download')
             throw new Error('File too large for browser memory. Try using a different browser or splitting the PDF.')
           }
@@ -707,7 +707,7 @@ export default function PdfToMarkdownPage() {
             return
           }
           // Check for quota/space errors
-          if (apiError.name === 'QuotaExceededError' || apiError.message?.includes('quota')) {
+          if (apiError.name === 'QuotaExceededError' || apiError.message?.toLowerCase().includes('quota')) {
             addLog('error', 'Insufficient disk space to save ZIP')
             throw new Error('Insufficient disk space. Please free up space and try again.')
           }
@@ -724,7 +724,7 @@ export default function PdfToMarkdownPage() {
         } catch (downloadError) {
           // Check if it's an out-of-memory error
           if (downloadError instanceof Error &&
-              (downloadError.message?.includes('memory') || downloadError.message?.includes('allocation'))) {
+              (downloadError.message?.toLowerCase().includes('memory') || downloadError.message?.toLowerCase().includes('allocation'))) {
             addLog('error', 'Out of memory while creating ZIP download')
             throw new Error('ZIP file too large for browser memory. Try downloading fewer files at once.')
           }
