@@ -6,9 +6,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from '@/lib/services/markerApiService'
-import { formatBytesToMB, formatBytesToKB, replaceExtension } from '@/lib/utils/formatUtils'
+import type { BatchProgress } from '@/lib/services/batchConversionService'
+import { formatBytesToMB, formatBytesToKB } from '@/lib/utils/formatUtils'
+import { replaceExtension } from '@/lib/utils/downloadUtils'
 import { MARKER_CONFIG } from '@/lib/constants'
-import type { MarkerOptions, BatchProgress } from '@/types'
+import type { MarkerOptions } from '@/types'
 
 export type ConversionMode = 'paid' | 'free'
 
