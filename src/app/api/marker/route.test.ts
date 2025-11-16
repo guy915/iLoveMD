@@ -56,7 +56,7 @@ describe('GET /api/marker', () => {
     })
 
     it('should return 400 when API key header is missing', async () => {
-      const request = createGetRequest({ checkUrl: 'https://example.com/check' })
+      const request = createGetRequest({ checkUrl: 'https://www.datalab.to/api/v1/marker/check' })
       const response = await GET(request)
       const data = await response.json()
 
@@ -83,7 +83,7 @@ describe('GET /api/marker', () => {
       fetchMock.mockRejectedValueOnce(abortError)
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -101,7 +101,7 @@ describe('GET /api/marker', () => {
       fetchMock.mockRejectedValueOnce(connectionError)
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -119,7 +119,7 @@ describe('GET /api/marker', () => {
       fetchMock.mockRejectedValueOnce(dnsError)
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -135,7 +135,7 @@ describe('GET /api/marker', () => {
       fetchMock.mockRejectedValueOnce(new Error('Unknown network error'))
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -151,7 +151,7 @@ describe('GET /api/marker', () => {
       fetchMock.mockRejectedValueOnce(new Error('request timed out'))
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -165,7 +165,7 @@ describe('GET /api/marker', () => {
       fetchMock.mockRejectedValueOnce(new Error('econnrefused occurred'))
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -187,7 +187,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -209,7 +209,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -231,7 +231,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -252,7 +252,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -273,7 +273,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'invalid-key' }
       )
       const response = await GET(request)
@@ -294,7 +294,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -318,7 +318,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -341,7 +341,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -365,7 +365,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -389,7 +389,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -410,7 +410,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -433,7 +433,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -461,7 +461,7 @@ describe('GET /api/marker', () => {
 
     it('should handle empty API key gracefully', async () => {
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': '' }
       )
       const response = await GET(request)
@@ -482,7 +482,7 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       const response = await GET(request)
@@ -503,13 +503,13 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'my-secret-key' }
       )
       await GET(request)
 
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/check',
+        'https://www.datalab.to/api/v1/marker/check',
         expect.objectContaining({
           headers: {
             'X-Api-Key': 'my-secret-key',
@@ -528,13 +528,13 @@ describe('GET /api/marker', () => {
       })
 
       const request = createGetRequest(
-        { checkUrl: 'https://example.com/check' },
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
         { 'x-api-key': 'test-key' }
       )
       await GET(request)
 
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/check',
+        'https://www.datalab.to/api/v1/marker/check',
         expect.objectContaining({
           method: 'GET',
         })
