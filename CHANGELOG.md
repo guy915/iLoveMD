@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Phase 1: Extract Business Logic from Components** (2025-11-16):
+  - **New Services** (improves modularity and testability):
+    - `FilenameService` - Handles unique filename generation and conflict resolution with numerical suffixes
+    - `FileValidationService` - Centralized file type validation, size checks, and filtering operations
+    - `DownloadService` - Manages file downloads with File System Access API support and fallback
+  - **New Custom Hooks** (separates business logic from UI):
+    - `useFileSelection` - Manages file selection state, validation, and unique naming for PDF/Markdown files
+    - `useConversionWorkflow` - Orchestrates PDF to Markdown conversion workflow (paid and free modes)
+    - `useMergeMarkdown` - Handles markdown merging logic with sorting, validation, and file management
+  - **Test Coverage**:
+    - 55 new tests for services (FilenameService: 20, FileValidationService: 21, DownloadService: 14)
+    - All tests passing (438 total tests, 71.47% coverage maintained)
+  - **Architecture Benefits**:
+    - Reduces component complexity by extracting business logic into reusable services
+    - Enables dependency injection for better testability
+    - Provides clear separation of concerns (UI vs. business logic)
+    - Follows Single Responsibility Principle
+    - Reduces code duplication across components
+  - **Files Added**:
+    - src/lib/services/filenameService.ts + tests
+    - src/lib/services/fileValidationService.ts + tests
+    - src/lib/services/downloadService.ts + tests
+    - src/hooks/useFileSelection.ts
+    - src/hooks/useConversionWorkflow.ts
+    - src/hooks/useMergeMarkdown.ts
+  - **Next Steps**: Pages can be refactored to use these new hooks/services in subsequent PRs
+
 ### Removed
 - **Cleanup Unused Files and Deployment Artifacts** (2025-11-15):
   - **Removed unused Hugging Face Space deployment**:
