@@ -643,10 +643,11 @@ export default function MergeMarkdownPage() {
                             blockquote: ({...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
                             a: ({href, ...props}) => {
                               // Whitelist approach: only allow safe URL schemes
+                              // Block protocol-relative URLs (//) which inherit the page's protocol
                               const isSafe = href && (
                                 href.startsWith('http://') ||
                                 href.startsWith('https://') ||
-                                href.startsWith('/') ||
+                                (href.startsWith('/') && !href.startsWith('//')) || // Allow relative paths but not protocol-relative
                                 href.startsWith('#') ||
                                 href.startsWith('mailto:')
                               )

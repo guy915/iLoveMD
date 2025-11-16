@@ -409,7 +409,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
     const allowedDomain = 'datalab.to'
     try {
       const url = new URL(checkUrl)
-      if (!url.hostname.endsWith(allowedDomain)) {
+      // Only allow exact match or proper subdomains (e.g., www.datalab.to, api.datalab.to)
+      // This prevents domains like "evil-datalab.to" from passing the check
+      const isValidDomain = url.hostname === allowedDomain || url.hostname.endsWith(`.${allowedDomain}`)
+      if (!isValidDomain) {
         console.warn('SSRF attempt detected:', { checkUrl, hostname: url.hostname })
         return NextResponse.json(
           { success: false, error: 'Invalid check URL domain' },
