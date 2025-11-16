@@ -21,7 +21,7 @@ export default function GlobalDiagnosticPanel() {
   useEffect(() => {
     if (!isOpen) return
 
-    const handleClickOutside = (event: MouseEvent | Event) => {
+    const handleClickOutside = (event: Event) => {
       const target = event.target as Node
       if (panelRef.current && !panelRef.current.contains(target)) {
         setIsOpen(false)
@@ -29,11 +29,11 @@ export default function GlobalDiagnosticPanel() {
     }
 
     // Add event listener
-    document.addEventListener('mousedown', handleClickOutside as EventListener)
+    document.addEventListener('mousedown', handleClickOutside)
 
     // Cleanup
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside as EventListener)
+      document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isOpen])
 
@@ -150,8 +150,17 @@ Log Format: #ID [timestamp] TYPE: message
                 // Combine metadata + logs
                 const fullCopy = metadata + logsText
 
+                // Copy to clipboard with error handling
                 navigator.clipboard.writeText(fullCopy)
-                addLog('info', 'Logs copied to clipboard')
+                  .then(() => {
+                    addLog('success', 'Logs copied to clipboard')
+                  })
+                  .catch((error) => {
+                    console.error('Failed to copy logs to clipboard:', error)
+                    addLog('error', 'Failed to copy logs to clipboard. Please check browser permissions.', {
+                      error: error instanceof Error ? error.message : String(error)
+                    })
+                  })
               }}
               className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
             >

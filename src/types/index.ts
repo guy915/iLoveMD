@@ -163,6 +163,48 @@ export interface DownloadOptions {
 // ===== Error Types =====
 
 /**
+ * Standardized error codes for consistent error handling
+ */
+export enum ErrorCode {
+  // Request/Input Errors (4xx)
+  FORM_PARSE_ERROR = 'FORM_PARSE_ERROR',
+  URL_PARSE_ERROR = 'URL_PARSE_ERROR',
+  INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
+  FILE_TOO_LARGE = 'FILE_TOO_LARGE',
+  FILE_EMPTY = 'FILE_EMPTY',
+  MISSING_PARAMETER = 'MISSING_PARAMETER',
+  INVALID_API_KEY = 'INVALID_API_KEY',
+  INVALID_OPTIONS = 'INVALID_OPTIONS',
+
+  // Network/External Service Errors (5xx)
+  NETWORK_TIMEOUT = 'NETWORK_TIMEOUT',
+  NETWORK_CONNECTION = 'NETWORK_CONNECTION',
+  NETWORK_DNS = 'NETWORK_DNS',
+  NETWORK_UNKNOWN = 'NETWORK_UNKNOWN',
+  EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR',
+  MALFORMED_RESPONSE = 'MALFORMED_RESPONSE',
+
+  // Resource/Memory Errors
+  OUT_OF_MEMORY = 'OUT_OF_MEMORY',
+  QUOTA_EXCEEDED = 'QUOTA_EXCEEDED',
+  FILE_TOO_LARGE_FOR_MEMORY = 'FILE_TOO_LARGE_FOR_MEMORY',
+
+  // File Operation Errors
+  FILE_READ_ERROR = 'FILE_READ_ERROR',
+  FILE_WRITE_ERROR = 'FILE_WRITE_ERROR',
+  FILE_NOT_FOUND = 'FILE_NOT_FOUND',
+  FILE_NOT_READABLE = 'FILE_NOT_READABLE',
+  FILE_SECURITY_ERROR = 'FILE_SECURITY_ERROR',
+
+  // Module/Import Errors
+  MODULE_IMPORT_ERROR = 'MODULE_IMPORT_ERROR',
+
+  // Generic/Unexpected Errors
+  UNEXPECTED_ERROR = 'UNEXPECTED_ERROR',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+}
+
+/**
  * API error response
  */
 export interface ApiError {
@@ -174,4 +216,6 @@ export interface ApiError {
   details?: Record<string, unknown>
   /** HTTP status code */
   status?: number
+  /** Standardized error code */
+  code?: ErrorCode | string
 }

@@ -400,7 +400,17 @@ export default function PdfToMarkdownPage() {
           // Free mode: use batch service with parallel processing (up to 10 concurrent)
           setStatus('Processing batch...')
 
-          const { convertBatchPdfToMarkdownLocal } = await import('@/lib/services/batchConversionService')
+          // Dynamically import batch service with error handling
+          let convertBatchPdfToMarkdownLocal: typeof import('@/lib/services/batchConversionService').convertBatchPdfToMarkdownLocal
+          try {
+            const batchModule = await import('@/lib/services/batchConversionService')
+            convertBatchPdfToMarkdownLocal = batchModule.convertBatchPdfToMarkdownLocal
+          } catch (importError) {
+            addLog('error', 'Failed to load batch conversion module', {
+              error: importError instanceof Error ? importError.message : String(importError)
+            })
+            throw new Error('Failed to load required conversion module. Please refresh and try again.')
+          }
 
           const result = await convertBatchPdfToMarkdownLocal(files, {
             geminiApiKey: options.use_llm ? geminiApiKey : null,
@@ -447,7 +457,17 @@ export default function PdfToMarkdownPage() {
           // Paid mode - use batch service
           setStatus('Processing batch...')
 
-          const { convertBatchPdfToMarkdown } = await import('@/lib/services/batchConversionService')
+          // Dynamically import batch service with error handling
+          let convertBatchPdfToMarkdown: typeof import('@/lib/services/batchConversionService').convertBatchPdfToMarkdown
+          try {
+            const batchModule = await import('@/lib/services/batchConversionService')
+            convertBatchPdfToMarkdown = batchModule.convertBatchPdfToMarkdown
+          } catch (importError) {
+            addLog('error', 'Failed to load batch conversion module', {
+              error: importError instanceof Error ? importError.message : String(importError)
+            })
+            throw new Error('Failed to load required conversion module. Please refresh and try again.')
+          }
 
           const result = await convertBatchPdfToMarkdown(files, {
             apiKey,
@@ -577,8 +597,20 @@ export default function PdfToMarkdownPage() {
           })
 
           const writable = await handle.createWritable()
-          await writable.write(convertedMarkdown)
-          await writable.close()
+
+          // Write with error handling for large files/memory issues
+          try {
+            await writable.write(convertedMarkdown)
+            await writable.close()
+          } catch (writeError) {
+            // Attempt to close writable even if write failed
+            try {
+              await writable.close()
+            } catch {
+              // Ignore close errors
+            }
+            throw writeError
+          }
 
           addLog('success', 'File saved successfully via File System Access API', {
             filename: outputFilename
@@ -592,18 +624,33 @@ export default function PdfToMarkdownPage() {
             addLog('info', 'User cancelled save dialog')
             return
           }
+          // Check for quota/space errors
+          if (apiError.name === 'QuotaExceededError' || apiError.message?.toLowerCase().includes('quota')) {
+            addLog('error', 'Insufficient disk space to save file')
+            throw new Error('Insufficient disk space. Please free up space and try again.')
+          }
           throw apiError
         }
       } else {
         // Fallback to traditional download for browsers without File System Access API
         addLog('info', 'Using traditional download method (File System Access API not available)')
-        downloadFile(convertedMarkdown, outputFilename, 'text/markdown')
 
-        addLog('success', 'File download triggered', {
-          filename: outputFilename
-        })
-
-        setStatus('File download started! Check your downloads folder. You can download again or upload a new file.')
+        // Wrap download in try-catch to handle out-of-memory errors
+        try {
+          downloadFile(convertedMarkdown, outputFilename, 'text/markdown')
+          addLog('success', 'File download triggered', {
+            filename: outputFilename
+          })
+          setStatus('File download started! Check your downloads folder. You can download again or upload a new file.')
+        } catch (downloadError) {
+          // Check if it's an out-of-memory error
+          if (downloadError instanceof Error &&
+              (downloadError.message?.toLowerCase().includes('memory') || downloadError.message?.toLowerCase().includes('allocation'))) {
+            addLog('error', 'Out of memory while creating download')
+            throw new Error('File too large for browser memory. Try using a different browser or splitting the PDF.')
+          }
+          throw downloadError
+        }
       }
 
     } catch (err) {
@@ -636,8 +683,20 @@ export default function PdfToMarkdownPage() {
           })
 
           const writable = await handle.createWritable()
-          await writable.write(batchZipBlob)
-          await writable.close()
+
+          // Write with error handling for large files/memory issues
+          try {
+            await writable.write(batchZipBlob)
+            await writable.close()
+          } catch (writeError) {
+            // Attempt to close writable even if write failed
+            try {
+              await writable.close()
+            } catch {
+              // Ignore close errors
+            }
+            throw writeError
+          }
 
           addLog('success', 'ZIP saved successfully', { filename: batchZipFilename })
           setStatus('ZIP saved successfully!')
@@ -647,13 +706,30 @@ export default function PdfToMarkdownPage() {
             addLog('info', 'User cancelled save dialog')
             return
           }
+          // Check for quota/space errors
+          if (apiError.name === 'QuotaExceededError' || apiError.message?.toLowerCase().includes('quota')) {
+            addLog('error', 'Insufficient disk space to save ZIP')
+            throw new Error('Insufficient disk space. Please free up space and try again.')
+          }
           throw apiError
         }
       } else {
         addLog('info', 'Using traditional download for ZIP')
-        downloadFile(batchZipBlob, batchZipFilename, 'application/zip')
-        addLog('success', 'ZIP download triggered', { filename: batchZipFilename })
-        setStatus('ZIP download started!')
+
+        // Wrap download in try-catch to handle out-of-memory errors
+        try {
+          downloadFile(batchZipBlob, batchZipFilename, 'application/zip')
+          addLog('success', 'ZIP download triggered', { filename: batchZipFilename })
+          setStatus('ZIP download started!')
+        } catch (downloadError) {
+          // Check if it's an out-of-memory error
+          if (downloadError instanceof Error &&
+              (downloadError.message?.toLowerCase().includes('memory') || downloadError.message?.toLowerCase().includes('allocation'))) {
+            addLog('error', 'Out of memory while creating ZIP download')
+            throw new Error('ZIP file too large for browser memory. Try downloading fewer files at once.')
+          }
+          throw downloadError
+        }
       }
 
     } catch (err) {
