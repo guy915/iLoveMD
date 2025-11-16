@@ -20,7 +20,10 @@ import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
 
 // Detect if running in test environment to skip delays
-const isVitest = typeof process !== 'undefined' && process.env.VITEST === 'true'
+// Check multiple indicators since process.env.VITEST may not always be set
+const isVitest = 
+  (typeof process !== 'undefined' && process.env.VITEST === 'true') ||
+  (typeof process !== 'undefined' && process.env.NODE_ENV === 'test')
 
 /**
  * Status of an individual file conversion

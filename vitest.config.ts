@@ -11,6 +11,11 @@ export default defineConfig({
     // Enable global test APIs (describe, it, expect, etc.)
     globals: true,
 
+    // Set environment variables for test detection
+    env: {
+      VITEST: 'true',
+    },
+
     // Setup file to run before each test file
     setupFiles: ['./src/test/setup.ts'],
 
