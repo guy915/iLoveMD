@@ -269,7 +269,6 @@ export function useConversionWorkflow(
     }
 
     const isBatch = files.length > 1
-    const conversionStartTime = Date.now()
 
     setProcessing(true)
     setError('')

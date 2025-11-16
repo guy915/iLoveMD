@@ -3,7 +3,7 @@
  */
 
 /**
- * Filters out non-PDF files from an array
+ * Filters to include only PDF files from an array
  * @param files - Array of files to filter
  * @returns Array containing only PDF files
  *
@@ -39,7 +39,7 @@ export function filterImmediateFolderFiles(files: File[]): File[] {
 }
 
 /**
- * Filters out markdown files from an array
+ * Filters to include only markdown files from an array
  * @param files - Array of files to filter
  * @returns Array containing only markdown files
  *
