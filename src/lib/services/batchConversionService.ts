@@ -19,6 +19,12 @@ import { replaceExtension } from '@/lib/utils/downloadUtils'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
 
+// Detect if running in test environment to skip delays
+// Check multiple indicators since process.env.VITEST may not always be set
+const isVitest = 
+  (typeof process !== 'undefined' && process.env.VITEST === 'true') ||
+  (typeof process !== 'undefined' && process.env.NODE_ENV === 'test')
+
 /**
  * Status of an individual file conversion
  */
@@ -94,85 +100,115 @@ export interface BatchConversionResult {
 
 /**
  * Sleep utility for delays
+ * Skips delays in test environment for faster test execution
  */
 function sleep(ms: number): Promise<void> {
+  if (isVitest) {
+    return Promise.resolve()
+  }
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 /**
  * Calculate exponential backoff delay
+ * Returns 0 in test environment for faster test execution
  */
 function getRetryDelay(attempt: number): number {
+  if (isVitest) {
+    return 0
+  }
   const delay = MARKER_CONFIG.BATCH.RETRY_DELAY_BASE_MS * Math.pow(2, attempt)
   return Math.min(delay, MARKER_CONFIG.BATCH.RETRY_DELAY_MAX_MS)
 }
 
 /**
- * Convert a single file with retry logic (paid mode)
+ * Create error summary for failed conversions
  */
-async function convertFileWithRetry(
-  file: File,
-  apiKey: string,
-  markerOptions: MarkerOptions,
-  maxRetries: number,
-  signal?: AbortSignal
-): Promise<FileConversionResult> {
-  const result: FileConversionResult = {
-    file,
-    filename: file.name,
-    status: 'processing',
-    attempts: 0,
-    startTime: Date.now()
-  }
+function createErrorSummary(failed: FileConversionResult[]): string {
+  const errorMessages = failed
+    .map(r => r.error)
+    .filter((msg): msg is string => !!msg)
+    .slice(0, 3) // Show first 3 errors
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    if (signal?.aborted) {
-      result.status = 'failed'
-      result.error = 'Conversion cancelled'
-      break
-    }
-
-    result.attempts = attempt + 1
-
-    try {
-      // Forward abort signal to individual conversion
-      const conversionResult = await convertPdfToMarkdown(file, apiKey, markerOptions, undefined, signal)
-
-      if (conversionResult.success && conversionResult.markdown) {
-        result.markdown = conversionResult.markdown
-        result.status = 'complete'
-        result.endTime = Date.now()
-        result.duration = result.endTime - (result.startTime || 0)
-        return result
-      } else {
-        throw new Error(conversionResult.error || 'Conversion failed')
-      }
-    } catch (error) {
-      const isLastAttempt = attempt === maxRetries
-
-      if (isLastAttempt) {
-        result.status = 'failed'
-        result.error = error instanceof Error ? error.message : 'Unknown error'
-        result.endTime = Date.now()
-        result.duration = result.endTime - (result.startTime || 0)
-      } else {
-        // Wait before retrying with exponential backoff
-        const delay = getRetryDelay(attempt)
-        await sleep(delay)
-      }
-    }
-  }
-
-  return result
+  return errorMessages.length > 0
+    ? `All conversions failed. Errors: ${errorMessages.join('; ')}${failed.length > 3 ? ` (and ${failed.length - 3} more)` : ''}`
+    : 'All conversions failed'
 }
 
 /**
- * Convert a single file with retry logic (Modal free mode)
+ * Generate ZIP file from completed conversions
  */
-async function convertFileWithRetryLocal(
+async function generateZipFile(
+  completed: FileConversionResult[],
+  filenameMap?: Map<File, string>
+): Promise<Blob> {
+  // Dynamically import JSZip (client-side only library)
+  // Handle both ESM and CommonJS module formats
+  const JSZipModule = await import('jszip')
+  const JSZip = JSZipModule.default || JSZipModule
+  const zip = new JSZip()
+
+  for (const result of completed) {
+    if (result.markdown) {
+      // Use custom filename from map if available, otherwise use default
+      const outputFilename = filenameMap?.get(result.file) || replaceExtension(result.filename, 'md')
+      zip.file(outputFilename, result.markdown)
+    }
+  }
+
+  // Generate ZIP blob
+  return await zip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  })
+}
+
+/**
+ * Initialize batch progress tracking
+ */
+function initializeBatchProgress(files: File[]): { results: FileConversionResult[], progress: BatchProgress } {
+  const results: FileConversionResult[] = files.map(file => ({
+    file,
+    filename: file.name,
+    status: 'pending' as FileConversionStatus,
+    attempts: 0
+  }))
+
+  const progress: BatchProgress = {
+    total: files.length,
+    completed: 0,
+    failed: 0,
+    inProgress: 0,
+    results
+  }
+
+  return { results, progress }
+}
+
+/**
+ * Type for progress callback used by conversion functions
+ */
+type ProgressCallback = (status: string, attemptNumber: number, elapsedSeconds: number) => void
+
+/**
+ * Type for conversion function that can be either paid or free mode
+ */
+type ConversionFunction = (
   file: File,
-  geminiApiKey: string | null,
   markerOptions: MarkerOptions,
+  onProgress?: ProgressCallback,
+  signal?: AbortSignal
+) => Promise<{ success: boolean; markdown?: string; error?: string }>
+
+/**
+ * Generic function to convert a single file with retry logic
+ * Works for both paid mode (Marker API) and free mode (Modal)
+ */
+async function convertFileWithRetry(
+  file: File,
+  markerOptions: MarkerOptions,
+  conversionFn: ConversionFunction,
   maxRetries: number,
   signal?: AbortSignal
 ): Promise<FileConversionResult> {
@@ -195,7 +231,7 @@ async function convertFileWithRetryLocal(
 
     try {
       // Forward abort signal to individual conversion
-      const conversionResult = await convertPdfToMarkdownLocal(file, geminiApiKey, markerOptions, undefined, signal)
+      const conversionResult = await conversionFn(file, markerOptions, undefined, signal)
 
       if (conversionResult.success && conversionResult.markdown) {
         result.markdown = conversionResult.markdown
@@ -241,27 +277,17 @@ export async function convertBatchPdfToMarkdown(
     signal
   } = options
 
-  // Initialize results array
-  const results: FileConversionResult[] = files.map(file => ({
-    file,
-    filename: file.name,
-    status: 'pending' as FileConversionStatus,
-    attempts: 0
-  }))
-
-  // Track progress
-  const progress: BatchProgress = {
-    total: files.length,
-    completed: 0,
-    failed: 0,
-    inProgress: 0,
-    results
-  }
+  // Initialize progress tracking
+  const { results, progress } = initializeBatchProgress(files)
 
   // Update progress helper
   const updateProgress = () => {
     onProgress?.(progress)
   }
+
+  // Create conversion function wrapper for paid mode
+  const conversionFn: ConversionFunction = (file, markerOpts, onProg, sig) =>
+    convertPdfToMarkdown(file, apiKey, markerOpts, onProg, sig)
 
   // Create file-to-index map for O(1) lookups instead of O(n) indexOf
   const fileIndexMap = new Map(files.map((file, index) => [file, index]))
@@ -292,8 +318,8 @@ export async function convertBatchPdfToMarkdown(
         try {
           const result = await convertFileWithRetry(
             file,
-            apiKey,
             markerOptions,
+            conversionFn,
             maxRetries,
             signal
           )
@@ -344,47 +370,17 @@ export async function convertBatchPdfToMarkdown(
 
   // If all conversions failed, return early with detailed error info
   if (completed.length === 0) {
-    // Collect error messages from failed conversions
-    const errorMessages = failed
-      .map(r => r.error)
-      .filter((msg): msg is string => !!msg)
-      .slice(0, 3) // Show first 3 errors
-    
-    const errorSummary = errorMessages.length > 0
-      ? `All conversions failed. Errors: ${errorMessages.join('; ')}${failed.length > 3 ? ` (and ${failed.length - 3} more)` : ''}`
-      : 'All conversions failed'
-    
     return {
       success: false,
       completed: [],
       failed: results,
-      error: errorSummary
+      error: createErrorSummary(failed)
     }
   }
 
   // Create ZIP file with successful conversions
   try {
-    // Dynamically import JSZip (client-side only library)
-    // Handle both ESM and CommonJS module formats
-    const JSZipModule = await import('jszip')
-    const JSZip = JSZipModule.default || JSZipModule
-    const zip = new JSZip()
-
-    for (const result of completed) {
-      if (result.markdown) {
-        // Use custom filename from map if available, otherwise use default
-        const outputFilename = options.filenameMap?.get(result.file) || replaceExtension(result.filename, 'md')
-        zip.file(outputFilename, result.markdown)
-      }
-    }
-
-    // Generate ZIP blob
-    const zipBlob = await zip.generateAsync({
-      type: 'blob',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 6 }
-    })
-
+    const zipBlob = await generateZipFile(completed, options.filenameMap)
     return {
       success: true,
       completed,
@@ -417,30 +413,17 @@ export async function convertBatchPdfToMarkdownLocal(
     signal
   } = options
 
-  // Import the same function used for single file conversion
-  const { convertPdfToMarkdownLocal } = await import('./markerApiService')
-
-  // Initialize results array
-  const results: FileConversionResult[] = files.map(file => ({
-    file,
-    filename: file.name,
-    status: 'pending' as FileConversionStatus,
-    attempts: 0
-  }))
-
-  // Track progress
-  const progress: BatchProgress = {
-    total: files.length,
-    completed: 0,
-    failed: 0,
-    inProgress: 0,
-    results
-  }
+  // Initialize progress tracking
+  const { results, progress } = initializeBatchProgress(files)
 
   // Update progress helper
   const updateProgress = () => {
     onProgress?.(progress)
   }
+
+  // Create conversion function wrapper for Modal free mode
+  const conversionFn: ConversionFunction = (file, markerOpts, onProg, sig) =>
+    convertPdfToMarkdownLocal(file, geminiApiKey, markerOpts, onProg, sig)
 
   // Process files in parallel with concurrency limit (Modal allows up to 10 concurrent)
   const MAX_CONCURRENT = 10
@@ -461,10 +444,10 @@ export async function convertBatchPdfToMarkdownLocal(
 
     // Use retry logic if maxRetries is specified, otherwise single attempt
     const maxRetries = options.maxRetries ?? 0
-    const result = await convertFileWithRetryLocal(
+    const result = await convertFileWithRetry(
       file,
-      geminiApiKey,
       markerOptions,
+      conversionFn,
       maxRetries,
       signal
     )
@@ -507,10 +490,10 @@ export async function convertBatchPdfToMarkdownLocal(
       const fileIndex = i + 1
       currentIndex = fileIndex + 1
       
-      // Stagger starts: 5 seconds between each file submission
+      // Stagger starts: delay between each file submission
       // This prevents multiple cold containers from hitting model init simultaneously
       if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 5000))
+        await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.BATCH.STAGGER_DELAY_MS))
       }
       
       const promise = processFile(fileIndex)
@@ -528,7 +511,7 @@ export async function convertBatchPdfToMarkdownLocal(
       await Promise.race(Array.from(activePromises.values()))
     } else {
       // No active promises but files still pending - wait a bit for new promises to start
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.BATCH.QUEUE_CHECK_INTERVAL_MS))
     }
   }
   
@@ -541,47 +524,17 @@ export async function convertBatchPdfToMarkdownLocal(
 
   // If all conversions failed, return early with detailed error info
   if (completed.length === 0) {
-    // Collect error messages from failed conversions
-    const errorMessages = failed
-      .map(r => r.error)
-      .filter((msg): msg is string => !!msg)
-      .slice(0, 3) // Show first 3 errors
-    
-    const errorSummary = errorMessages.length > 0
-      ? `All conversions failed. Errors: ${errorMessages.join('; ')}${failed.length > 3 ? ` (and ${failed.length - 3} more)` : ''}`
-      : 'All conversions failed'
-    
     return {
       success: false,
       completed: [],
       failed: results,
-      error: errorSummary
+      error: createErrorSummary(failed)
     }
   }
 
   // Create ZIP file with successful conversions
   try {
-    // Dynamically import JSZip (client-side only library)
-    // Handle both ESM and CommonJS module formats
-    const JSZipModule = await import('jszip')
-    const JSZip = JSZipModule.default || JSZipModule
-    const zip = new JSZip()
-
-    for (const result of completed) {
-      if (result.markdown) {
-        // Use custom filename from map if available, otherwise use default
-        const outputFilename = options.filenameMap?.get(result.file) || replaceExtension(result.filename, 'md')
-        zip.file(outputFilename, result.markdown)
-      }
-    }
-
-    // Generate ZIP blob
-    const zipBlob = await zip.generateAsync({
-      type: 'blob',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 6 }
-    })
-
+    const zipBlob = await generateZipFile(completed, options.filenameMap)
     return {
       success: true,
       completed,

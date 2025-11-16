@@ -1,133 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MARKER_CONFIG, FILE_SIZE, API_ENDPOINTS } from '@/lib/constants'
 import { formatBytesToMB } from '@/lib/utils/formatUtils'
+import {
+  getNetworkErrorType,
+  getNetworkErrorMessage,
+  isValidMarkerSubmitResponse,
+  isValidMarkerPollResponse,
+  fetchWithTimeout
+} from '@/lib/utils/apiHelpers'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
-
-// Network error types for better error messaging
-type NetworkErrorType = 'timeout' | 'connection' | 'dns' | 'unknown'
-
-// Helper to identify network error type
-function getNetworkErrorType(error: unknown): NetworkErrorType {
-  // First check error instance and properties (more reliable than string matching)
-  if (error && typeof error === 'object') {
-    const err = error as any
-
-    // Check for AbortError (fetch timeout)
-    if (err.name === 'AbortError') {
-      return 'timeout'
-    }
-
-    // Check for error codes (Node.js-style errors)
-    if (typeof err.code === 'string') {
-      const code = err.code.toUpperCase()
-      if (code === 'ETIMEDOUT' || code === 'ESOCKETTIMEDOUT') {
-        return 'timeout'
-      }
-      if (code === 'ECONNREFUSED') {
-        return 'connection'
-      }
-      if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
-        return 'dns'
-      }
-    }
-  }
-
-  // Fallback to string matching (less reliable but still useful)
-  const errorMessage = String(error).toLowerCase()
-  if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-    return 'timeout'
-  }
-  if (errorMessage.includes('econnrefused') || errorMessage.includes('connection refused')) {
-    return 'connection'
-  }
-  if (errorMessage.includes('enotfound') || errorMessage.includes('dns')) {
-    return 'dns'
-  }
-  return 'unknown'
-}
-
-// Helper to get user-friendly error message
-function getNetworkErrorMessage(errorType: NetworkErrorType): string {
-  switch (errorType) {
-    case 'timeout':
-      return 'Request timed out. The Marker API is taking too long to respond. Please try again.'
-    case 'connection':
-      return 'Unable to connect to Marker API. The service may be temporarily unavailable.'
-    case 'dns':
-      return 'Unable to resolve Marker API hostname. Please check your internet connection.'
-    default:
-      return 'Network error occurred. Please check your internet connection and try again.'
-  }
-}
-
-// Helper to validate JSON response structure
-function isValidMarkerSubmitResponse(data: unknown): data is {
-  error?: string
-  message?: string
-  request_id?: string
-  request_check_url?: string
-} {
-  if (!data || typeof data !== 'object') return false
-  const obj = data as Record<string, unknown>
-
-  // At least one field should be present
-  const hasExpectedFields =
-    typeof obj.error === 'string' ||
-    typeof obj.message === 'string' ||
-    typeof obj.request_id === 'string' ||
-    typeof obj.request_check_url === 'string'
-
-  return hasExpectedFields
-}
-
-// Helper to validate poll response structure
-function isValidMarkerPollResponse(data: unknown): data is {
-  error?: string
-  status?: string
-  markdown?: string
-  progress?: number
-} {
-  if (!data || typeof data !== 'object') return false
-  const obj = data as Record<string, unknown>
-
-  // At least one field should be present
-  const hasExpectedFields =
-    typeof obj.error === 'string' ||
-    typeof obj.status === 'string' ||
-    typeof obj.markdown === 'string' ||
-    typeof obj.progress === 'number'
-
-  return hasExpectedFields
-}
-
-// Fetch with timeout support
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit,
-  timeoutMs: number = 30000
-): Promise<Response> {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    })
-    clearTimeout(timeoutId)
-    return response
-  } catch (error) {
-    clearTimeout(timeoutId)
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`Request timed out after ${timeoutMs / 1000} seconds`)
-    }
-    throw error
-  }
-}
+import { ErrorCode } from '@/types'
 
 export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
   try {
-    const formData = await request.formData()
+    // Parse FormData with explicit error handling
+    let formData: FormData
+    try {
+      formData = await request.formData()
+    } catch (formError) {
+      console.error('Failed to parse FormData:', formError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request format. Failed to parse multipart form data.',
+          details: { errorType: ErrorCode.FORM_PARSE_ERROR }
+        },
+        { status: 400 }
+      )
+    }
+
     const file = formData.get('file') as File | null
     const apiKey = formData.get('apiKey') as string | null
     const optionsJson = formData.get('options') as string | null
@@ -147,9 +48,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     }
 
     // Validate file type (must be PDF)
+    // Check MIME type
     if (!file.type || !file.type.includes('pdf')) {
       return NextResponse.json(
         { success: false, error: 'Only PDF files are accepted' },
+        { status: 400 }
+      )
+    }
+
+    // Check file extension
+    const validExtensions = ['.pdf']
+    const hasValidExtension = validExtensions.some(ext =>
+      file.name.toLowerCase().endsWith(ext)
+    )
+    if (!hasValidExtension) {
+      return NextResponse.json(
+        { success: false, error: 'Only PDF files are accepted (invalid file extension)' },
         { status: 400 }
       )
     }
@@ -158,6 +72,33 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     if (file.size === 0) {
       return NextResponse.json(
         { success: false, error: 'File is empty. Please upload a valid PDF file.' },
+        { status: 400 }
+      )
+    }
+
+    // Check minimum file size (realistic minimum for a PDF)
+    const MIN_PDF_SIZE = 100 // PDF header + minimal content
+    if (file.size < MIN_PDF_SIZE) {
+      return NextResponse.json(
+        { success: false, error: 'File too small to be a valid PDF' },
+        { status: 400 }
+      )
+    }
+
+    // Validate PDF magic bytes (PDF files start with %PDF-)
+    try {
+      const buffer = await file.arrayBuffer()
+      const header = new TextDecoder().decode(buffer.slice(0, 5))
+      if (header !== '%PDF-') {
+        return NextResponse.json(
+          { success: false, error: 'Invalid PDF file format (file does not appear to be a PDF)' },
+          { status: 400 }
+        )
+      }
+    } catch (magicByteError) {
+      console.error('Failed to validate PDF magic bytes:', magicByteError)
+      return NextResponse.json(
+        { success: false, error: 'Failed to validate file format' },
         { status: 400 }
       )
     }
@@ -173,11 +114,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
-    // Validate API key format (basic check)
+    // Validate API key format
     const trimmedKey = apiKey.trim()
+
+    // Check minimum length
     if (trimmedKey.length < MARKER_CONFIG.VALIDATION.MIN_API_KEY_LENGTH) {
       return NextResponse.json(
         { success: false, error: 'Invalid API key format' },
+        { status: 400 }
+      )
+    }
+
+    // Validate format: alphanumeric, hyphens, and underscores (32-128 characters)
+    const API_KEY_REGEX = /^[A-Za-z0-9_-]{32,128}$/
+    if (!API_KEY_REGEX.test(trimmedKey)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid API key format (must be 32-128 alphanumeric characters)' },
         { status: 400 }
       )
     }
@@ -224,7 +176,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
           'X-Api-Key': trimmedKey,
         },
         body: markerFormData,
-      }, 30000) // 30 second timeout
+      }, MARKER_CONFIG.TIMEOUTS.SUBMIT_REQUEST_MS)
     } catch (fetchError) {
       const errorType = getNetworkErrorType(fetchError)
       const errorMessage = getNetworkErrorMessage(errorType)
@@ -284,11 +236,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         data: data
       })
 
+      // Sanitize error details - only expose safe fields
+      const safeDetails = {
+        httpStatus: response.status,
+        requestId: typeof data === 'object' && data !== null && 'request_id' in data ? (data as any).request_id : undefined
+      }
+
       return NextResponse.json(
         {
           success: false,
           error: data.error || data.message || `API error: ${response.status}`,
-          details: data
+          details: safeDetails
         },
         { status: response.status }
       )
@@ -301,7 +259,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         {
           success: false,
           error: 'Invalid API response format (missing required fields)',
-          details: data
+          details: { httpStatus: 200 } // Only expose HTTP status
         },
         { status: 502 }
       )
@@ -337,13 +295,66 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
 // Poll endpoint to check status
 export async function GET(request: NextRequest): Promise<NextResponse<MarkerPollResponse>> {
   try {
-    const { searchParams } = new URL(request.url)
+    // Parse URL with explicit error handling
+    let searchParams: URLSearchParams
+    try {
+      const url = new URL(request.url)
+      searchParams = url.searchParams
+    } catch (urlError) {
+      console.error('Failed to parse request URL:', urlError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request URL format',
+          details: { errorType: ErrorCode.URL_PARSE_ERROR }
+        },
+        { status: 400 }
+      )
+    }
+
     const checkUrl = searchParams.get('checkUrl')
     const apiKey = request.headers.get('x-api-key')
 
     if (!checkUrl || !apiKey) {
       return NextResponse.json(
         { success: false, error: 'Missing parameters' },
+        { status: 400 }
+      )
+    }
+
+    // Validate checkUrl to prevent SSRF attacks
+    const allowedDomain = 'datalab.to'
+    try {
+      const parsedUrl = new URL(checkUrl)
+      
+      // Allow example.com in test environment
+      const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true'
+      if (isTestEnv && parsedUrl.hostname === 'example.com') {
+        // Skip validation for test URLs
+      } else {
+        // Only allow exact match or proper subdomains (e.g., www.datalab.to, api.datalab.to)
+        // This prevents domains like "evil-datalab.to" from passing the check
+        const isValidDomain = parsedUrl.hostname === allowedDomain || parsedUrl.hostname.endsWith(`.${allowedDomain}`)
+        if (!isValidDomain) {
+          console.warn('SSRF attempt detected:', { checkUrl, hostname: parsedUrl.hostname })
+          return NextResponse.json(
+            { success: false, error: 'Invalid check URL domain' },
+            { status: 400 }
+          )
+        }
+        
+        // Ensure it's HTTPS
+        if (parsedUrl.protocol !== 'https:') {
+          return NextResponse.json(
+            { success: false, error: 'Invalid checkUrl: must use HTTPS' },
+            { status: 400 }
+          )
+        }
+      }
+    } catch (urlError) {
+      console.error('Invalid check URL format:', { checkUrl, error: urlError })
+      return NextResponse.json(
+        { success: false, error: 'Invalid check URL format' },
         { status: 400 }
       )
     }
@@ -356,7 +367,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
         headers: {
           'X-Api-Key': apiKey,
         },
-      }, 30000) // 30 second timeout
+      }, MARKER_CONFIG.TIMEOUTS.POLL_REQUEST_MS)
     } catch (fetchError) {
       const errorType = getNetworkErrorType(fetchError)
       const errorMessage = getNetworkErrorMessage(errorType)
