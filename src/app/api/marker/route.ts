@@ -48,9 +48,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     }
 
     // Validate file type (must be PDF)
+    // Check MIME type
     if (!file.type || !file.type.includes('pdf')) {
       return NextResponse.json(
         { success: false, error: 'Only PDF files are accepted' },
+        { status: 400 }
+      )
+    }
+
+    // Check file extension
+    const validExtensions = ['.pdf']
+    const hasValidExtension = validExtensions.some(ext =>
+      file.name.toLowerCase().endsWith(ext)
+    )
+    if (!hasValidExtension) {
+      return NextResponse.json(
+        { success: false, error: 'Only PDF files are accepted (invalid file extension)' },
         { status: 400 }
       )
     }
@@ -59,6 +72,33 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     if (file.size === 0) {
       return NextResponse.json(
         { success: false, error: 'File is empty. Please upload a valid PDF file.' },
+        { status: 400 }
+      )
+    }
+
+    // Check minimum file size (realistic minimum for a PDF)
+    const MIN_PDF_SIZE = 100 // PDF header + minimal content
+    if (file.size < MIN_PDF_SIZE) {
+      return NextResponse.json(
+        { success: false, error: 'File too small to be a valid PDF' },
+        { status: 400 }
+      )
+    }
+
+    // Validate PDF magic bytes (PDF files start with %PDF-)
+    try {
+      const buffer = await file.arrayBuffer()
+      const header = new TextDecoder().decode(buffer.slice(0, 5))
+      if (header !== '%PDF-') {
+        return NextResponse.json(
+          { success: false, error: 'Invalid PDF file format (file does not appear to be a PDF)' },
+          { status: 400 }
+        )
+      }
+    } catch (magicByteError) {
+      console.error('Failed to validate PDF magic bytes:', magicByteError)
+      return NextResponse.json(
+        { success: false, error: 'Failed to validate file format' },
         { status: 400 }
       )
     }
@@ -74,11 +114,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
-    // Validate API key format (basic check)
+    // Validate API key format
     const trimmedKey = apiKey.trim()
+
+    // Check minimum length
     if (trimmedKey.length < MARKER_CONFIG.VALIDATION.MIN_API_KEY_LENGTH) {
       return NextResponse.json(
         { success: false, error: 'Invalid API key format' },
+        { status: 400 }
+      )
+    }
+
+    // Validate format: alphanumeric, hyphens, and underscores (32-128 characters)
+    const API_KEY_REGEX = /^[A-Za-z0-9_-]{32,128}$/
+    if (!API_KEY_REGEX.test(trimmedKey)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid API key format (must be 32-128 alphanumeric characters)' },
         { status: 400 }
       )
     }
@@ -185,11 +236,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         data: data
       })
 
+      // Sanitize error details - only expose safe fields
+      const safeDetails = {
+        httpStatus: response.status,
+        requestId: typeof data === 'object' && data !== null && 'request_id' in data ? (data as any).request_id : undefined
+      }
+
       return NextResponse.json(
         {
           success: false,
           error: data.error || data.message || `API error: ${response.status}`,
-          details: data
+          details: safeDetails
         },
         { status: response.status }
       )
@@ -202,7 +259,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         {
           success: false,
           error: 'Invalid API response format (missing required fields)',
-          details: data
+          details: { httpStatus: 200 } // Only expose HTTP status
         },
         { status: 502 }
       )
@@ -266,21 +323,26 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
     }
 
     // Validate checkUrl to prevent SSRF attacks
+    const allowedDomain = 'datalab.to'
     try {
       const parsedUrl = new URL(checkUrl)
-      const allowedHosts = ['www.datalab.to', 'datalab.to']
-
+      
       // Allow example.com in test environment
       const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true'
       if (isTestEnv && parsedUrl.hostname === 'example.com') {
         // Skip validation for test URLs
       } else {
-        if (!allowedHosts.includes(parsedUrl.hostname)) {
+        // Only allow exact match or proper subdomains (e.g., www.datalab.to, api.datalab.to)
+        // This prevents domains like "evil-datalab.to" from passing the check
+        const isValidDomain = parsedUrl.hostname === allowedDomain || parsedUrl.hostname.endsWith(`.${allowedDomain}`)
+        if (!isValidDomain) {
+          console.warn('SSRF attempt detected:', { checkUrl, hostname: parsedUrl.hostname })
           return NextResponse.json(
-            { success: false, error: 'Invalid checkUrl: must be a Marker API URL' },
+            { success: false, error: 'Invalid check URL domain' },
             { status: 400 }
           )
         }
+        
         // Ensure it's HTTPS
         if (parsedUrl.protocol !== 'https:') {
           return NextResponse.json(
@@ -290,8 +352,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
         }
       }
     } catch (urlError) {
+      console.error('Invalid check URL format:', { checkUrl, error: urlError })
       return NextResponse.json(
-        { success: false, error: 'Invalid checkUrl format' },
+        { success: false, error: 'Invalid check URL format' },
         { status: 400 }
       )
     }
