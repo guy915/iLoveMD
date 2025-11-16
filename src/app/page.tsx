@@ -11,7 +11,7 @@ export default function Home() {
           <Image
             src="/logo.svg"
             alt="iLoveLLM"
-            width={300}
+            width={298}
             height={100}
             priority
           />
