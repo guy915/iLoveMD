@@ -51,6 +51,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Improved debugging with standardized error codes and logging
     - Better recovery from transient network errors
 
+### Security
+- **Security Improvements** (2025-11-15):
+  - **Fixed SSRF vulnerability in API polling endpoint**:
+    - Added URL validation to `/api/marker` GET endpoint to prevent Server-Side Request Forgery attacks
+    - Restricts checkUrl parameter to only allow Marker API domains (datalab.to, www.datalab.to)
+    - Enforces HTTPS protocol for all external API calls
+    - Test URLs (example.com) are allowed only in test environment
+  - **Fixed XSS vulnerability in markdown renderer**:
+    - Improved URL scheme filtering in merge-markdown preview to prevent cross-site scripting
+    - Uses URL API for proper protocol validation instead of simple string checks
+    - Only allows safe protocols: http://, https://, mailto:
+    - Handles malformed URLs gracefully with try-catch
+
+### Fixed
+- **Bug Fixes and Code Quality Improvements** (2025-11-15):
+  - **Improved FileReader error handling**:
+    - Added defensive check for abort() method availability before calling
+    - Prevents errors in test environments and browsers where FileReader.abort() is not available
+  - **Enhanced session storage quota handling**:
+    - Implemented automatic log trimming when storage quota is exceeded
+    - Trims logs to most recent 30 entries when quota exceeded, then retries save
+    - Prevents silent failures and memory bloat from unlimited in-memory logs
+    - Users are notified via console when logs are trimmed
+  - **Improved event listener cleanup**:
+    - Simplified event listener type signature in GlobalDiagnosticPanel
+    - Removed redundant type casts to ensure proper cleanup
+    - Changed from `MouseEvent | Event` to just `Event` for cleaner code
+
 ### Removed
 - **Cleanup Unused Files and Deployment Artifacts** (2025-11-15):
   - **Removed unused Hugging Face Space deployment**:
