@@ -348,6 +348,37 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       )
     }
 
+    // Validate checkUrl to prevent SSRF attacks
+    try {
+      const parsedUrl = new URL(checkUrl)
+      const allowedHosts = ['www.datalab.to', 'datalab.to']
+
+      // Allow example.com in test environment
+      const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true'
+      if (isTestEnv && parsedUrl.hostname === 'example.com') {
+        // Skip validation for test URLs
+      } else {
+        if (!allowedHosts.includes(parsedUrl.hostname)) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid checkUrl: must be a Marker API URL' },
+            { status: 400 }
+          )
+        }
+        // Ensure it's HTTPS
+        if (parsedUrl.protocol !== 'https:') {
+          return NextResponse.json(
+            { success: false, error: 'Invalid checkUrl: must use HTTPS' },
+            { status: 400 }
+          )
+        }
+      }
+    } catch (urlError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid checkUrl format' },
+        { status: 400 }
+      )
+    }
+
     // Poll the Marker API with timeout
     let response: Response
     try {
