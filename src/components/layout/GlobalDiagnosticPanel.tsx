@@ -21,7 +21,7 @@ export default function GlobalDiagnosticPanel() {
   useEffect(() => {
     if (!isOpen) return
 
-    const handleClickOutside = (event: MouseEvent | Event) => {
+    const handleClickOutside = (event: Event) => {
       const target = event.target as Node
       if (panelRef.current && !panelRef.current.contains(target)) {
         setIsOpen(false)
@@ -29,11 +29,11 @@ export default function GlobalDiagnosticPanel() {
     }
 
     // Add event listener
-    document.addEventListener('mousedown', handleClickOutside as EventListener)
+    document.addEventListener('mousedown', handleClickOutside)
 
     // Cleanup
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside as EventListener)
+      document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isOpen])
 
