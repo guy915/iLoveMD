@@ -135,9 +135,24 @@ export async function fetchWithTimeout(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
+    // Combine signals if caller provided one
+    // Note: AbortSignal.any() is only available in Node 20+
+    // For compatibility, we listen to the external signal and abort the timeout controller
+    let signal = controller.signal
+
+    if (options.signal) {
+      // If AbortSignal.any is available (Node 20+), use it
+      if (typeof AbortSignal.any === 'function') {
+        signal = AbortSignal.any([options.signal, controller.signal])
+      } else {
+        // Fallback for Node 18: manually handle external signal
+        options.signal.addEventListener('abort', () => controller.abort(), { once: true })
+      }
+    }
+
     const response = await fetch(url, {
       ...options,
-      signal: controller.signal
+      signal
     })
     clearTimeout(timeoutId)
     return response

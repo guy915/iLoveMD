@@ -42,8 +42,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Now handles permission denials and clipboard access failures gracefully
     - Logs success/error messages to diagnostic panel
     - **Impact**: Better user experience, prevents silent failures
+  - **Add comprehensive test coverage for apiHelpers.ts**:
+    - Created new test file: src/lib/utils/apiHelpers.test.ts (53 tests)
+    - Test coverage includes:
+      - Network error type detection (12 tests)
+      - User-friendly error messages for local/cloud contexts (10 tests)
+      - Response validation functions (24 tests)
+      - Fetch with timeout functionality (7 tests)
+    - **Impact**: Isolated unit tests for helper functions, improved test isolation
+  - **Fix signal handling in fetchWithTimeout**:
+    - Added Node 18/20 compatibility for AbortSignal handling
+    - Uses AbortSignal.any() when available (Node 20+)
+    - Falls back to manual signal combination for Node 18
+    - Prevents overwriting external abort signals
+    - **Impact**: Better abort signal handling, cross-version compatibility
   - **Code quality metrics**:
-    - All tests pass: 383 passed, 6 skipped (389 total)
+    - All tests pass: 436 passed, 6 skipped (442 total) - added 53 new tests
     - Build succeeds with no errors
     - Lint passes with no warnings
 
