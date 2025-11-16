@@ -642,8 +642,14 @@ export default function MergeMarkdownPage() {
                             pre: ({...props}) => <pre className="bg-gray-100 p-1 rounded text-[0.32rem] mb-1 overflow-x-auto" {...props} />,
                             blockquote: ({...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
                             a: ({href, ...props}) => {
-                              // Filter out dangerous URL schemes for security
-                              const isSafe = href && !href.startsWith('javascript:') && !href.startsWith('data:')
+                              // Whitelist approach: only allow safe URL schemes
+                              const isSafe = href && (
+                                href.startsWith('http://') ||
+                                href.startsWith('https://') ||
+                                href.startsWith('/') ||
+                                href.startsWith('#') ||
+                                href.startsWith('mailto:')
+                              )
                               return isSafe
                                 ? <a className="text-blue-600" href={href} rel="noopener noreferrer" {...props} />
                                 : <span className="text-blue-600" {...props} />
