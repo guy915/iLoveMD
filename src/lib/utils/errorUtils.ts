@@ -1,5 +1,33 @@
 /**
  * Error handling utilities for consistent error management
+ *
+ * This module provides infrastructure for standardized error handling across the application.
+ * While not currently integrated into all error handling code, these utilities are available
+ * for use when implementing new features or refactoring existing error handling.
+ *
+ * Key use cases:
+ * - Use `retryWithBackoff()` for network operations that might fail transiently
+ * - Use `classifyError()` to standardize error codes in API responses
+ * - Use `createErrorLogData()` for consistent error logging format
+ * - Use `isTransientError()` to determine if an operation should be retried
+ *
+ * Example usage:
+ * ```typescript
+ * import { retryWithBackoff, createErrorLogData } from '@/lib/utils/errorUtils'
+ *
+ * // Retry a network request with exponential backoff
+ * const data = await retryWithBackoff(
+ *   () => fetch('/api/endpoint').then(r => r.json()),
+ *   { maxAttempts: 3, initialDelayMs: 1000 }
+ * )
+ *
+ * // Log error with standardized format
+ * try {
+ *   // ... operation
+ * } catch (error) {
+ *   addLog('error', 'Operation failed', createErrorLogData(error))
+ * }
+ * ```
  */
 
 import { ErrorCode } from '@/types'
@@ -138,10 +166,10 @@ export function classifyError(error: unknown): ErrorCode {
   const err = error as any
 
   // Memory errors
-  if (err.name === 'QuotaExceededError' || err.message?.includes('quota')) {
+  if (err.name === 'QuotaExceededError' || err.message?.toLowerCase().includes('quota')) {
     return ErrorCode.QUOTA_EXCEEDED
   }
-  if (err.message?.includes('memory') || err.message?.includes('allocation')) {
+  if (err.message?.toLowerCase().includes('memory') || err.message?.toLowerCase().includes('allocation')) {
     return ErrorCode.OUT_OF_MEMORY
   }
 
