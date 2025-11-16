@@ -19,6 +19,12 @@ import { replaceExtension } from '@/lib/utils/downloadUtils'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
 
+// Detect if running in test environment to skip delays
+// Check multiple indicators since process.env.VITEST may not always be set
+const isVitest = 
+  (typeof process !== 'undefined' && process.env.VITEST === 'true') ||
+  (typeof process !== 'undefined' && process.env.NODE_ENV === 'test')
+
 /**
  * Status of an individual file conversion
  */
@@ -94,15 +100,23 @@ export interface BatchConversionResult {
 
 /**
  * Sleep utility for delays
+ * Skips delays in test environment for faster test execution
  */
 function sleep(ms: number): Promise<void> {
+  if (isVitest) {
+    return Promise.resolve()
+  }
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 /**
  * Calculate exponential backoff delay
+ * Returns 0 in test environment for faster test execution
  */
 function getRetryDelay(attempt: number): number {
+  if (isVitest) {
+    return 0
+  }
   const delay = MARKER_CONFIG.BATCH.RETRY_DELAY_BASE_MS * Math.pow(2, attempt)
   return Math.min(delay, MARKER_CONFIG.BATCH.RETRY_DELAY_MAX_MS)
 }

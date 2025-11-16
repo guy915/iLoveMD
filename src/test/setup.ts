@@ -89,6 +89,24 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// Mock window.location for JSDOM compatibility (prevents "navigation not implemented" errors)
+delete (window as any).location
+window.location = {
+  href: 'http://localhost:3000/',
+  origin: 'http://localhost:3000',
+  protocol: 'http:',
+  host: 'localhost:3000',
+  hostname: 'localhost',
+  port: '3000',
+  pathname: '/',
+  search: '',
+  hash: '',
+  assign: vi.fn(),
+  replace: vi.fn(),
+  reload: vi.fn(),
+  toString: () => 'http://localhost:3000/',
+} as any
+
 // Suppress console errors in tests (optional - can be removed if you want to see them)
 // Uncomment to hide expected errors during testing:
 // global.console.error = vi.fn()
