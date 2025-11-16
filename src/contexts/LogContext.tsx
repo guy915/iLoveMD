@@ -54,7 +54,7 @@ function safeStorageSet(key: string, value: string, retryWithCleanup = true): bo
         // Try to clean up old logs and retry once
         try {
           const logs = JSON.parse(value) as LogEntry[]
-          if (Array.isArray(logs) && logs.length > 10) {
+          if (Array.isArray(logs) && logs.length > 30) {
             // Keep only the most recent 30 logs when quota is exceeded
             const trimmedLogs = logs.slice(-30)
             const trimmedValue = JSON.stringify(trimmedLogs)

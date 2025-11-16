@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Fixed XSS vulnerability in markdown renderer**:
     - Improved URL scheme filtering in merge-markdown preview to prevent cross-site scripting
     - Uses URL API for proper protocol validation instead of simple string checks
-    - Only allows safe protocols: http://, https://, mailto://
+    - Only allows safe protocols: http://, https://, mailto:
     - Handles malformed URLs gracefully with try-catch
 
 ### Fixed
