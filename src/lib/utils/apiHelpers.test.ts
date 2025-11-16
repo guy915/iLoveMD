@@ -288,10 +288,13 @@ describe('apiHelpers', () => {
 
       const promise = fetchWithTimeout('https://example.com', {}, 1000)
 
+      // Attach rejection handler before advancing timers to prevent unhandled rejection
+      const expectation = expect(promise).rejects.toThrow('Request timed out after 1 seconds')
+
       // Advance time past timeout to trigger abort
       await vi.advanceTimersByTimeAsync(1500)
 
-      await expect(promise).rejects.toThrow('Request timed out after 1 seconds')
+      await expectation
     }, 10000)
 
     it('should use default timeout of 30 seconds when not specified', async () => {
@@ -372,22 +375,27 @@ describe('apiHelpers', () => {
 
       const promise = fetchWithTimeout('https://example.com', { signal: externalController.signal }, 5000)
 
+      // Attach rejection handler before advancing timers to prevent unhandled rejection
+      const expectation = expect(promise).rejects.toThrow('Request timed out after 5 seconds')
+
       // Abort externally before timeout
       setTimeout(() => externalController.abort(), 100)
       await vi.advanceTimersByTimeAsync(200)
 
-      await expect(promise).rejects.toThrow('Request timed out after 5 seconds')
+      await expectation
     })
 
     it('should propagate non-abort errors', async () => {
       const networkError = new Error('Network failure')
       global.fetch = vi.fn().mockRejectedValue(networkError)
 
-      await expect(async () => {
-        const promise = fetchWithTimeout('https://example.com', {}, 5000)
-        await vi.runAllTimersAsync()
-        await promise
-      }).rejects.toThrow('Network failure')
+      const promise = fetchWithTimeout('https://example.com', {}, 5000)
+
+      // Attach rejection handler before running timers to prevent unhandled rejection
+      const expectation = expect(promise).rejects.toThrow('Network failure')
+
+      await vi.runAllTimersAsync()
+      await expectation
     })
 
     it('should clear timeout after successful response', async () => {
@@ -410,11 +418,13 @@ describe('apiHelpers', () => {
 
       const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout')
 
-      await expect(async () => {
-        const promise = fetchWithTimeout('https://example.com', {}, 5000)
-        await vi.runAllTimersAsync()
-        await promise
-      }).rejects.toThrow('Network failure')
+      const promise = fetchWithTimeout('https://example.com', {}, 5000)
+
+      // Attach rejection handler before running timers to prevent unhandled rejection
+      const expectation = expect(promise).rejects.toThrow('Network failure')
+
+      await vi.runAllTimersAsync()
+      await expectation
 
       expect(clearTimeoutSpy).toHaveBeenCalled()
     })
