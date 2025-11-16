@@ -199,22 +199,56 @@ export default function MergeMarkdownPage() {
     }
   }, [processFiles, addLog])
 
-  // Read file as text
+  // Read file as text with comprehensive error handling
   const readFileAsText = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
+      // Check for browser support
+      if (typeof FileReader === 'undefined') {
+        reject(new Error('FileReader API not supported in this browser'))
+        return
+      }
+
       const reader = new FileReader()
+
       reader.onload = (e) => {
         const content = e.target?.result as string
-        resolve(content || '')
-      }
-      reader.onerror = () => {
-        // Abort if method exists (not available in all environments/mocks)
-        if (typeof reader.abort === 'function') {
-          reader.abort()
+        if (content === null || content === undefined) {
+          reject(new Error('File read resulted in empty content'))
+          return
         }
-        reject(new Error('Failed to read file'))
+        resolve(content)
       }
-      reader.readAsText(file)
+
+      reader.onerror = () => {
+        const error = reader.error
+        if (error) {
+          // Provide specific error messages based on error type
+          if (error.name === 'NotFoundError') {
+            reject(new Error('File not found or no longer accessible'))
+          } else if (error.name === 'SecurityError') {
+            reject(new Error('Security error: Cannot read file'))
+          } else if (error.name === 'NotReadableError') {
+            reject(new Error('File is not readable (may be locked or corrupted)'))
+          } else if (error.name === 'AbortError') {
+            reject(new Error('File read was aborted'))
+          } else {
+            reject(new Error(`Failed to read file: ${error.message || 'Unknown error'}`))
+          }
+        } else {
+          reject(new Error('Failed to read file: Unknown error'))
+        }
+      }
+
+      reader.onabort = () => {
+        reject(new Error('File read was aborted'))
+      }
+
+      // Attempt to read the file
+      try {
+        reader.readAsText(file)
+      } catch (err) {
+        reject(new Error(`Failed to start file read: ${err instanceof Error ? err.message : 'Unknown error'}`))
+      }
     })
   }
 
@@ -295,7 +329,7 @@ export default function MergeMarkdownPage() {
     return merged
   }, [files, separatorStyle, addHeaders, addLog])
 
-  // Download merged markdown
+  // Download merged markdown with comprehensive error handling
   const handleMergeAndDownload = useCallback(() => {
     if (files.length === 0) {
       addLog('error', 'No files to merge')
@@ -304,20 +338,58 @@ export default function MergeMarkdownPage() {
 
     try {
       const mergedContent = mergeMarkdownFiles()
-      const blob = new Blob([mergedContent], { type: 'text/markdown' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'merged.md'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
 
-      addLog('success', 'Merged file downloaded', { filename: 'merged.md' })
+      // Check for browser APIs
+      if (typeof Blob === 'undefined') {
+        throw new Error('Blob API not supported in this browser')
+      }
+
+      let blob: Blob
+      try {
+        blob = new Blob([mergedContent], { type: 'text/markdown' })
+      } catch (blobError) {
+        // Blob creation can fail due to memory constraints
+        if (blobError instanceof Error && (blobError.message?.toLowerCase().includes('memory') || blobError.message?.toLowerCase().includes('allocation'))) {
+          addLog('error', 'Out of memory while creating merged file')
+          throw new Error('Merged file too large for browser memory. Try merging fewer files at once.')
+        }
+        throw blobError
+      }
+
+      let url: string
+      try {
+        url = URL.createObjectURL(blob)
+      } catch (urlError) {
+        if (urlError instanceof Error && urlError.message?.toLowerCase().includes('quota')) {
+          addLog('error', 'Too many blob URLs created')
+          throw new Error('Browser URL quota exceeded. Please refresh the page and try again.')
+        }
+        throw urlError
+      }
+
+      try {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'merged.md'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        addLog('success', 'Merged file downloaded', { filename: 'merged.md' })
+      } finally {
+        // Always clean up URL to prevent memory leaks
+        try {
+          URL.revokeObjectURL(url)
+        } catch (revokeError) {
+          // Ignore revoke errors but log them
+          console.warn('Failed to revoke object URL:', revokeError)
+        }
+      }
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       addLog('error', `Failed to merge and download: ${errorMessage}`)
+      // Note: We don't set an error state in this component, just log it
     }
   }, [files.length, mergeMarkdownFiles, addLog])
 

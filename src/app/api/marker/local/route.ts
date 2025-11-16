@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { MARKER_CONFIG, FILE_SIZE, API_ENDPOINTS } from '@/lib/constants'
 import { formatBytesToMB } from '@/lib/utils/formatUtils'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
+import { ErrorCode } from '@/types'
 
 // Network error types for better error messaging
 type NetworkErrorType = 'timeout' | 'connection' | 'dns' | 'unknown'
@@ -129,7 +130,22 @@ async function fetchWithTimeout(
 
 export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
   try {
-    const formData = await request.formData()
+    // Parse FormData with explicit error handling
+    let formData: FormData
+    try {
+      formData = await request.formData()
+    } catch (formError) {
+      console.error('Failed to parse FormData:', formError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request format. Failed to parse multipart form data.',
+          details: { errorType: ErrorCode.FORM_PARSE_ERROR }
+        },
+        { status: 400 }
+      )
+    }
+
     const file = formData.get('file') as File | null
     const geminiApiKey = formData.get('geminiApiKey') as string | null
     const optionsJson = formData.get('options') as string | null
@@ -349,7 +365,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
 // Poll endpoint to check status
 export async function GET(request: NextRequest): Promise<NextResponse<MarkerPollResponse>> {
   try {
-    const { searchParams } = new URL(request.url)
+    // Parse URL with explicit error handling
+    let searchParams: URLSearchParams
+    try {
+      const url = new URL(request.url)
+      searchParams = url.searchParams
+    } catch (urlError) {
+      console.error('Failed to parse request URL:', urlError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request URL format',
+          details: { errorType: ErrorCode.URL_PARSE_ERROR }
+        },
+        { status: 400 }
+      )
+    }
+
     const checkUrl = searchParams.get('checkUrl')
 
     if (!checkUrl) {
