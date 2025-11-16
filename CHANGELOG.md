@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Code Refactoring - Eliminate Batch Conversion Logic Duplication** (2025-11-16):
+  - **Extracted shared helper functions**:
+    - Created `createErrorSummary()` - Generates error summary for failed batch conversions
+    - Created `generateZipFile()` - Generates ZIP files from completed conversions
+    - Created `initializeBatchProgress()` - Initializes progress tracking for batch operations
+    - Created generic `convertFileWithRetry()` - Handles retry logic for both paid and free modes
+  - **Refactored duplicated code**:
+    - Replaced separate `convertFileWithRetry` and `convertFileWithRetryLocal` functions with single generic function
+    - Eliminated duplicate ZIP generation code (lines 366-401 and 562-598)
+    - Eliminated duplicate error summary code (lines 346-362 and 542-559)
+    - Eliminated duplicate progress tracking initialization (lines 253-259 and 432-438)
+    - Both `convertBatchPdfToMarkdown` and `convertBatchPdfToMarkdownLocal` now use shared helpers
+  - **Files Modified**:
+    - Updated: src/lib/services/batchConversionService.ts
+      - Removed ~120 lines of duplicated code
+      - Added 4 new helper functions
+      - Refactored retry logic to use generic conversion function pattern
+  - **Impact**:
+    - Reduced code duplication by ~25% in batch conversion service
+    - Improved maintainability - changes to retry logic, ZIP generation, or error handling now only need to be made once
+    - All 436 tests pass, build succeeds with no errors
+    - No functional changes - behavior remains identical
+
 - **Code Refactoring - Fixed Code Smells** (2025-11-15):
   - **Extract duplicated API helper functions**:
     - Created new utility file: src/lib/utils/apiHelpers.ts
