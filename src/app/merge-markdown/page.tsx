@@ -277,7 +277,9 @@ export default function MergeMarkdownPage() {
 
       // Add header if enabled
       if (addHeaders) {
-        parts.push(`# ${markdownFile.file.name}\n\n`)
+        // Remove .md or .markdown extension from filename
+        const nameWithoutExt = markdownFile.file.name.replace(/\.(md|markdown)$/i, '')
+        parts.push(`# ${nameWithoutExt}\n\n`)
       }
 
       // Add file content
