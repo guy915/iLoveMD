@@ -285,7 +285,7 @@ export async function convertPdfToMarkdownLocal(
 
     // Small delay before first status check to allow Modal Volumes to propagate
     // Modal Volumes have eventual consistency, so the job might not be readable immediately
-    await new Promise(resolve => setTimeout(resolve, 1000)) // 1 second delay
+    await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.POLLING.INITIAL_DELAY_MS))
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       // Check if cancelled
