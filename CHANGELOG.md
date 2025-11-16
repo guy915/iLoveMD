@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Comprehensive Error Handling Improvements** (2025-11-16):
+  - **API Route Error Handling**:
+    - Added FormData parsing error handling with explicit try-catch blocks
+    - Added URL parsing error handling for malformed request URLs
+    - Improved error messages with specific error type codes (FORM_PARSE_ERROR, URL_PARSE_ERROR)
+    - Applied to both /api/marker and /api/marker/local routes
+  - **Component-Level Error Handling**:
+    - Added dynamic import error handling for batch conversion modules
+    - Added memory/quota error handling for file downloads (QuotaExceededError, out-of-memory)
+    - Improved FileReader error handling with specific error messages for different failure modes
+    - Added proper resource cleanup in finally blocks for file operations
+  - **Standardized Error Codes**:
+    - Created ErrorCode enum with 25+ standardized error codes
+    - Categorized errors: Request/Input (4xx), Network/External (5xx), Resource/Memory, File Operations, Module Imports
+    - Updated ApiError interface to include optional code field
+  - **Error Utility Module** (new file: src/lib/utils/errorUtils.ts):
+    - `isTransientError()`: Identifies retryable errors (network timeouts, 5xx errors, connection issues)
+    - `retryWithBackoff()`: Retry function with exponential backoff and configurable options
+    - `getErrorMessage()`: Extract user-friendly error messages from various error types
+    - `classifyError()`: Automatically classify errors into ErrorCode categories
+    - `createErrorLogData()`: Generate standardized error log entries
+    - Full test coverage: 35 test cases covering all utility functions
+  - **Memory & Resource Error Handling**:
+    - Added out-of-memory detection for Blob creation and download operations
+    - Added disk quota exceeded error handling for File System Access API
+    - Improved error messages for memory-constrained scenarios
+    - Added proper cleanup of resources (URLs, writable streams) even on failure
+  - **File Operation Error Handling**:
+    - Enhanced FileReader error handling with specific messages for NotFoundError, SecurityError, NotReadableError
+    - Added abort handling for file read operations
+    - Improved Blob and URL creation error handling
+    - Added browser API availability checks before usage
+  - **Test Coverage**:
+    - Maintained test coverage at 72.25% (above 70% threshold)
+    - Added 35 new tests for error utility functions
+    - Total test count: 418 tests (all passing, 6 skipped as expected)
+  - **Impact**:
+    - More robust error handling across all layers of the application
+    - Better user-facing error messages with actionable guidance
+    - Reduced risk of unhandled promise rejections and uncaught errors
+    - Improved debugging with standardized error codes and logging
+    - Better recovery from transient network errors
+
 ### Security
 - **Security Improvements** (2025-11-15):
   - **Fixed SSRF vulnerability in API polling endpoint**:
