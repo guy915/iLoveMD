@@ -13,6 +13,7 @@ export default function Home() {
             alt="iLoveLLM"
             width={297}
             height={100}
+            style={{ height: 'auto' }}
             priority
           />
         </div>
