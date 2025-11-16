@@ -142,9 +142,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     }
 
     // Validate file type (must be PDF)
+    // Check MIME type
     if (!file.type || !file.type.includes('pdf')) {
       return NextResponse.json(
         { success: false, error: 'Only PDF files are accepted' },
+        { status: 400 }
+      )
+    }
+
+    // Check file extension
+    const validExtensions = ['.pdf']
+    const hasValidExtension = validExtensions.some(ext =>
+      file.name.toLowerCase().endsWith(ext)
+    )
+    if (!hasValidExtension) {
+      return NextResponse.json(
+        { success: false, error: 'Only PDF files are accepted (invalid file extension)' },
         { status: 400 }
       )
     }
@@ -153,6 +166,33 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     if (file.size === 0) {
       return NextResponse.json(
         { success: false, error: 'File is empty. Please upload a valid PDF file.' },
+        { status: 400 }
+      )
+    }
+
+    // Check minimum file size (realistic minimum for a PDF)
+    const MIN_PDF_SIZE = 100 // PDF header + minimal content
+    if (file.size < MIN_PDF_SIZE) {
+      return NextResponse.json(
+        { success: false, error: 'File too small to be a valid PDF' },
+        { status: 400 }
+      )
+    }
+
+    // Validate PDF magic bytes (PDF files start with %PDF-)
+    try {
+      const buffer = await file.arrayBuffer()
+      const header = new TextDecoder().decode(buffer.slice(0, 5))
+      if (header !== '%PDF-') {
+        return NextResponse.json(
+          { success: false, error: 'Invalid PDF file format (file does not appear to be a PDF)' },
+          { status: 400 }
+        )
+      }
+    } catch (magicByteError) {
+      console.error('Failed to validate PDF magic bytes:', magicByteError)
+      return NextResponse.json(
+        { success: false, error: 'Failed to validate file format' },
         { status: 400 }
       )
     }
@@ -291,11 +331,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         data: data
       })
 
+      // Sanitize error details - only expose safe fields
+      const safeDetails = {
+        httpStatus: response.status,
+        requestId: typeof data === 'object' && data !== null && 'request_id' in data ? (data as any).request_id : undefined
+      }
+
       return NextResponse.json(
         {
           success: false,
           error: data.error || data.message || `API error: ${response.status}`,
-          details: data
+          details: safeDetails
         },
         { status: response.status }
       )
@@ -308,7 +354,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
         {
           success: false,
           error: 'Invalid API response format (missing required fields)',
-          details: data
+          details: { httpStatus: 200 } // Only expose HTTP status
         },
         { status: 502 }
       )
@@ -355,6 +401,28 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
     if (!checkUrl) {
       return NextResponse.json(
         { success: false, error: 'Missing checkUrl parameter' },
+        { status: 400 }
+      )
+    }
+
+    // Validate checkUrl is from expected domains (prevent SSRF)
+    const allowedDomains = ['modal.run', 'localhost', '127.0.0.1']
+    try {
+      const url = new URL(checkUrl)
+      const isAllowed = allowedDomains.some(domain =>
+        url.hostname === domain || url.hostname.endsWith(`.${domain}`)
+      )
+      if (!isAllowed) {
+        console.warn('SSRF attempt detected:', { checkUrl, hostname: url.hostname })
+        return NextResponse.json(
+          { success: false, error: 'Invalid check URL domain' },
+          { status: 400 }
+        )
+      }
+    } catch (urlError) {
+      console.error('Invalid check URL format:', { checkUrl, error: urlError })
+      return NextResponse.json(
+        { success: false, error: 'Invalid check URL format' },
         { status: 400 }
       )
     }
