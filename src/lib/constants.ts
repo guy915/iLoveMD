@@ -90,6 +90,15 @@ export const MARKER_CONFIG = {
     INTERVAL_MS: 2000, // Poll every 2 seconds
     MAX_ATTEMPTS: 3600, // 2 hours max (3600 * 2 seconds = 7200 seconds)
     TIMEOUT_DURATION_MS: 7200000, // 2 hours in milliseconds
+    INITIAL_DELAY_MS: 1000, // Wait 1 second before first poll
+  },
+
+  // API request timeouts
+  TIMEOUTS: {
+    SUBMIT_REQUEST_MS: 30000, // 30 seconds for submit requests
+    POLL_REQUEST_MS: 30000, // 30 seconds for poll requests
+    LOCAL_SUBMIT_REQUEST_MS: 300000, // 5 minutes for local submit (Modal cold starts)
+    LOCAL_POLL_REQUEST_MS: 60000, // 60 seconds for local poll requests
   },
 
   // Batch processing configuration
@@ -98,6 +107,8 @@ export const MARKER_CONFIG = {
     MAX_RETRIES: 3, // Number of retry attempts for failed conversions
     RETRY_DELAY_BASE_MS: 1000, // Base delay for exponential backoff (1 second)
     RETRY_DELAY_MAX_MS: 32000, // Maximum retry delay (32 seconds)
+    STAGGER_DELAY_MS: 5000, // Delay between batch submissions to avoid rate limits (5 seconds)
+    QUEUE_CHECK_INTERVAL_MS: 10, // Interval for checking queue slots (10ms)
   },
 
   // Validation rules

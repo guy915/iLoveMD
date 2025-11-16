@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Code Refactoring - Fixed Code Smells** (2025-11-15):
+  - **Extract duplicated API helper functions**:
+    - Created new utility file: src/lib/utils/apiHelpers.ts
+    - Moved shared helper functions from API routes to centralized location:
+      - `getNetworkErrorType()` - Identifies network error types (timeout, connection, DNS)
+      - `getNetworkErrorMessage()` - User-friendly error messages with local/cloud context
+      - `isValidMarkerSubmitResponse()` - Validates submit response structure
+      - `isValidMarkerPollResponse()` - Validates poll response structure
+      - `fetchWithTimeout()` - Fetch wrapper with configurable timeout
+    - Updated routes to import from shared utility:
+      - src/app/api/marker/route.ts (removed 121 lines of duplicated code)
+      - src/app/api/marker/local/route.ts (removed 121 lines of duplicated code)
+    - **Impact**: Eliminated 242 lines of duplicated code, improved maintainability
+  - **Move magic numbers to constants**:
+    - Added new constants to MARKER_CONFIG in src/lib/constants.ts:
+      - `POLLING.INITIAL_DELAY_MS` - 1 second delay before first poll
+      - `TIMEOUTS.SUBMIT_REQUEST_MS` - 30 seconds for cloud submit requests
+      - `TIMEOUTS.POLL_REQUEST_MS` - 30 seconds for cloud poll requests
+      - `TIMEOUTS.LOCAL_SUBMIT_REQUEST_MS` - 5 minutes for local submit (Modal cold starts)
+      - `TIMEOUTS.LOCAL_POLL_REQUEST_MS` - 60 seconds for local poll requests
+      - `BATCH.STAGGER_DELAY_MS` - 5 seconds between batch submissions
+      - `BATCH.QUEUE_CHECK_INTERVAL_MS` - 10ms for checking queue slots
+    - Replaced hardcoded values with named constants in:
+      - src/app/api/marker/route.ts (2 timeout values)
+      - src/app/api/marker/local/route.ts (2 timeout values)
+      - src/lib/services/batchConversionService.ts (2 delay values)
+      - src/lib/services/markerApiService.ts (1 delay value)
+    - **Impact**: Improved code readability and centralized configuration
+  - **Add clipboard error handling**:
+    - Updated src/components/layout/GlobalDiagnosticPanel.tsx
+    - Added proper error handling to clipboard.writeText() operation
+    - Now handles permission denials and clipboard access failures gracefully
+    - Logs success/error messages to diagnostic panel
+    - **Impact**: Better user experience, prevents silent failures
+  - **Add comprehensive test coverage for apiHelpers.ts**:
+    - Created new test file: src/lib/utils/apiHelpers.test.ts (53 tests)
+    - Test coverage includes:
+      - Network error type detection (12 tests)
+      - User-friendly error messages for local/cloud contexts (10 tests)
+      - Response validation functions (24 tests)
+      - Fetch with timeout functionality (7 tests)
+    - **Impact**: Isolated unit tests for helper functions, improved test isolation
+  - **Fix signal handling in fetchWithTimeout**:
+    - Added Node 18/20 compatibility for AbortSignal handling
+    - Uses AbortSignal.any() when available (Node 20+)
+    - Falls back to manual signal combination for Node 18
+    - Prevents overwriting external abort signals
+    - **Impact**: Better abort signal handling, cross-version compatibility
+  - **Code quality metrics**:
+    - All tests pass: 436 passed, 6 skipped (442 total) - added 53 new tests
+    - Build succeeds with no errors
+    - Lint passes with no warnings
 ### Added
 - **Comprehensive Error Handling Improvements** (2025-11-16):
   - **API Route Error Handling**:
