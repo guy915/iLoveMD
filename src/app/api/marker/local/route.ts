@@ -409,9 +409,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
     const allowedDomains = ['modal.run', 'localhost', '127.0.0.1']
     try {
       const url = new URL(checkUrl)
-      const isAllowed = allowedDomains.some(domain =>
-        url.hostname === domain || url.hostname.endsWith(`.${domain}`)
-      )
+      const isAllowed = allowedDomains.some(domain => {
+        // For localhost and IP addresses, require exact match only
+        // This prevents "evil-localhost" or "fake127.0.0.1" from passing
+        if (domain === 'localhost' || domain === '127.0.0.1') {
+          return url.hostname === domain
+        }
+        // For modal.run, allow exact match or proper subdomains
+        // This prevents "evil-modal.run" from passing
+        return url.hostname === domain || url.hostname.endsWith(`.${domain}`)
+      })
       if (!isAllowed) {
         console.warn('SSRF attempt detected:', { checkUrl, hostname: url.hostname })
         return NextResponse.json(
