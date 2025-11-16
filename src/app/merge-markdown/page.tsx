@@ -832,7 +832,7 @@ export default function MergeMarkdownPage() {
             disabled={files.length === 0}
             className="w-full"
           >
-            Clear All Files
+            Clear All
           </Button>
         </div>
       </div>
