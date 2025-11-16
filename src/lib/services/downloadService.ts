@@ -105,10 +105,12 @@ export class DownloadService {
 
         return
       } catch (error) {
-        // User cancelled or API error, fall back to regular download
-        if ((error as Error).name !== 'AbortError') {
-          console.warn('File System Access API failed, falling back to regular download:', error)
+        // User cancelled - don't fallback, respect their choice
+        if ((error as Error).name === 'AbortError') {
+          return
         }
+        // API error, fall back to regular download
+        console.warn('File System Access API failed, falling back to regular download:', error)
       }
     }
 

@@ -247,12 +247,14 @@ export function useMergeMarkdown(
    * Remove a file by ID
    */
   const removeFile = useCallback((id: string) => {
-    const file = files.find(f => f.id === id)
-    if (file) {
-      addLog('info', `Removed file: ${file.file.name}`)
-    }
-    setFiles(prev => prev.filter(f => f.id !== id))
-  }, [files, addLog])
+    setFiles(prev => {
+      const file = prev.find(f => f.id === id)
+      if (file) {
+        addLog('info', `Removed file: ${file.file.name}`)
+      }
+      return prev.filter(f => f.id !== id)
+    })
+  }, [addLog])
 
   /**
    * Clear all files
