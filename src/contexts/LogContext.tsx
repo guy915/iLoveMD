@@ -40,7 +40,7 @@ function safeStorageGet(key: string): string | null {
   }
 }
 
-function safeStorageSet(key: string, value: string): boolean {
+function safeStorageSet(key: string, value: string, retryWithCleanup = true): boolean {
   if (typeof window === 'undefined' || storageUnavailable) return false
 
   try {
@@ -50,6 +50,26 @@ function safeStorageSet(key: string, value: string): boolean {
     return true
   } catch (error) {
     if (error instanceof Error && error.name === 'QuotaExceededError') {
+      if (retryWithCleanup && key === LOGS_STORAGE_KEY) {
+        // Try to clean up old logs and retry once
+        try {
+          const logs = JSON.parse(value) as LogEntry[]
+          if (Array.isArray(logs) && logs.length > 30) {
+            // Keep only the most recent 30 logs when quota is exceeded
+            const trimmedLogs = logs.slice(-30)
+            const trimmedValue = JSON.stringify(trimmedLogs)
+            // Retry with trimmed logs (retryWithCleanup = false to prevent infinite recursion)
+            const success = safeStorageSet(key, trimmedValue, false)
+            if (success && originalConsoleWarn) {
+              originalConsoleWarn.call(console, 'sessionStorage quota exceeded. Trimmed logs to 30 most recent entries.')
+            }
+            return success
+          }
+        } catch {
+          // If trimming fails, fall through to original error handling
+        }
+      }
+
       if (!storageQuotaExceeded) {
         // Set flag BEFORE logging to prevent recursive calls via wrapped console.warn
         storageQuotaExceeded = true

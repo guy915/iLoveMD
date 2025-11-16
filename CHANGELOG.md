@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Critical Security Fixes** (2025-11-16):
   - **Fixed SSRF vulnerabilities in API routes** (CRITICAL):
     - Added URL validation to prevent Server-Side Request Forgery attacks
-    - GET /api/marker now validates checkUrl is from datalab.to domain only
+    - GET /api/marker now validates checkUrl is from datalab.to domain only (with proper subdomain handling)
     - GET /api/marker/local now validates checkUrl is from modal.run, localhost, or 127.0.0.1 only
+    - Added HTTPS protocol validation for checkUrl
     - Prevents attackers from accessing internal network resources or stealing API keys
   - **Improved file validation** (HIGH):
     - Added file extension validation (.pdf only)
@@ -30,9 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Files: src/app/api/marker/route.ts, src/app/api/marker/local/route.ts
   - **Improved URL scheme validation** (MEDIUM):
     - Changed from blacklist to whitelist approach for markdown link rendering
-    - Only allow http://, https://, /, #, and mailto: schemes
+    - Only allow http://, https://, and mailto: schemes
+    - Uses URL parsing for robust validation
     - Prevents javascript:, vbscript:, file:, and other dangerous URL schemes
-    - File: src/app/merge-markdown/page.tsx:644-656
+    - File: src/app/merge-markdown/page.tsx
   - **Added Content Security Policy headers** (MEDIUM):
     - Implemented comprehensive CSP headers to prevent XSS attacks
     - Added X-Frame-Options, X-Content-Type-Options, Referrer-Policy headers
@@ -47,6 +49,155 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Updated batch conversion tests to use valid API keys (32+ characters)
     - Skipped 1 test with vitest 4.x compatibility issue (not security-related)
     - Build verification: All builds pass successfully
+
+### Changed
+- **Code Refactoring - Eliminate Batch Conversion Logic Duplication** (2025-11-16):
+  - **Extracted shared helper functions**:
+    - Created `createErrorSummary()` - Generates error summary for failed batch conversions
+    - Created `generateZipFile()` - Generates ZIP files from completed conversions
+    - Created `initializeBatchProgress()` - Initializes progress tracking for batch operations
+    - Created generic `convertFileWithRetry()` - Handles retry logic for both paid and free modes
+  - **Refactored duplicated code**:
+    - Replaced separate `convertFileWithRetry` and `convertFileWithRetryLocal` functions with single generic function
+    - Eliminated duplicate ZIP generation code (lines 366-401 and 562-598)
+    - Eliminated duplicate error summary code (lines 346-362 and 542-559)
+    - Eliminated duplicate progress tracking initialization (lines 253-259 and 432-438)
+    - Both `convertBatchPdfToMarkdown` and `convertBatchPdfToMarkdownLocal` now use shared helpers
+  - **Files Modified**:
+    - Updated: src/lib/services/batchConversionService.ts
+      - Removed ~120 lines of duplicated code
+      - Added 4 new helper functions
+      - Refactored retry logic to use generic conversion function pattern
+  - **Impact**:
+    - Reduced code duplication by ~25% in batch conversion service
+    - Improved maintainability - changes to retry logic, ZIP generation, or error handling now only need to be made once
+    - All 436 tests pass, build succeeds with no errors
+    - No functional changes - behavior remains identical
+
+- **Code Refactoring - Fixed Code Smells** (2025-11-15):
+  - **Extract duplicated API helper functions**:
+    - Created new utility file: src/lib/utils/apiHelpers.ts
+    - Moved shared helper functions from API routes to centralized location:
+      - `getNetworkErrorType()` - Identifies network error types (timeout, connection, DNS)
+      - `getNetworkErrorMessage()` - User-friendly error messages with local/cloud context
+      - `isValidMarkerSubmitResponse()` - Validates submit response structure
+      - `isValidMarkerPollResponse()` - Validates poll response structure
+      - `fetchWithTimeout()` - Fetch wrapper with configurable timeout
+    - Updated routes to import from shared utility:
+      - src/app/api/marker/route.ts (removed 121 lines of duplicated code)
+      - src/app/api/marker/local/route.ts (removed 121 lines of duplicated code)
+    - **Impact**: Eliminated 242 lines of duplicated code, improved maintainability
+  - **Move magic numbers to constants**:
+    - Added new constants to MARKER_CONFIG in src/lib/constants.ts:
+      - `POLLING.INITIAL_DELAY_MS` - 1 second delay before first poll
+      - `TIMEOUTS.SUBMIT_REQUEST_MS` - 30 seconds for cloud submit requests
+      - `TIMEOUTS.POLL_REQUEST_MS` - 30 seconds for cloud poll requests
+      - `TIMEOUTS.LOCAL_SUBMIT_REQUEST_MS` - 5 minutes for local submit (Modal cold starts)
+      - `TIMEOUTS.LOCAL_POLL_REQUEST_MS` - 60 seconds for local poll requests
+      - `BATCH.STAGGER_DELAY_MS` - 5 seconds between batch submissions
+      - `BATCH.QUEUE_CHECK_INTERVAL_MS` - 10ms for checking queue slots
+    - Replaced hardcoded values with named constants in:
+      - src/app/api/marker/route.ts (2 timeout values)
+      - src/app/api/marker/local/route.ts (2 timeout values)
+      - src/lib/services/batchConversionService.ts (2 delay values)
+      - src/lib/services/markerApiService.ts (1 delay value)
+    - **Impact**: Improved code readability and centralized configuration
+  - **Add clipboard error handling**:
+    - Updated src/components/layout/GlobalDiagnosticPanel.tsx
+    - Added proper error handling to clipboard.writeText() operation
+    - Now handles permission denials and clipboard access failures gracefully
+    - Logs success/error messages to diagnostic panel
+    - **Impact**: Better user experience, prevents silent failures
+  - **Add comprehensive test coverage for apiHelpers.ts**:
+    - Created new test file: src/lib/utils/apiHelpers.test.ts (53 tests)
+    - Test coverage includes:
+      - Network error type detection (12 tests)
+      - User-friendly error messages for local/cloud contexts (10 tests)
+      - Response validation functions (24 tests)
+      - Fetch with timeout functionality (7 tests)
+    - **Impact**: Isolated unit tests for helper functions, improved test isolation
+  - **Fix signal handling in fetchWithTimeout**:
+    - Added Node 18/20 compatibility for AbortSignal handling
+    - Uses AbortSignal.any() when available (Node 20+)
+    - Falls back to manual signal combination for Node 18
+    - Prevents overwriting external abort signals
+    - **Impact**: Better abort signal handling, cross-version compatibility
+  - **Code quality metrics**:
+    - All tests pass: 436 passed, 6 skipped (442 total) - added 53 new tests
+    - Build succeeds with no errors
+    - Lint passes with no warnings
+### Added
+- **Comprehensive Error Handling Improvements** (2025-11-16):
+  - **API Route Error Handling**:
+    - Added FormData parsing error handling with explicit try-catch blocks
+    - Added URL parsing error handling for malformed request URLs
+    - Improved error messages with specific error type codes (FORM_PARSE_ERROR, URL_PARSE_ERROR)
+    - Applied to both /api/marker and /api/marker/local routes
+  - **Component-Level Error Handling**:
+    - Added dynamic import error handling for batch conversion modules
+    - Added memory/quota error handling for file downloads (QuotaExceededError, out-of-memory)
+    - Improved FileReader error handling with specific error messages for different failure modes
+    - Added proper resource cleanup in finally blocks for file operations
+  - **Standardized Error Codes**:
+    - Created ErrorCode enum with 25+ standardized error codes
+    - Categorized errors: Request/Input (4xx), Network/External (5xx), Resource/Memory, File Operations, Module Imports
+    - Updated ApiError interface to include optional code field
+  - **Error Utility Module** (new file: src/lib/utils/errorUtils.ts):
+    - `isTransientError()`: Identifies retryable errors (network timeouts, 5xx errors, connection issues)
+    - `retryWithBackoff()`: Retry function with exponential backoff and configurable options
+    - `getErrorMessage()`: Extract user-friendly error messages from various error types
+    - `classifyError()`: Automatically classify errors into ErrorCode categories
+    - `createErrorLogData()`: Generate standardized error log entries
+    - Full test coverage: 35 test cases covering all utility functions
+  - **Memory & Resource Error Handling**:
+    - Added out-of-memory detection for Blob creation and download operations
+    - Added disk quota exceeded error handling for File System Access API
+    - Improved error messages for memory-constrained scenarios
+    - Added proper cleanup of resources (URLs, writable streams) even on failure
+  - **File Operation Error Handling**:
+    - Enhanced FileReader error handling with specific messages for NotFoundError, SecurityError, NotReadableError
+    - Added abort handling for file read operations
+    - Improved Blob and URL creation error handling
+    - Added browser API availability checks before usage
+  - **Test Coverage**:
+    - Maintained test coverage at 72.25% (above 70% threshold)
+    - Added 35 new tests for error utility functions
+    - Total test count: 418 tests (all passing, 6 skipped as expected)
+  - **Impact**:
+    - More robust error handling across all layers of the application
+    - Better user-facing error messages with actionable guidance
+    - Reduced risk of unhandled promise rejections and uncaught errors
+    - Improved debugging with standardized error codes and logging
+    - Better recovery from transient network errors
+
+### Security
+- **Security Improvements** (2025-11-15):
+  - **Fixed SSRF vulnerability in API polling endpoint**:
+    - Added URL validation to `/api/marker` GET endpoint to prevent Server-Side Request Forgery attacks
+    - Restricts checkUrl parameter to only allow Marker API domains (datalab.to, www.datalab.to)
+    - Enforces HTTPS protocol for all external API calls
+    - Test URLs (example.com) are allowed only in test environment
+  - **Fixed XSS vulnerability in markdown renderer**:
+    - Improved URL scheme filtering in merge-markdown preview to prevent cross-site scripting
+    - Uses URL API for proper protocol validation instead of simple string checks
+    - Only allows safe protocols: http://, https://, mailto:
+    - Handles malformed URLs gracefully with try-catch
+
+### Fixed
+- **Bug Fixes and Code Quality Improvements** (2025-11-15):
+  - **Improved FileReader error handling**:
+    - Added defensive check for abort() method availability before calling
+    - Prevents errors in test environments and browsers where FileReader.abort() is not available
+  - **Enhanced session storage quota handling**:
+    - Implemented automatic log trimming when storage quota is exceeded
+    - Trims logs to most recent 30 entries when quota exceeded, then retries save
+    - Prevents silent failures and memory bloat from unlimited in-memory logs
+    - Users are notified via console when logs are trimmed
+  - **Improved event listener cleanup**:
+    - Simplified event listener type signature in GlobalDiagnosticPanel
+    - Removed redundant type casts to ensure proper cleanup
+    - Changed from `MouseEvent | Event` to just `Event` for cleaner code
+>>>>>>> origin/main
 
 ### Removed
 - **Cleanup Unused Files and Deployment Artifacts** (2025-11-15):
