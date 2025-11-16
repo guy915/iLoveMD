@@ -2,7 +2,7 @@
 
 ## System Overview
 
-iLoveLLM is a client-heavy web application built with Next.js that processes documents for LLM consumption. Most processing happens client-side for privacy and cost efficiency, with API routes used only when necessary.
+iLoveLLM is a client-heavy web application built with Next.js that processes documents for LLM consumption. Most processing happens client-side for privacy and cost efficiency, with API routes used only when necessary. 
 
 ## Tech Stack Decisions
 

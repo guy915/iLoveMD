@@ -199,16 +199,56 @@ export default function MergeMarkdownPage() {
     }
   }, [processFiles, addLog])
 
-  // Read file as text
+  // Read file as text with comprehensive error handling
   const readFileAsText = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
+      // Check for browser support
+      if (typeof FileReader === 'undefined') {
+        reject(new Error('FileReader API not supported in this browser'))
+        return
+      }
+
       const reader = new FileReader()
+
       reader.onload = (e) => {
         const content = e.target?.result as string
-        resolve(content || '')
+        if (content === null || content === undefined) {
+          reject(new Error('File read resulted in empty content'))
+          return
+        }
+        resolve(content)
       }
-      reader.onerror = () => reject(new Error('Failed to read file'))
-      reader.readAsText(file)
+
+      reader.onerror = () => {
+        const error = reader.error
+        if (error) {
+          // Provide specific error messages based on error type
+          if (error.name === 'NotFoundError') {
+            reject(new Error('File not found or no longer accessible'))
+          } else if (error.name === 'SecurityError') {
+            reject(new Error('Security error: Cannot read file'))
+          } else if (error.name === 'NotReadableError') {
+            reject(new Error('File is not readable (may be locked or corrupted)'))
+          } else if (error.name === 'AbortError') {
+            reject(new Error('File read was aborted'))
+          } else {
+            reject(new Error(`Failed to read file: ${error.message || 'Unknown error'}`))
+          }
+        } else {
+          reject(new Error('Failed to read file: Unknown error'))
+        }
+      }
+
+      reader.onabort = () => {
+        reject(new Error('File read was aborted'))
+      }
+
+      // Attempt to read the file
+      try {
+        reader.readAsText(file)
+      } catch (err) {
+        reject(new Error(`Failed to start file read: ${err instanceof Error ? err.message : 'Unknown error'}`))
+      }
     })
   }
 
@@ -271,7 +311,9 @@ export default function MergeMarkdownPage() {
 
       // Add header if enabled
       if (addHeaders) {
-        parts.push(`# ${markdownFile.file.name}\n\n`)
+        // Remove .md or .markdown extension from filename
+        const nameWithoutExt = markdownFile.file.name.replace(/\.(md|markdown)$/i, '')
+        parts.push(`# ${nameWithoutExt}\n\n`)
       }
 
       // Add file content
@@ -287,7 +329,7 @@ export default function MergeMarkdownPage() {
     return merged
   }, [files, separatorStyle, addHeaders, addLog])
 
-  // Download merged markdown
+  // Download merged markdown with comprehensive error handling
   const handleMergeAndDownload = useCallback(() => {
     if (files.length === 0) {
       addLog('error', 'No files to merge')
@@ -296,20 +338,58 @@ export default function MergeMarkdownPage() {
 
     try {
       const mergedContent = mergeMarkdownFiles()
-      const blob = new Blob([mergedContent], { type: 'text/markdown' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'merged.md'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
 
-      addLog('success', 'Merged file downloaded', { filename: 'merged.md' })
+      // Check for browser APIs
+      if (typeof Blob === 'undefined') {
+        throw new Error('Blob API not supported in this browser')
+      }
+
+      let blob: Blob
+      try {
+        blob = new Blob([mergedContent], { type: 'text/markdown' })
+      } catch (blobError) {
+        // Blob creation can fail due to memory constraints
+        if (blobError instanceof Error && (blobError.message?.toLowerCase().includes('memory') || blobError.message?.toLowerCase().includes('allocation'))) {
+          addLog('error', 'Out of memory while creating merged file')
+          throw new Error('Merged file too large for browser memory. Try merging fewer files at once.')
+        }
+        throw blobError
+      }
+
+      let url: string
+      try {
+        url = URL.createObjectURL(blob)
+      } catch (urlError) {
+        if (urlError instanceof Error && urlError.message?.toLowerCase().includes('quota')) {
+          addLog('error', 'Too many blob URLs created')
+          throw new Error('Browser URL quota exceeded. Please refresh the page and try again.')
+        }
+        throw urlError
+      }
+
+      try {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'merged.md'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        addLog('success', 'Merged file downloaded', { filename: 'merged.md' })
+      } finally {
+        // Always clean up URL to prevent memory leaks
+        try {
+          URL.revokeObjectURL(url)
+        } catch (revokeError) {
+          // Ignore revoke errors but log them
+          console.warn('Failed to revoke object URL:', revokeError)
+        }
+      }
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       addLog('error', `Failed to merge and download: ${errorMessage}`)
+      // Note: We don't set an error state in this component, just log it
     }
   }, [files.length, mergeMarkdownFiles, addLog])
 
@@ -643,10 +723,24 @@ export default function MergeMarkdownPage() {
                             blockquote: ({...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
                             a: ({href, ...props}) => {
                               // Filter out dangerous URL schemes for security
-                              const isSafe = href && !href.startsWith('javascript:') && !href.startsWith('data:')
-                              return isSafe
-                                ? <a className="text-blue-600" href={href} rel="noopener noreferrer" {...props} />
-                                : <span className="text-blue-600" {...props} />
+                              if (!href) {
+                                return <span className="text-blue-600" {...props} />
+                              }
+
+                              try {
+                                // Parse the URL to validate it
+                                const url = new URL(href, 'http://example.com')
+                                // Only allow safe protocols
+                                const safeProtocols = ['http:', 'https:', 'mailto:']
+                                const isSafe = safeProtocols.includes(url.protocol.toLowerCase())
+
+                                return isSafe
+                                  ? <a className="text-blue-600" href={href} rel="noopener noreferrer" {...props} />
+                                  : <span className="text-blue-600" {...props} />
+                              } catch {
+                                // If URL parsing fails, treat as unsafe
+                                return <span className="text-blue-600" {...props} />
+                              }
                             },
                             hr: ({...props}) => <hr className="my-1 border-gray-300" {...props} />,
                             // Don't render images - just show alt text to prevent 404 errors flooding logs
