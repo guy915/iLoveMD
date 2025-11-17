@@ -12,7 +12,6 @@ import type {
   IConversionRepository,
   ProgressCallback,
   ConversionMode,
-  SubmitResponse,
   BatchProgressData,
 } from '@/domain/repositories'
 import type { MarkerOptions, ConversionResult } from '@/types'
@@ -30,21 +29,6 @@ import {
  * Repository implementation for PDF to Markdown conversion
  */
 export class MarkerConversionRepository implements IConversionRepository {
-  /**
-   * Submit is not directly exposed in the current implementation.
-   * The convert() method handles submit + poll internally.
-   */
-  async submit(
-    file: File,
-    apiKey: string,
-    options: MarkerOptions,
-    mode: ConversionMode
-  ): Promise<SubmitResponse> {
-    throw new Error(
-      'Direct submit() not implemented. Use convert() which handles submit + poll automatically.'
-    )
-  }
-
   /**
    * Convert a single PDF file to Markdown
    */
@@ -77,41 +61,50 @@ export class MarkerConversionRepository implements IConversionRepository {
     // Adapt batch progress callback format
     const adaptedCallback = onProgress
       ? (batchProgress: BatchProgress) => {
+          const lastResult = batchProgress.results[batchProgress.results.length - 1]
           onProgress({
             total: batchProgress.total,
             completed: batchProgress.completed,
             failed: batchProgress.failed,
-            inProgress: batchProgress.total - batchProgress.completed - batchProgress.failed,
-            currentFile: batchProgress.results[batchProgress.results.length - 1]?.fileName,
+            inProgress: batchProgress.inProgress,
+            currentFile: lastResult?.filename,
           })
         }
       : undefined
 
     let batchResult
     if (mode === 'paid') {
-      batchResult = await convertBatchPdfToMarkdown(
-        files,
+      batchResult = await convertBatchPdfToMarkdown(files, {
         apiKey,
-        options,
-        adaptedCallback,
-        signal
-      )
+        markerOptions: options,
+        onProgress: adaptedCallback,
+        signal,
+      })
     } else {
-      batchResult = await convertBatchPdfToMarkdownLocal(
-        files,
-        apiKey,
-        options,
-        adaptedCallback,
-        signal
-      )
+      batchResult = await convertBatchPdfToMarkdownLocal(files, {
+        geminiApiKey: apiKey,
+        markerOptions: options,
+        onProgress: adaptedCallback,
+        signal,
+      })
     }
 
     // Convert BatchConversionResult to Map<string, ConversionResult>
+    // BatchConversionResult has 'completed' and 'failed' arrays
     const resultMap = new Map<string, ConversionResult>()
-    for (const fileResult of batchResult.results) {
-      resultMap.set(fileResult.fileName, {
-        success: fileResult.success,
+
+    // Add successful conversions
+    for (const fileResult of batchResult.completed) {
+      resultMap.set(fileResult.filename, {
+        success: true,
         markdown: fileResult.markdown,
+      })
+    }
+
+    // Add failed conversions
+    for (const fileResult of batchResult.failed) {
+      resultMap.set(fileResult.filename, {
+        success: false,
         error: fileResult.error,
       })
     }

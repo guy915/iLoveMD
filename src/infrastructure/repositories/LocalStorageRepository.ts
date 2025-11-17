@@ -12,7 +12,7 @@
  */
 
 import type { IStorageRepository } from '@/domain/repositories'
-import { getFromLocalStorage, saveToLocalStorage, removeFromLocalStorage } from '@/lib/services/storageService'
+import { getJSON, setJSON, removeItem } from '@/lib/services/storageService'
 
 /**
  * Repository implementation for localStorage
@@ -22,21 +22,21 @@ export class LocalStorageRepository implements IStorageRepository {
    * Retrieve a value from localStorage
    */
   get<T>(key: string): T | null {
-    return getFromLocalStorage<T>(key)
+    return getJSON<T>(key)
   }
 
   /**
    * Store a value in localStorage
    */
   set<T>(key: string, value: T): boolean {
-    return saveToLocalStorage(key, value)
+    return setJSON(key, value)
   }
 
   /**
    * Remove a value from localStorage
    */
   remove(key: string): boolean {
-    return removeFromLocalStorage(key)
+    return removeItem(key)
   }
 
   /**

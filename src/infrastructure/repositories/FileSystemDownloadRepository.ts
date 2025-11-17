@@ -8,7 +8,7 @@
  */
 
 import type { IDownloadRepository, DownloadOptions } from '@/domain/repositories'
-import { downloadFile as downloadFileUtil } from '@/lib/services/downloadService'
+import { downloadService } from '@/lib/services/downloadService'
 import JSZip from 'jszip'
 
 /**
@@ -31,9 +31,10 @@ export class FileSystemDownloadRepository implements IDownloadRepository {
       ? new Blob([content], { type: mimeType })
       : content
 
-    // Use the existing downloadService
+    // Use the existing downloadService (synchronous operation)
     // Note: The existing service automatically uses File System Access API if available
-    await downloadFileUtil(filename, blob, useFileSystemAPI)
+    downloadService.downloadFile(blob, filename, { useFileSystemApi: useFileSystemAPI })
+    return Promise.resolve()
   }
 
   /**
@@ -45,13 +46,9 @@ export class FileSystemDownloadRepository implements IDownloadRepository {
   ): Promise<void> {
     const zip = new JSZip()
 
-    // Add all files to the ZIP
+    // Add all files to the ZIP (JSZip handles both string and Blob)
     for (const [filename, content] of files.entries()) {
-      if (typeof content === 'string') {
-        zip.file(filename, content)
-      } else {
-        zip.file(filename, content)
-      }
+      zip.file(filename, content)
     }
 
     // Generate ZIP blob

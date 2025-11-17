@@ -28,34 +28,9 @@ export type ProgressCallback = (
 export type ConversionMode = 'paid' | 'free'
 
 /**
- * Submission response from conversion service
- */
-export interface SubmitResponse {
-  requestId?: string
-  checkUrl: string
-}
-
-/**
  * Repository interface for converting PDFs to Markdown
  */
 export interface IConversionRepository {
-  /**
-   * Submit a PDF file for conversion
-   *
-   * @param file - The PDF file to convert
-   * @param apiKey - API key for the conversion service
-   * @param options - Conversion options
-   * @param mode - Conversion mode (paid or free)
-   * @returns Submission response with checkUrl for polling
-   * @throws Error if submission fails
-   */
-  submit(
-    file: File,
-    apiKey: string,
-    options: MarkerOptions,
-    mode: ConversionMode
-  ): Promise<SubmitResponse>
-
   /**
    * Convert a PDF file to Markdown with automatic polling
    *

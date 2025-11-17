@@ -74,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `IStorageRepository` - Interface for persistent storage (localStorage, sessionStorage, etc.)
     - `IDownloadRepository` - Interface for file download operations (File System Access API, blob downloads)
   - **Domain Entities** (encapsulate business logic and state):
-    - `PdfDocument` - Represents a PDF file with metadata and validation state (size checks, type validation, PDF magic bytes)
+    - `PdfDocument` - Represents a PDF file with metadata and validation state (size checks, MIME type validation, file extension validation)
     - `Conversion` - Represents conversion workflow with state machine (pending → submitted → processing → complete/failed/cancelled)
   - **Concrete Repository Implementations**:
     - `MarkerConversionRepository` - Implements IConversionRepository using existing markerApiService and batchConversionService
