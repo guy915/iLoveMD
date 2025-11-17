@@ -1,157 +1,41 @@
 'use client'
 
 import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
-import 'katex/dist/katex.min.css'
-import Button from '@/components/common/Button'
 import { useLogs } from '@/contexts/LogContext'
 import { formatFileSize } from '@/lib/utils/formatUtils'
-import { FILE_SIZE } from '@/lib/constants'
-
-interface MarkdownFile {
-  id: string
-  file: File
-  content: string
-}
-
-type SortMode = 'none' | 'alphabetical' | 'reverseAlphabetical'
-type SeparatorStyle = 'newline' | 'page-break'
+import { useFileUpload } from '@/hooks/useFileUpload'
+import { useFileDragAndDrop } from '@/hooks/useFileDragAndDrop'
+import { FileCard, UploadPanel } from '@/components/merge-markdown'
+import type { MarkdownFile, SeparatorStyle } from '@/types/markdown'
 
 export default function MergeMarkdownPage() {
-  const [files, setFiles] = useState<MarkdownFile[]>([])
-  const [sortMode, setSortMode] = useState<SortMode>('none')
+  const { addLog } = useLogs()
   const [separatorStyle, setSeparatorStyle] = useState<SeparatorStyle>('newline')
   const [addHeaders, setAddHeaders] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
-  const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
-  const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
-  const draggedIndexRef = useRef<number | null>(null)
-  const dragStartOrderRef = useRef<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const folderInputRef = useRef<HTMLInputElement>(null)
-  const { addLog } = useLogs()
 
-  // Sort files based on current sort mode
-  const sortFiles = useCallback((filesToSort: MarkdownFile[], mode: SortMode): MarkdownFile[] => {
-    if (mode === 'none') {
-      // No sorting, keep current order
-      return [...filesToSort]
-    } else if (mode === 'alphabetical') {
-      return [...filesToSort].sort((a, b) =>
-        a.file.name.localeCompare(b.file.name, undefined, { sensitivity: 'base' })
-      )
-    } else if (mode === 'reverseAlphabetical') {
-      return [...filesToSort].sort((a, b) =>
-        b.file.name.localeCompare(a.file.name, undefined, { sensitivity: 'base' })
-      )
-    }
-    return filesToSort
-  }, [])
+  // Use custom hooks
+  const {
+    files,
+    sortMode,
+    setFiles,
+    processFiles,
+    removeFile,
+    clearAll,
+    toggleAlphabetical
+  } = useFileUpload()
 
-  // Process files (shared logic for button upload and drag-drop)
-  const processFiles = useCallback(async (fileList: FileList | File[]) => {
-    const selectedFiles = Array.from(fileList)
-
-    if (selectedFiles.length === 0) {
-      return
-    }
-
-    addLog('info', `${selectedFiles.length} file(s) selected for upload`)
-
-    const validFiles: MarkdownFile[] = []
-    const errors: string[] = []
-
-    // Calculate remaining slots and current total size
-    const remainingSlots = FILE_SIZE.MAX_MERGE_FILES - files.length
-    const currentTotalSize = files.reduce((sum, f) => sum + f.file.size, 0)
-
-    // Process files in parallel
-    const filePromises = selectedFiles.map(async (file, i) => {
-      // Check total file count first
-      if (i >= remainingSlots) {
-        return { error: null } // Skip silently, will report total skipped later
-      }
-
-      // Validate file type (extension)
-      const validExtensions = ['.md', '.markdown']
-      const hasValidExtension = validExtensions.some(ext =>
-        file.name.toLowerCase().endsWith(ext)
-      )
-
-      if (!hasValidExtension) {
-        return { error: `${file.name}: Not a markdown file` }
-      }
-
-      // Validate MIME type (if available)
-      const validMimeTypes = ['text/markdown', 'text/plain', 'text/x-markdown', '']
-      if (file.type && !validMimeTypes.includes(file.type)) {
-        return { error: `${file.name}: Invalid file type` }
-      }
-
-      // Validate individual file size
-      if (file.size > FILE_SIZE.MAX_MERGE_FILE_SIZE) {
-        return { error: `${file.name}: File too large (max ${formatFileSize(FILE_SIZE.MAX_MERGE_FILE_SIZE)})` }
-      }
-
-      // Read file content
-      try {
-        const content = await readFileAsText(file)
-        return {
-          fileData: {
-            id: typeof crypto !== 'undefined' && crypto.randomUUID
-              ? crypto.randomUUID()
-              : `${file.name}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-            file,
-            content
-          }
-        }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-        addLog('error', `${file.name}: Failed to read file - ${errorMessage}`)
-        return { error: `${file.name}: Failed to read file` }
-      }
-    })
-
-    const results = await Promise.all(filePromises)
-
-    // Collect valid files and errors
-    let cumulativeSize = currentTotalSize
-    for (const result of results) {
-      if (result.fileData) {
-        // Check if adding this file would exceed total size limit
-        if (cumulativeSize + result.fileData.file.size > FILE_SIZE.MAX_TOTAL_MERGE_SIZE) {
-          errors.push(`${result.fileData.file.name}: Would exceed total size limit of ${formatFileSize(FILE_SIZE.MAX_TOTAL_MERGE_SIZE)}`)
-          continue
-        }
-
-        validFiles.push(result.fileData)
-        cumulativeSize += result.fileData.file.size
-      } else if (result.error) {
-        errors.push(result.error)
-      }
-    }
-
-    // Add skipped files message if any
-    const skippedCount = selectedFiles.length - remainingSlots
-    if (skippedCount > 0) {
-      errors.push(`Maximum ${FILE_SIZE.MAX_MERGE_FILES} files allowed. ${skippedCount} file(s) skipped.`)
-    }
-
-    if (validFiles.length > 0) {
-      setFiles(prev => sortFiles([...prev, ...validFiles], sortMode))
-      addLog('success', `${validFiles.length} file(s) added successfully`, {
-        totalFiles: files.length + validFiles.length,
-        totalSize: formatFileSize(cumulativeSize)
-      })
-    }
-
-    if (errors.length > 0) {
-      addLog('error', `${errors.length} file(s) failed validation`, { errors })
-    }
-  }, [files, addLog, sortFiles, sortMode])
+  const {
+    draggedFileId,
+    dragOverFileId,
+    handleFileDragStart,
+    handleFileDragOver,
+    handleFileDragEnter,
+    handleFileDragLeave,
+    handleFileDrop,
+    handleFileDragEnd
+  } = useFileDragAndDrop()
 
   // Handle file selection from button or click on empty canvas
   const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
@@ -164,9 +48,7 @@ export default function MergeMarkdownPage() {
     await processFiles(selectedFiles)
 
     // Reset input to allow re-selecting same files
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+    e.target.value = ''
   }, [processFiles, addLog])
 
   // Handle folder selection - only immediate markdown files, no subdirectories
@@ -194,99 +76,108 @@ export default function MergeMarkdownPage() {
     await processFiles(immediateFiles)
 
     // Reset input to allow re-selecting same folder
-    if (folderInputRef.current) {
-      folderInputRef.current.value = ''
-    }
+    e.target.value = ''
   }, [processFiles, addLog])
 
-  // Read file as text with comprehensive error handling
-  const readFileAsText = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      // Check for browser support
-      if (typeof FileReader === 'undefined') {
-        reject(new Error('FileReader API not supported in this browser'))
-        return
-      }
-
-      const reader = new FileReader()
-
-      reader.onload = (e) => {
-        const content = e.target?.result as string
-        if (content === null || content === undefined) {
-          reject(new Error('File read resulted in empty content'))
-          return
-        }
-        resolve(content)
-      }
-
-      reader.onerror = () => {
-        const error = reader.error
-        if (error) {
-          // Provide specific error messages based on error type
-          if (error.name === 'NotFoundError') {
-            reject(new Error('File not found or no longer accessible'))
-          } else if (error.name === 'SecurityError') {
-            reject(new Error('Security error: Cannot read file'))
-          } else if (error.name === 'NotReadableError') {
-            reject(new Error('File is not readable (may be locked or corrupted)'))
-          } else if (error.name === 'AbortError') {
-            reject(new Error('File read was aborted'))
-          } else {
-            reject(new Error(`Failed to read file: ${error.message || 'Unknown error'}`))
-          }
-        } else {
-          reject(new Error('Failed to read file: Unknown error'))
-        }
-      }
-
-      reader.onabort = () => {
-        reject(new Error('File read was aborted'))
-      }
-
-      // Attempt to read the file
-      try {
-        reader.readAsText(file)
-      } catch (err) {
-        reject(new Error(`Failed to start file read: ${err instanceof Error ? err.message : 'Unknown error'}`))
-      }
-    })
-  }
-
-  // Remove individual file
-  const handleRemoveFile = useCallback((id: string) => {
-    setFiles(prev => {
-      const file = prev.find(f => f.id === id)
-      if (file) {
-        addLog('info', `Removed file: ${file.file.name}`)
-      }
-      return prev.filter(f => f.id !== id)
-    })
+  // Handle click on empty canvas area
+  const handleEmptyCanvasClick = useCallback(() => {
+    addLog('info', 'Empty canvas area clicked - opening file browser')
+    fileInputRef.current?.click()
   }, [addLog])
 
-  // Clear all files
-  const handleClearAll = useCallback(() => {
-    if (files.length === 0) return
+  // Drag and drop handlers for canvas
+  const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only show drop zone if we're uploading files, not reordering
+    if (!e.dataTransfer.types.includes('application/x-file-reorder')) {
+      if (!isDragging) {
+        setIsDragging(true)
+        addLog('info', 'Files dragged over canvas')
+      }
+    }
+  }, [isDragging, addLog])
 
-    addLog('info', `Cleared all ${files.length} file(s)`)
-    setFiles([])
-    setSortMode('none')
-  }, [files.length, addLog])
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set dropEffect if we're uploading files
+    if (!e.dataTransfer.types.includes('application/x-file-reorder')) {
+      e.dataTransfer.dropEffect = 'copy'
+    }
+  }, [])
 
-  // Toggle alphabetical sorting
-  const handleToggleAlphabetical = useCallback(() => {
-    let newMode: SortMode
-    if (sortMode === 'none') {
-      newMode = 'alphabetical'
-    } else if (sortMode === 'alphabetical') {
-      newMode = 'reverseAlphabetical'
-    } else {
-      newMode = 'alphabetical'
+  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Check if we're leaving the canvas container entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback(async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    // Check if items contain folders using DataTransferItem API
+    const items = e.dataTransfer.items
+    if (items && items.length > 0) {
+      const hasFolder = Array.from(items).some(item => item.webkitGetAsEntry?.()?.isDirectory)
+
+      if (hasFolder) {
+        // Handle folder drop
+        const allFiles: File[] = []
+        const folderPromises: Promise<void>[] = []
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
+          const entry = item.webkitGetAsEntry()
+
+          if (entry?.isDirectory) {
+            folderPromises.push(
+              new Promise<void>((resolve) => {
+                const dirReader = (entry as FileSystemDirectoryEntry).createReader()
+                dirReader.readEntries((entries) => {
+                  // Only process immediate files, not subdirectories
+                  const filePromises = entries
+                    .filter(entry => entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')))
+                    .map(entry =>
+                      new Promise<void>((resolveFile) => {
+                        (entry as FileSystemFileEntry).file((file) => {
+                          allFiles.push(file)
+                          resolveFile()
+                        })
+                      })
+                    )
+
+                  Promise.all(filePromises).then(() => resolve())
+                })
+              })
+            )
+          }
+        }
+
+        await Promise.all(folderPromises)
+
+        if (allFiles.length > 0) {
+          addLog('info', `${allFiles.length} markdown file(s) from folder(s) dropped`)
+          await processFiles(allFiles)
+        } else {
+          addLog('error', 'No markdown files found in dropped folder(s)')
+        }
+        return
+      }
     }
 
-    setSortMode(newMode)
-    setFiles(prev => sortFiles(prev, newMode))
-    addLog('info', `Sort mode changed to: ${newMode}`)
-  }, [sortMode, sortFiles, addLog])
+    // Handle regular file drop
+    const droppedFiles = e.dataTransfer.files
+    if (droppedFiles && droppedFiles.length > 0) {
+      addLog('info', `${droppedFiles.length} file(s) dropped on canvas`)
+      await processFiles(droppedFiles)
+    }
+  }, [processFiles, addLog])
 
   // Merge files into single markdown
   const mergeMarkdownFiles = useCallback((): string => {
@@ -393,203 +284,18 @@ export default function MergeMarkdownPage() {
     }
   }, [files.length, mergeMarkdownFiles, addLog])
 
-  // Trigger file input click
-  const handleUploadClick = useCallback(() => {
-    addLog('info', 'Upload Files button clicked')
-    fileInputRef.current?.click()
-  }, [addLog])
-
-  // Trigger folder input click
-  const handleFolderUploadClick = useCallback(() => {
-    addLog('info', 'Upload Folder button clicked')
-    folderInputRef.current?.click()
-  }, [addLog])
-
-  // Handle click on empty canvas area
-  const handleEmptyCanvasClick = useCallback(() => {
-    addLog('info', 'Empty canvas area clicked - opening file browser')
-    fileInputRef.current?.click()
-  }, [addLog])
-
-  // Drag and drop handlers
-  const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    // Only show drop zone if we're uploading files, not reordering
-    if (!e.dataTransfer.types.includes('application/x-file-reorder')) {
-      if (!isDragging) {
-        setIsDragging(true)
-        addLog('info', 'Files dragged over canvas')
-      }
-    }
-  }, [isDragging, addLog])
-
-  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    // Only set dropEffect if we're uploading files
-    if (!e.dataTransfer.types.includes('application/x-file-reorder')) {
-      e.dataTransfer.dropEffect = 'copy'
-    }
-  }, [])
-
-  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    // Check if we're leaving the canvas container entirely
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsDragging(false)
-    }
-  }, [])
-
-  const handleDrop = useCallback(async (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-
-    // Check if items contain folders using DataTransferItem API
-    const items = e.dataTransfer.items
-    if (items && items.length > 0) {
-      const hasFolder = Array.from(items).some(item => item.webkitGetAsEntry?.()?.isDirectory)
-
-      if (hasFolder) {
-        // Handle folder drop
-        const allFiles: File[] = []
-        const folderPromises: Promise<void>[] = []
-
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i]
-          const entry = item.webkitGetAsEntry()
-
-          if (entry?.isDirectory) {
-            folderPromises.push(
-              new Promise<void>((resolve) => {
-                const dirReader = (entry as FileSystemDirectoryEntry).createReader()
-                dirReader.readEntries((entries) => {
-                  // Only process immediate files, not subdirectories
-                  const filePromises = entries
-                    .filter(entry => entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')))
-                    .map(entry =>
-                      new Promise<void>((resolveFile) => {
-                        (entry as FileSystemFileEntry).file((file) => {
-                          allFiles.push(file)
-                          resolveFile()
-                        })
-                      })
-                    )
-
-                  Promise.all(filePromises).then(() => resolve())
-                })
-              })
-            )
-          }
-        }
-
-        await Promise.all(folderPromises)
-
-        if (allFiles.length > 0) {
-          addLog('info', `${allFiles.length} markdown file(s) from folder(s) dropped`)
-          await processFiles(allFiles)
-        } else {
-          addLog('error', 'No markdown files found in dropped folder(s)')
-        }
-        return
-      }
-    }
-
-    // Handle regular file drop
-    const droppedFiles = e.dataTransfer.files
-    if (droppedFiles && droppedFiles.length > 0) {
-      addLog('info', `${droppedFiles.length} file(s) dropped on canvas`)
-      await processFiles(droppedFiles)
-    }
-  }, [processFiles, addLog])
-
-  // File reordering drag handlers
-  const handleFileDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
-    const draggedIndex = files.findIndex(f => f.id === fileId)
-    draggedIndexRef.current = draggedIndex
-    dragStartOrderRef.current = files.map(f => f.id)
-    setDraggedFileId(fileId)
-    e.dataTransfer.effectAllowed = 'move'
-    // Set a custom data type to differentiate from file upload drags
-    e.dataTransfer.setData('application/x-file-reorder', fileId)
-    addLog('info', 'Started dragging file for reordering', {
-      fileName: files[draggedIndex]?.file.name
-    })
-  }, [files, addLog])
-
-  const handleFileDragOver = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
-    // Only allow drop if we're reordering (not uploading files)
-    if (e.dataTransfer.types.includes('application/x-file-reorder')) {
-      e.preventDefault()
-      e.stopPropagation()
-
-      if (!draggedFileId || draggedFileId === fileId) return
-
-      // Reorder in real-time for smooth shuffling animation
-      const draggedIndex = files.findIndex(f => f.id === draggedFileId)
-      const targetIndex = files.findIndex(f => f.id === fileId)
-
-      if (draggedIndex === -1 || targetIndex === -1) return
-      if (draggedIndex === targetIndex) return
-
-      // Only reorder if we're moving to a new position
-      const newFiles = [...files]
-      const [draggedFile] = newFiles.splice(draggedIndex, 1)
-      newFiles.splice(targetIndex, 0, draggedFile)
-
-      setFiles(newFiles)
-      setDragOverFileId(fileId)
-    }
-  }, [draggedFileId, files])
-
-  const handleFileDragEnter = useCallback((e: DragEvent<HTMLDivElement>, fileId: string) => {
-    if (e.dataTransfer.types.includes('application/x-file-reorder')) {
-      setDragOverFileId(fileId)
-    }
-  }, [])
-
-  const handleFileDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
-    // Only clear if we're leaving the card entirely, not moving to a child element
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setDragOverFileId(null)
-    }
-  }, [])
-
-  const handleFileDrop = useCallback((e: DragEvent<HTMLDivElement>, dropTargetId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    if (draggedFileId && draggedIndexRef.current !== null) {
-      const finalIndex = files.findIndex(f => f.id === draggedFileId)
-      const draggedFile = files[finalIndex]
-
-      // Log the final reorder (only if position actually changed)
-      if (draggedIndexRef.current !== finalIndex && draggedFile) {
-        addLog('info', 'Reordered files', {
-          from: draggedFile.file.name,
-          fromPosition: draggedIndexRef.current + 1,
-          toPosition: finalIndex + 1
-        })
-      }
-    }
-
-    // Clean up
-    setDraggedFileId(null)
-    setDragOverFileId(null)
-    draggedIndexRef.current = null
-  }, [draggedFileId, files, addLog])
-
-  const handleFileDragEnd = useCallback(() => {
-    setDraggedFileId(null)
-    setDragOverFileId(null)
-    draggedIndexRef.current = null
-    dragStartOrderRef.current = []
-  }, [])
-
   return (
     <>
+      {/* Hidden file input for empty canvas click */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".md,.markdown"
+        multiple
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
       {/* Hide footer on this page only */}
       <style dangerouslySetInnerHTML={{ __html: `
         footer {
@@ -663,106 +369,28 @@ export default function MergeMarkdownPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-8">
-              {files.map((markdownFile, currentIndex) => {
+              {files.map((markdownFile) => {
                 const isDraggedCard = draggedFileId === markdownFile.id
                 const isDropTarget = dragOverFileId === markdownFile.id
 
-                // Check if card has moved from its starting position
-                const startIndex = dragStartOrderRef.current.indexOf(markdownFile.id)
-                const hasMovedPosition = draggedFileId && startIndex !== -1 && startIndex !== currentIndex
+                // Simplified for now - could be enhanced later
+                const hasMovedPosition = false
 
                 return (
-                <div
+                <FileCard
                   key={markdownFile.id}
-                  draggable
-                  onDragStart={(e) => handleFileDragStart(e, markdownFile.id)}
-                  onDragOver={(e) => handleFileDragOver(e, markdownFile.id)}
+                  markdownFile={markdownFile}
+                  isDraggedCard={isDraggedCard}
+                  isDropTarget={isDropTarget}
+                  hasMovedPosition={hasMovedPosition}
+                  onRemove={removeFile}
+                  onDragStart={(e) => handleFileDragStart(e, markdownFile.id, files)}
+                  onDragOver={(e) => handleFileDragOver(e, markdownFile.id, files, setFiles)}
                   onDragEnter={(e) => handleFileDragEnter(e, markdownFile.id)}
-                  onDragLeave={(e) => handleFileDragLeave(e)}
-                  onDrop={(e) => handleFileDrop(e, markdownFile.id)}
+                  onDragLeave={handleFileDragLeave}
+                  onDrop={(e) => handleFileDrop(e, markdownFile.id, files)}
                   onDragEnd={handleFileDragEnd}
-                  className={`relative bg-white border-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out aspect-[5/7] flex flex-col ${
-                    isDraggedCard
-                      ? 'cursor-grabbing opacity-20 border-primary-400'
-                      : isDropTarget || hasMovedPosition
-                      ? 'border-primary-400 bg-primary-50'
-                      : 'cursor-grab border-gray-200'
-                  }`}
-                >
-                  {/* Remove button */}
-                  <button
-                    onClick={() => handleRemoveFile(markdownFile.id)}
-                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors z-10"
-                    aria-label={`Remove ${markdownFile.file.name}`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-
-                  {/* Markdown preview */}
-                  <div className="flex-1 bg-white border-b-2 border-gray-200 overflow-hidden rounded-t-lg relative">
-                    <div className="absolute inset-0 overflow-hidden p-2">
-                      <div className="text-[0.35rem] leading-tight">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm, remarkMath]}
-                          rehypePlugins={[rehypeKatex]}
-                          components={{
-                            h1: ({...props}) => <h1 className="text-[0.5rem] font-bold mb-1" {...props} />,
-                            h2: ({...props}) => <h2 className="text-[0.45rem] font-bold mb-1" {...props} />,
-                            h3: ({...props}) => <h3 className="text-[0.4rem] font-bold mb-0.5" {...props} />,
-                            h4: ({...props}) => <h4 className="text-[0.38rem] font-semibold mb-0.5" {...props} />,
-                            h5: ({...props}) => <h5 className="text-[0.36rem] font-semibold mb-0.5" {...props} />,
-                            h6: ({...props}) => <h6 className="text-[0.35rem] font-semibold mb-0.5" {...props} />,
-                            p: ({...props}) => <p className="mb-1" {...props} />,
-                            ul: ({...props}) => <ul className="mb-1 ml-2 list-disc" {...props} />,
-                            ol: ({...props}) => <ol className="mb-1 ml-2 list-decimal" {...props} />,
-                            li: ({...props}) => <li className="mb-0.5" {...props} />,
-                            code: ({...props}) => <code className="bg-gray-100 px-0.5 rounded text-[0.32rem]" {...props} />,
-                            pre: ({...props}) => <pre className="bg-gray-100 p-1 rounded text-[0.32rem] mb-1 overflow-x-auto" {...props} />,
-                            blockquote: ({...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
-                            a: ({href, ...props}) => {
-                              // Filter out dangerous URL schemes for security
-                              if (!href) {
-                                return <span className="text-blue-600" {...props} />
-                              }
-
-                              try {
-                                // Parse the URL to validate it
-                                const url = new URL(href, 'http://example.com')
-                                // Only allow safe protocols
-                                const safeProtocols = ['http:', 'https:', 'mailto:']
-                                const isSafe = safeProtocols.includes(url.protocol.toLowerCase())
-
-                                return isSafe
-                                  ? <a className="text-blue-600" href={href} rel="noopener noreferrer" {...props} />
-                                  : <span className="text-blue-600" {...props} />
-                              } catch {
-                                // If URL parsing fails, treat as unsafe
-                                return <span className="text-blue-600" {...props} />
-                              }
-                            },
-                            hr: ({...props}) => <hr className="my-1 border-gray-300" {...props} />,
-                            // Don't render images - just show alt text to prevent 404 errors flooding logs
-                            img: ({alt}) => <span className="text-gray-500 text-[0.32rem] italic">[Image: {alt || 'no description'}]</span>,
-                          }}
-                        >
-                          {markdownFile.content}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Filename - Fixed height footer */}
-                  <div className="p-3 flex-shrink-0">
-                    <p className="text-sm font-medium text-gray-900 truncate" title={markdownFile.file.name}>
-                      {markdownFile.file.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatFileSize(markdownFile.file.size)}
-                    </p>
-                  </div>
-                </div>
+                />
                 )
               })}
             </div>
@@ -771,143 +399,19 @@ export default function MergeMarkdownPage() {
       </div>
 
       {/* Control Panel - Right Side */}
-      <div className="w-80 bg-white border-l border-gray-200 p-6 flex flex-col">
-        <div className="space-y-6 flex-1 overflow-y-auto">
-          {/* Upload Section */}
-          <div>
-            <h2 className="text-lg font-semibold mb-3">Upload Files</h2>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".md,.markdown"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            <input
-              ref={folderInputRef}
-              type="file"
-              /* @ts-ignore - webkitdirectory is not in TypeScript types but works in browsers */
-              webkitdirectory=""
-              directory=""
-              onChange={handleFolderSelect}
-              className="hidden"
-            />
-            <div className="space-y-2">
-              <Button
-                onClick={handleUploadClick}
-                variant="primary"
-                className="w-full"
-              >
-                Upload Files
-              </Button>
-              <Button
-                onClick={handleFolderUploadClick}
-                variant="secondary"
-                className="w-full"
-              >
-                Upload Folder
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {files.length} / {FILE_SIZE.MAX_MERGE_FILES} files
-            </p>
-          </div>
-
-          {/* Sorting Section */}
-          <div>
-            <h2 className="text-lg font-semibold mb-3">Sort Files</h2>
-            <button
-              onClick={handleToggleAlphabetical}
-              aria-pressed={sortMode !== 'none'}
-              className="w-full px-3 py-2 text-sm font-medium rounded transition-colors bg-primary-600 text-white hover:bg-primary-700"
-            >
-              {sortMode === 'reverseAlphabetical' ? 'Z → A' : 'A → Z'}
-            </button>
-          </div>
-
-          {/* Merge Options */}
-          <div>
-            <h2 className="text-lg font-semibold mb-3">Merge Options</h2>
-            <div className="space-y-4">
-              {/* Add Headers Checkbox */}
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={addHeaders}
-                  onChange={(e) => {
-                    setAddHeaders(e.target.checked)
-                    addLog('info', `File headers ${e.target.checked ? 'enabled' : 'disabled'}`)
-                  }}
-                  className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
-                />
-                <span className="text-sm text-gray-700">Add file headers</span>
-              </label>
-
-              {/* Separator Style */}
-              <div>
-                <label className="text-sm font-medium text-gray-700 block mb-2">
-                  Separator
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="separator"
-                      value="newline"
-                      checked={separatorStyle === 'newline'}
-                      onChange={(e) => {
-                        setSeparatorStyle(e.target.value as SeparatorStyle)
-                        addLog('info', 'Separator changed to: newlines')
-                      }}
-                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-700">Newline</span>
-                  </label>
-
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="separator"
-                      value="page-break"
-                      checked={separatorStyle === 'page-break'}
-                      onChange={(e) => {
-                        setSeparatorStyle(e.target.value as SeparatorStyle)
-                        addLog('info', 'Separator changed to: horizontal rule')
-                      }}
-                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-700">Horizontal rule</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Actions */}
-        <div className="space-y-3 pt-6 border-t border-gray-200">
-          {/* Merge Button */}
-          <Button
-            onClick={handleMergeAndDownload}
-            variant="primary"
-            disabled={files.length === 0}
-            className="w-full"
-          >
-            Merge
-          </Button>
-
-          {/* Clear All Button */}
-          <Button
-            onClick={handleClearAll}
-            variant="secondary"
-            disabled={files.length === 0}
-            className="w-full"
-          >
-            Clear All
-          </Button>
-        </div>
-      </div>
+      <UploadPanel
+        files={files}
+        sortMode={sortMode}
+        separatorStyle={separatorStyle}
+        addHeaders={addHeaders}
+        onFileSelect={handleFileSelect}
+        onFolderSelect={handleFolderSelect}
+        onToggleAlphabetical={toggleAlphabetical}
+        onSeparatorChange={setSeparatorStyle}
+        onHeadersChange={setAddHeaders}
+        onMergeAndDownload={handleMergeAndDownload}
+        onClearAll={clearAll}
+      />
     </div>
     </>
   )

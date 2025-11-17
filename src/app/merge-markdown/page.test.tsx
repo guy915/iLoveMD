@@ -215,7 +215,7 @@ describe('MergeMarkdownPage', () => {
       const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
       fireEvent.click(folderButton)
 
-      const folderInput = container.querySelectorAll('input[type="file"]')[1] as HTMLInputElement
+      const folderInput = container.querySelectorAll('input[type="file"]')[2] as HTMLInputElement
       fireEvent.change(folderInput, { target: { files: [file1, file2] } })
 
       await waitFor(() => {
@@ -248,7 +248,7 @@ describe('MergeMarkdownPage', () => {
       const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
       fireEvent.click(folderButton)
 
-      const folderInput = container.querySelectorAll('input[type="file"]')[1] as HTMLInputElement
+      const folderInput = container.querySelectorAll('input[type="file"]')[2] as HTMLInputElement
       fireEvent.change(folderInput, { target: { files: [file1, file2] } })
 
       await waitFor(() => {
@@ -270,7 +270,7 @@ describe('MergeMarkdownPage', () => {
       const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
       fireEvent.click(folderButton)
 
-      const folderInput = container.querySelectorAll('input[type="file"]')[1] as HTMLInputElement
+      const folderInput = container.querySelectorAll('input[type="file"]')[2] as HTMLInputElement
       fireEvent.change(folderInput, { target: { files: [file] } })
 
       await waitFor(() => {
@@ -284,7 +284,7 @@ describe('MergeMarkdownPage', () => {
       const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
       fireEvent.click(folderButton)
 
-      const folderInput = container.querySelectorAll('input[type="file"]')[1] as HTMLInputElement
+      const folderInput = container.querySelectorAll('input[type="file"]')[2] as HTMLInputElement
       fireEvent.change(folderInput, { target: { files: null } })
 
       await waitFor(() => {
