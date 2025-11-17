@@ -43,7 +43,11 @@ ilovellm/
 │   │   ├── constants.ts        # Centralized constants
 │   │   ├── services/           # Business services
 │   │   │   ├── storageService.ts          # localStorage abstraction
-│   │   │   ├── markerApiService.ts        # Marker API client
+│   │   │   ├── markerApiService.ts        # Marker API client (uses Strategy pattern)
+│   │   │   ├── conversionStrategy.ts      # Strategy pattern base (IConversionStrategy)
+│   │   │   ├── strategies/                # Conversion strategy implementations
+│   │   │   │   ├── PaidModeStrategy.ts    # Marker API strategy
+│   │   │   │   └── FreeModeStrategy.ts    # Modal strategy
 │   │   │   ├── batchConversionService.ts  # Batch PDF conversion
 │   │   │   ├── filenameService.ts         # Filename generation and conflict resolution
 │   │   │   ├── fileValidationService.ts   # File validation and filtering
@@ -506,8 +510,27 @@ export default function MyPage() {
    - Manages blob URLs and cleanup
    - **Example**: Download markdown files with "Save As" dialog when supported
 
-4. **Existing Services**:
-   - `markerApiService` - Marker API client for PDF conversion
+4. **`markerApiService` with Strategy Pattern**
+   - Client for PDF to Markdown conversion (paid and free modes)
+   - **Strategy Pattern** eliminates code duplication between conversion modes:
+     - `IConversionStrategy` interface - Defines contract for submit, poll, error handling
+     - `PaidModeStrategy` - Marker API (datalab.to) implementation
+     - `FreeModeStrategy` - Modal (modal.run) implementation
+     - `convertWithStrategy()` - Common conversion workflow (submit → poll loop → result)
+   - **Benefits**:
+     - Reduced from ~180 lines of duplicate logic to ~20 lines
+     - Single source of truth for conversion workflow
+     - Easy to add new conversion modes (just implement interface)
+   - **Example**:
+     ```typescript
+     // Paid mode - delegates to PaidModeStrategy
+     const result = await convertPdfToMarkdown(file, apiKey, options)
+
+     // Free mode - delegates to FreeModeStrategy
+     const result = await convertPdfToMarkdownLocal(file, geminiKey, options)
+     ```
+
+5. **Existing Services**:
    - `batchConversionService` - Batch PDF processing with concurrency control
    - `storageService` - localStorage abstraction for settings persistence
 
@@ -560,12 +583,12 @@ downloadService.downloadFile(content, 'output.md')
 
 ### Future Improvements
 
-**Phase 2 Candidates** (not yet implemented):
+**Phase 3+ Candidates** (not yet implemented):
 - Extract page components to use new hooks/services
 - Implement repository pattern for API access
-- Add strategy pattern for paid/free mode conversion
 - Create domain models and value objects
 - Implement error handling middleware
+- Break down large page components into smaller pieces
 
 ## Error Handling Strategy
 
