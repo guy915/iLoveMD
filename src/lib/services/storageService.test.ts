@@ -16,12 +16,15 @@ import {
   removeItem,
   getJSON,
   setJSON,
+  resetAdapter,
 } from './storageService'
 
 describe('storageService', () => {
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear()
+    // Reset adapter state to ensure clean test isolation
+    resetAdapter()
     // Clear any mocked console errors
     vi.clearAllMocks()
   })
@@ -29,6 +32,8 @@ describe('storageService', () => {
   afterEach(() => {
     // Clean up after each test
     localStorage.clear()
+    // Reset adapter state to ensure clean test isolation
+    resetAdapter()
   })
 
   describe('getItem', () => {
@@ -58,17 +63,18 @@ describe('storageService', () => {
 
     it('should handle errors gracefully', () => {
       // Mock localStorage to throw error
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const originalGetItem = localStorage.getItem
       localStorage.getItem = vi.fn(() => {
         throw new Error('Storage error')
       })
 
       expect(getItem('test')).toBeNull()
-      expect(consoleErrorSpy).toHaveBeenCalled()
+      expect(consoleWarnSpy).toHaveBeenCalled()
 
+      // Restore immediately
       localStorage.getItem = originalGetItem
-      consoleErrorSpy.mockRestore()
+      consoleWarnSpy.mockRestore()
     })
   })
 

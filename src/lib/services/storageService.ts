@@ -17,6 +17,13 @@ import { LocalStorageAdapter } from '@/lib/storage'
 const storageAdapter = new LocalStorageAdapter()
 
 /**
+ * Reset adapter state (useful for testing)
+ */
+export function resetAdapter(): void {
+  storageAdapter.reset()
+}
+
+/**
  * Get an item from localStorage
  * @param key - The storage key
  * @returns The stored value or null if not found
