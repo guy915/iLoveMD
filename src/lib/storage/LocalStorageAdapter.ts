@@ -136,10 +136,14 @@ export class LocalStorageAdapter implements IStorageAdapter {
       throw error
     } else {
       // Silent failure by default (graceful degradation)
-      // Only log getItem errors to avoid spam (setItem/removeItem errors are usually quota issues)
+      // Error logging strategy:
+      // - getItem errors: Log as warnings (unexpected, should be investigated)
+      // - setItem/removeItem errors: Silent (usually quota issues, expected in normal operation)
+      //   Quota errors are common and logging them would spam the console
       if (operation === 'getItem') {
         console.warn(`[LocalStorageAdapter] ${operation} failed for key "${key}":`, error)
       }
+      // setItem/removeItem errors are silently handled to avoid console spam
     }
   }
 

@@ -90,7 +90,16 @@ export class SessionStorageAdapter implements IStorageAdapter {
               ...options,
               autoTrimOnQuota: false
             }
-            return this.setItem(key, trimmed, retryOptions)
+            const retryResult = this.setItem(key, trimmed, retryOptions)
+            // If retry with trimmed data also fails, log a warning
+            if (!retryResult && options?.onError) {
+              options.onError(
+                new Error('Storage quota exceeded even after auto-trimming'),
+                'setItem',
+                key
+              )
+            }
+            return retryResult
           }
         }
         
