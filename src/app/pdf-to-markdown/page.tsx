@@ -867,7 +867,7 @@ export default function PdfToMarkdownPage() {
           <p className="mt-2 text-sm text-gray-500">
             {options.use_llm ? (
               <>
-                Don't have an API key?{' '}
+                Don&apos;t have an API key?{' '}
                 <a
                   href="https://aistudio.google.com/app/apikey"
                   target="_blank"

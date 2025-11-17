@@ -591,11 +591,11 @@ export default function MergeMarkdownPage() {
   return (
     <>
       {/* Hide footer on this page only */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         footer {
           display: none;
         }
-      `}</style>
+      `}} />
 
       <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
         {/* Canvas Area - Left Side */}
