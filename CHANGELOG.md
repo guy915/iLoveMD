@@ -107,6 +107,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Prepares codebase for future phases (DI container, use cases)
   - **Next Steps**: Phase 4 (Break Down God Components) - extract page components to use hooks and repositories
 
+- **Phase 4: Break Down God Components** (2025-11-17):
+  - **Part 1: pdf-to-markdown refactoring** - Reduced from 1,177 lines to 716 lines (39% reduction)
+  - **Part 2: merge-markdown refactoring** - Reduced from 915 lines to 415 lines (54% reduction)
+  - **New Custom Hooks** (extract state management from components):
+    - `useConversionMode` - Manages mode state (free/paid) with localStorage persistence and SSR safety
+    - `useConversionOptions` - Manages conversion options with localStorage persistence and change logging
+    - `useApiKeys` - Manages API keys (Marker & Gemini) with localStorage persistence and migration logic
+    - `useFullPageDropZone` - Handles full-page drag & drop overlay logic with document-level events
+    - `useFileUpload` - File upload, validation, sorting, and state management for markdown files
+    - `useFileDragAndDrop` - File drag-and-drop reordering with visual feedback and state tracking
+  - **New pdf-to-markdown Components** (split UI into focused pieces):
+    - `ConversionModeToggle` - Free/paid mode selection UI with accessibility support
+    - `ApiKeyInput` - API key input fields that adapt to mode (Marker/Gemini) with help links
+    - `FileUploadSection` - File/folder upload with drag-drop and file list display
+    - `ConversionOptions` - Conversion options checkboxes with mode-specific options
+    - `ConversionStatus` - Status display during conversion with progress tracking
+    - `FullPageDropOverlay` - Full-page drop overlay with visual feedback
+  - **New merge-markdown Components**:
+    - `FileCard` - Individual file card with markdown preview, drag-and-drop support, and remove button
+    - `UploadPanel` - Right sidebar with upload controls, sort options, merge options, and action buttons
+  - **Benefits**:
+    - **Single Responsibility**: Each component/hook has one clear, well-defined purpose
+    - **Easier Testing**: Smaller units can be tested in isolation without complex setup
+    - **Better Reusability**: Hooks can be used in other pages (e.g., useFileUpload for any file upload scenario)
+    - **Improved Readability**: Page logic is clearer, more focused, and easier to understand at a glance
+    - **Simpler Maintenance**: Changes are localized to specific components/hooks, reducing regression risk
+    - **Reduced Cognitive Load**: Developers can focus on one small piece at a time
+  - **Test Coverage**:
+    - All 616 tests passing (no regressions)
+    - Maintained 71.47% coverage threshold
+    - Build successful with no type errors
+  - **Files Added**:
+    - src/hooks/useConversionMode.ts
+    - src/hooks/useConversionOptions.ts
+    - src/hooks/useApiKeys.ts
+    - src/hooks/useFullPageDropZone.ts
+    - src/hooks/useFileUpload.ts
+    - src/hooks/useFileDragAndDrop.ts
+    - src/components/pdf-to-markdown/* (6 components + index)
+    - src/components/merge-markdown/* (2 components + index)
+  - **Files Modified**:
+    - src/app/pdf-to-markdown/page.tsx (1,177 → 716 lines)
+    - src/app/merge-markdown/page.tsx (915 → 415 lines)
+  - **Architecture Impact**:
+    - Pages are now orchestrators, not monoliths
+    - Business logic is extracted to reusable hooks
+    - UI is split into composable, testable components
+    - Prepares codebase for Phase 5 (Context and Storage refactoring)
+  - **Next Steps**: Phase 5 (Refactor Context and Storage) - implement proper storage abstraction, simplify LogContext
+
 - **Comprehensive Error Handling Improvements** (2025-11-16):
   - **API Route Error Handling**:
     - Added FormData parsing error handling with explicit try-catch blocks
