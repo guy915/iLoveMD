@@ -75,7 +75,7 @@ describe('MergeMarkdownPage', () => {
     it('should render page title and description', () => {
       render(<MergeMarkdownPage />)
       expect(screen.getByText('Merge Markdown Files')).toBeInTheDocument()
-      expect(screen.getByText('Combine multiple markdown files into one document')).toBeInTheDocument()
+      expect(screen.getByText('Combine multiple Markdown files into one document')).toBeInTheDocument()
     })
 
     it('should render upload buttons', () => {
@@ -92,14 +92,14 @@ describe('MergeMarkdownPage', () => {
     it('should render merge options', () => {
       render(<MergeMarkdownPage />)
       expect(screen.getByText('Merge Options')).toBeInTheDocument()
-      expect(screen.getByText('Add file headers (# filename)')).toBeInTheDocument()
+      expect(screen.getByText('Add file headers')).toBeInTheDocument()
       expect(screen.getByText('Separator')).toBeInTheDocument()
     })
 
     it('should render merge and clear buttons', () => {
       render(<MergeMarkdownPage />)
-      expect(screen.getByRole('button', { name: 'Merge & Download' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Clear All Files' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Merge' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Clear All' })).toBeInTheDocument()
     })
 
     it('should show empty state when no files uploaded', () => {
@@ -115,13 +115,13 @@ describe('MergeMarkdownPage', () => {
 
     it('should disable merge button when no files', () => {
       render(<MergeMarkdownPage />)
-      const mergeButton = screen.getByRole('button', { name: 'Merge & Download' })
+      const mergeButton = screen.getByRole('button', { name: 'Merge' })
       expect(mergeButton).toBeDisabled()
     })
 
     it('should disable clear button when no files', () => {
       render(<MergeMarkdownPage />)
-      const clearButton = screen.getByRole('button', { name: 'Clear All Files' })
+      const clearButton = screen.getByRole('button', { name: 'Clear All' })
       expect(clearButton).toBeDisabled()
     })
   })
@@ -602,7 +602,7 @@ describe('MergeMarkdownPage', () => {
         expect(screen.getByText('file2.md')).toBeInTheDocument()
       })
 
-      const clearButton = screen.getByRole('button', { name: 'Clear All Files' })
+      const clearButton = screen.getByRole('button', { name: 'Clear All' })
       fireEvent.click(clearButton)
 
       await waitFor(() => {
@@ -637,7 +637,7 @@ describe('MergeMarkdownPage', () => {
       })
 
       // Clear all
-      const clearButton = screen.getByRole('button', { name: 'Clear All Files' })
+      const clearButton = screen.getByRole('button', { name: 'Clear All' })
       fireEvent.click(clearButton)
 
       // Sort button should reset to 'A → Z'
@@ -754,13 +754,13 @@ describe('MergeMarkdownPage', () => {
 
     it('should change separator to newlines only', () => {
       render(<MergeMarkdownPage />)
-      const newlineRadio = screen.getByRole('radio', { name: /Newlines only/ })
-      const pageBreakRadio = screen.getByRole('radio', { name: /Page breaks/ })
+      const newlineRadio = screen.getByRole('radio', { name: /Newline/ })
+      const pageBreakRadio = screen.getByRole('radio', { name: /Horizontal rule/ })
 
       expect(newlineRadio).toBeChecked() // Default
 
       fireEvent.click(pageBreakRadio)
-      expect(mockAddLog).toHaveBeenCalledWith('info', 'Separator changed to: page breaks')
+      expect(mockAddLog).toHaveBeenCalledWith('info', 'Separator changed to: horizontal rule')
       expect(pageBreakRadio).toBeChecked()
 
       fireEvent.click(newlineRadio)
@@ -790,7 +790,7 @@ describe('MergeMarkdownPage', () => {
       const appendChildSpy = vi.spyOn(document.body, 'appendChild')
       const removeChildSpy = vi.spyOn(document.body, 'removeChild')
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge & Download' })
+      const mergeButton = screen.getByRole('button', { name: 'Merge' })
       fireEvent.click(mergeButton)
 
       await waitFor(() => {
@@ -818,7 +818,7 @@ describe('MergeMarkdownPage', () => {
         expect(screen.getByText('test.md')).toBeInTheDocument()
       })
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge & Download' })
+      const mergeButton = screen.getByRole('button', { name: 'Merge' })
       fireEvent.click(mergeButton)
 
       await waitFor(() => {
@@ -848,7 +848,7 @@ describe('MergeMarkdownPage', () => {
       const checkbox = screen.getByRole('checkbox', { name: /Add file headers/ })
       fireEvent.click(checkbox)
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge & Download' })
+      const mergeButton = screen.getByRole('button', { name: 'Merge' })
       fireEvent.click(mergeButton)
 
       await waitFor(() => {
@@ -874,11 +874,11 @@ describe('MergeMarkdownPage', () => {
         expect(screen.getByText('test.md')).toBeInTheDocument()
       })
 
-      // Change to page breaks
-      const pageBreakRadio = screen.getByRole('radio', { name: /Page breaks/ })
+      // Change to horizontal rule
+      const pageBreakRadio = screen.getByRole('radio', { name: /Horizontal rule/ })
       fireEvent.click(pageBreakRadio)
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge & Download' })
+      const mergeButton = screen.getByRole('button', { name: 'Merge' })
       fireEvent.click(mergeButton)
 
       await waitFor(() => {
@@ -893,7 +893,7 @@ describe('MergeMarkdownPage', () => {
     it('should show error when trying to merge with no files', () => {
       render(<MergeMarkdownPage />)
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge & Download' })
+      const mergeButton = screen.getByRole('button', { name: 'Merge' })
       // Button should be disabled, but try clicking anyway
       expect(mergeButton).toBeDisabled()
     })
