@@ -18,6 +18,13 @@ export class LocalStorageAdapter implements IStorageAdapter {
   }
 
   /**
+   * Reset internal state (useful for testing)
+   */
+  reset(): void {
+    this.quotaExceeded = false
+  }
+
+  /**
    * Get the storage instance (checked dynamically for test compatibility)
    */
   private getStorage(): Storage | null {
