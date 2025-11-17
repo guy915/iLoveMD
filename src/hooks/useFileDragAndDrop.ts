@@ -1,11 +1,6 @@
 import { useState, useRef, useCallback, DragEvent } from 'react'
 import { useLogs } from '@/contexts/LogContext'
-
-interface MarkdownFile {
-  id: string
-  file: File
-  content: string
-}
+import type { MarkdownFile } from '@/types/markdown'
 
 interface UseFileDragAndDropReturn {
   draggedFileId: string | null
@@ -26,13 +21,11 @@ export function useFileDragAndDrop(): UseFileDragAndDropReturn {
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverFileId, setDragOverFileId] = useState<string | null>(null)
   const draggedIndexRef = useRef<number | null>(null)
-  const dragStartOrderRef = useRef<string[]>([])
   const { addLog } = useLogs()
 
   const handleFileDragStart = useCallback((e: DragEvent<HTMLDivElement>, fileId: string, files: MarkdownFile[]) => {
     const draggedIndex = files.findIndex(f => f.id === fileId)
     draggedIndexRef.current = draggedIndex
-    dragStartOrderRef.current = files.map(f => f.id)
     setDraggedFileId(fileId)
     e.dataTransfer.effectAllowed = 'move'
     // Set a custom data type to differentiate from file upload drags
@@ -113,7 +106,6 @@ export function useFileDragAndDrop(): UseFileDragAndDropReturn {
     setDraggedFileId(null)
     setDragOverFileId(null)
     draggedIndexRef.current = null
-    dragStartOrderRef.current = []
   }, [])
 
   return {

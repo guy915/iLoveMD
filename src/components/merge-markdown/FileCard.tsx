@@ -3,13 +3,9 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import { formatFileSize } from '@/lib/utils/formatUtils'
-
-interface MarkdownFile {
-  id: string
-  file: File
-  content: string
-}
+import type { MarkdownFile } from '@/types/markdown'
 
 interface FileCardProps {
   markdownFile: MarkdownFile

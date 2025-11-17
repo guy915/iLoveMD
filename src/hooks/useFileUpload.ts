@@ -2,14 +2,7 @@ import { useState, useCallback } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 import { formatFileSize } from '@/lib/utils/formatUtils'
 import { FILE_SIZE } from '@/lib/constants'
-
-interface MarkdownFile {
-  id: string
-  file: File
-  content: string
-}
-
-type SortMode = 'none' | 'alphabetical' | 'reverseAlphabetical'
+import type { MarkdownFile, SortMode } from '@/types/markdown'
 
 interface UseFileUploadReturn {
   files: MarkdownFile[]

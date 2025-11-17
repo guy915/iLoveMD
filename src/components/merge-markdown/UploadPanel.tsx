@@ -2,15 +2,7 @@ import { useRef, ChangeEvent } from 'react'
 import Button from '@/components/common/Button'
 import { FILE_SIZE } from '@/lib/constants'
 import { useLogs } from '@/contexts/LogContext'
-
-type SortMode = 'none' | 'alphabetical' | 'reverseAlphabetical'
-type SeparatorStyle = 'newline' | 'page-break'
-
-interface MarkdownFile {
-  id: string
-  file: File
-  content: string
-}
+import type { MarkdownFile, SortMode, SeparatorStyle } from '@/types/markdown'
 
 interface UploadPanelProps {
   files: MarkdownFile[]
