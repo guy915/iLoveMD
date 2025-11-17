@@ -94,10 +94,11 @@ describe('PaidModeStrategy', () => {
 
       const result = await strategy.pollStatus(checkUrl)
 
-      const fetchCall = (fetch as any).mock.calls[0][0]
-      expect(fetchCall).toContain(API_ENDPOINTS.MARKER)
-      expect(fetchCall).toContain(encodeURIComponent(checkUrl))
-      expect(fetchCall).toContain(encodeURIComponent(mockApiKey))
+      const [url, options] = (fetch as any).mock.calls[0]
+      expect(url).toContain(API_ENDPOINTS.MARKER)
+      expect(url).toContain(encodeURIComponent(checkUrl))
+      expect(url).not.toContain(mockApiKey) // API key should be in header, not URL
+      expect(options?.headers?.['x-api-key']).toBe(mockApiKey)
       expect(result).toEqual(mockResponse)
     })
 
@@ -114,10 +115,9 @@ describe('PaidModeStrategy', () => {
       )
     })
 
-    it('should encode checkUrl and apiKey properly', async () => {
+    it('should encode checkUrl properly and send API key in header', async () => {
       const checkUrl = 'https://api.marker.com/check/123?foo=bar'
       const encodedCheckUrl = encodeURIComponent(checkUrl)
-      const encodedApiKey = encodeURIComponent(mockApiKey)
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -126,9 +126,10 @@ describe('PaidModeStrategy', () => {
 
       await strategy.pollStatus(checkUrl)
 
-      const fetchCall = (fetch as any).mock.calls[0][0]
-      expect(fetchCall).toContain(encodedCheckUrl)
-      expect(fetchCall).toContain(encodedApiKey)
+      const [url, options] = (fetch as any).mock.calls[0]
+      expect(url).toContain(encodedCheckUrl)
+      expect(url).not.toContain(mockApiKey) // API key should be in header, not URL
+      expect(options?.headers?.['x-api-key']).toBe(mockApiKey)
     })
   })
 

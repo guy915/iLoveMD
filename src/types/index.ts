@@ -219,3 +219,15 @@ export interface ApiError {
   /** Standardized error code */
   code?: ErrorCode | string
 }
+
+/**
+ * Conversion result from PDF to Markdown
+ */
+export interface ConversionResult {
+  /** Whether conversion succeeded */
+  success: boolean
+  /** Converted markdown content (when successful) */
+  markdown?: string
+  /** Error message (when failed) */
+  error?: string
+}

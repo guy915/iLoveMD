@@ -30,7 +30,12 @@ export class FreeModeStrategy implements IConversionStrategy {
       throw new Error(`Modal request failed: ${response.status} - ${errorText}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    if (!data.success) {
+      throw new Error(data.error || 'Modal request failed')
+    }
+
+    return data
   }
 
   async pollStatus(checkUrl: string): Promise<MarkerPollResponse> {
@@ -42,7 +47,12 @@ export class FreeModeStrategy implements IConversionStrategy {
       throw new Error(`Polling failed: ${response.status}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    if (!data.success) {
+      throw new Error(data.error || 'Polling failed')
+    }
+
+    return data
   }
 
   getErrorPrefix(): string {

@@ -2,7 +2,7 @@
  * Tests for conversionStrategy (convertWithStrategy function)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { convertWithStrategy, type IConversionStrategy, type ProgressCallback } from './conversionStrategy'
 import type { MarkerOptions, MarkerSubmitResponse, MarkerPollResponse } from '@/types'
 import { MARKER_CONFIG } from '@/lib/constants'

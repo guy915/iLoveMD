@@ -18,22 +18,13 @@
  */
 
 import { API_ENDPOINTS, MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
-import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
+import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions, ConversionResult } from '@/types'
 import { convertWithStrategy, type ProgressCallback } from './conversionStrategy'
 import { PaidModeStrategy } from './strategies/PaidModeStrategy'
 import { FreeModeStrategy } from './strategies/FreeModeStrategy'
 
-/**
- * Result of a conversion operation
- */
-export interface ConversionResult {
-  success: boolean
-  markdown?: string
-  error?: string
-}
-
-// Re-export ProgressCallback for backward compatibility
-export type { ProgressCallback }
+// Re-export types for backward compatibility
+export type { ProgressCallback, ConversionResult }
 
 /**
  * Submit a PDF file for conversion

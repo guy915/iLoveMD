@@ -28,19 +28,34 @@ export class PaidModeStrategy implements IConversionStrategy {
       throw new Error(`API request failed: ${response.status} - ${errorText}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    if (!data.success) {
+      throw new Error(data.error || 'API request failed')
+    }
+
+    return data
   }
 
   async pollStatus(checkUrl: string): Promise<MarkerPollResponse> {
     const response = await fetch(
-      `${API_ENDPOINTS.MARKER}?checkUrl=${encodeURIComponent(checkUrl)}&apiKey=${encodeURIComponent(this.apiKey)}`
+      `${API_ENDPOINTS.MARKER}?checkUrl=${encodeURIComponent(checkUrl)}`,
+      {
+        headers: {
+          'x-api-key': this.apiKey
+        }
+      }
     )
 
     if (!response.ok) {
       throw new Error(`Polling failed: ${response.status}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    if (!data.success) {
+      throw new Error(data.error || 'Polling failed')
+    }
+
+    return data
   }
 
   getErrorPrefix(): string {
