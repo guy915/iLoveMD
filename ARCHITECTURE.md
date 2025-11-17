@@ -34,11 +34,12 @@ ilovellm/
 │   │   ├── common/             # Button, FileUpload, ErrorBoundary
 │   │   └── home/               # ToolTile
 │   ├── contexts/               # React Context providers
-│   │   └── LogContext.tsx      # Diagnostic logging context
+│   │   └── LogContext.tsx      # Diagnostic logging context (uses SessionStorageAdapter, no global state)
 │   ├── hooks/                  # Custom React hooks
 │   │   ├── useFileSelection.ts       # File selection and validation logic
 │   │   ├── useConversionWorkflow.ts  # PDF conversion workflow orchestration
-│   │   └── useMergeMarkdown.ts       # Markdown merging logic
+│   │   ├── useMergeMarkdown.ts       # Markdown merging logic
+│   │   └── useGlobalErrorHandlers.ts # Global error handling (errors, console, network)
 │   ├── domain/                 # Clean Architecture - Domain Layer
 │   │   ├── entities/           # Domain entities with business logic
 │   │   │   ├── PdfDocument.ts       # PDF file with validation state
@@ -54,8 +55,12 @@ ilovellm/
 │   │       └── FileSystemDownloadRepository.ts # File download implementation
 │   ├── lib/                    # Business logic
 │   │   ├── constants.ts        # Centralized constants
+│   │   ├── storage/            # Storage abstraction layer
+│   │   │   ├── IStorageAdapter.ts         # Storage interface
+│   │   │   ├── LocalStorageAdapter.ts      # localStorage implementation
+│   │   │   └── SessionStorageAdapter.ts    # sessionStorage implementation
 │   │   ├── services/           # Business services
-│   │   │   ├── storageService.ts          # localStorage abstraction
+│   │   │   ├── storageService.ts          # localStorage abstraction (uses LocalStorageAdapter)
 │   │   │   ├── markerApiService.ts        # Marker API client (uses Strategy pattern)
 │   │   │   ├── conversionStrategy.ts      # Strategy pattern base (IConversionStrategy)
 │   │   │   ├── strategies/                # Conversion strategy implementations

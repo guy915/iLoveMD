@@ -2,19 +2,19 @@
  * Storage Service - Abstraction layer for browser storage
  *
  * This service provides a clean interface for localStorage operations,
- * making it easier to:
- * - Test components without browser dependencies
- * - Migrate to different storage mechanisms (sessionStorage, IndexedDB, etc.)
- * - Handle SSR safely
- * - Centralize error handling
+ * using the storage adapter pattern for better testability and flexibility.
+ *
+ * Benefits:
+ * - Uses IStorageAdapter interface for clean abstraction
+ * - Easy to swap implementations (localStorage → IndexedDB → API)
+ * - SSR-safe with automatic window checks
+ * - Centralized error handling
  */
 
-/**
- * Checks if localStorage is available (handles SSR)
- */
-function isStorageAvailable(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
-}
+import { LocalStorageAdapter } from '@/lib/storage'
+
+// Create singleton adapter instance
+const storageAdapter = new LocalStorageAdapter()
 
 /**
  * Get an item from localStorage
@@ -22,16 +22,7 @@ function isStorageAvailable(): boolean {
  * @returns The stored value or null if not found
  */
 export function getItem(key: string): string | null {
-  if (!isStorageAvailable()) {
-    return null
-  }
-
-  try {
-    return localStorage.getItem(key)
-  } catch (error) {
-    console.error(`[StorageService] Failed to get item "${key}":`, error)
-    return null
-  }
+  return storageAdapter.getItem(key)
 }
 
 /**
@@ -41,17 +32,7 @@ export function getItem(key: string): string | null {
  * @returns True if successful, false otherwise
  */
 export function setItem(key: string, value: string): boolean {
-  if (!isStorageAvailable()) {
-    return false
-  }
-
-  try {
-    localStorage.setItem(key, value)
-    return true
-  } catch (error) {
-    console.error(`[StorageService] Failed to set item "${key}":`, error)
-    return false
-  }
+  return storageAdapter.setItem(key, value)
 }
 
 /**
@@ -60,17 +41,7 @@ export function setItem(key: string, value: string): boolean {
  * @returns True if successful, false otherwise
  */
 export function removeItem(key: string): boolean {
-  if (!isStorageAvailable()) {
-    return false
-  }
-
-  try {
-    localStorage.removeItem(key)
-    return true
-  } catch (error) {
-    console.error(`[StorageService] Failed to remove item "${key}":`, error)
-    return false
-  }
+  return storageAdapter.removeItem(key)
 }
 
 /**
