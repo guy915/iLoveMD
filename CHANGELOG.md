@@ -35,6 +35,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - src/hooks/useMergeMarkdown.ts
   - **Next Steps**: Pages can be refactored to use these new hooks/services in subsequent PRs
 
+- **Phase 2: Eliminate Code Duplication with Strategy Pattern** (2025-11-17):
+  - **Strategy Pattern Implementation** (eliminates 95% code duplication):
+    - Created `IConversionStrategy` interface - Defines contract for all conversion modes (submit, poll, error handling, timing)
+    - Implemented `PaidModeStrategy` - Handles Marker API (paid mode) conversions with proper API key handling
+    - Implemented `FreeModeStrategy` - Handles Modal (free mode) conversions with optional Gemini API key
+    - Created `convertWithStrategy()` base function - Common conversion workflow for all modes (submit, poll loop, cancellation, progress callbacks)
+  - **Refactored markerApiService.ts**:
+    - Replaced duplicate `convertPdfToMarkdown()` and `convertPdfToMarkdownLocal()` implementations with strategy-based versions
+    - Each function now instantiates the appropriate strategy and delegates to `convertWithStrategy()`
+    - Reduced code from ~180 lines of duplicate logic to ~20 lines using strategies
+    - Deprecated old helper functions (submitPdfConversion, pollConversionStatus, etc.) - now encapsulated in strategies
+  - **Benefits**:
+    - Eliminates massive code duplication between paid/free conversion modes
+    - Easier to add new conversion modes (just implement IConversionStrategy)
+    - Single source of truth for conversion workflow logic
+    - Better separation of concerns (mode-specific logic in strategies, common logic in convertWithStrategy)
+    - Improves maintainability (bug fixes only need to happen in one place)
+  - **Test Coverage**:
+    - Added 32 new tests for Strategy pattern components
+    - PaidModeStrategy: 8 tests (100% coverage)
+    - FreeModeStrategy: 9 tests (100% coverage)
+    - conversionStrategy: 15 tests (100% coverage)
+    - Overall coverage increased from 71.47% to 75.2%
+    - All 581 tests passing (8 skipped as expected)
+  - **Files Added**:
+    - src/lib/services/conversionStrategy.ts + tests
+    - src/lib/services/strategies/PaidModeStrategy.ts + tests
+    - src/lib/services/strategies/FreeModeStrategy.ts + tests
+  - **Files Modified**:
+    - src/lib/services/markerApiService.ts (refactored to use strategies)
+    - src/lib/services/markerApiService.test.ts (updated expectations for new error messages)
+  - **Next Steps**: Continue with Phase 3 (Clean Architecture Layers) in subsequent PR
+
 - **Comprehensive Error Handling Improvements** (2025-11-16):
   - **API Route Error Handling**:
     - Added FormData parsing error handling with explicit try-catch blocks
