@@ -281,7 +281,7 @@ export function useMergeMarkdown(
       // Add separator before file (except for first file)
       if (index > 0) {
         if (separatorStyle === 'page-break') {
-          parts.push('\n\n---\n\n')
+          parts.push('\n---\n')
         } else {
           parts.push('\n\n')
         }
