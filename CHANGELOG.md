@@ -68,6 +68,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - src/lib/services/markerApiService.test.ts (updated expectations for new error messages)
   - **Next Steps**: Continue with Phase 3 (Clean Architecture Layers) in subsequent PR
 
+- **Phase 3: Implement Clean Architecture Layers** (2025-11-17):
+  - **Repository Interfaces** (define contracts for external dependencies):
+    - `IConversionRepository` - Interface for PDF to Markdown conversion operations (submit, convert, batch)
+    - `IStorageRepository` - Interface for persistent storage (localStorage, sessionStorage, etc.)
+    - `IDownloadRepository` - Interface for file download operations (File System Access API, blob downloads)
+  - **Domain Entities** (encapsulate business logic and state):
+    - `PdfDocument` - Represents a PDF file with metadata and validation state (size checks, MIME type validation, file extension validation)
+    - `Conversion` - Represents conversion workflow with state machine (pending → submitted → processing → complete/failed/cancelled)
+  - **Concrete Repository Implementations**:
+    - `MarkerConversionRepository` - Implements IConversionRepository using existing markerApiService and batchConversionService
+    - `LocalStorageRepository` - Implements IStorageRepository using browser localStorage (SSR-safe, graceful error handling)
+    - `FileSystemDownloadRepository` - Implements IDownloadRepository with File System Access API fallback
+  - **Benefits**:
+    - **Dependency Inversion**: Domain logic depends on abstractions (interfaces), not concrete implementations
+    - **Testability**: Easy to mock repositories for unit testing
+    - **Flexibility**: Can swap implementations without changing business logic (e.g., localStorage → IndexedDB → API)
+    - **Domain-Driven Design**: Business rules encapsulated in entities, not scattered across components
+    - **State Management**: Conversion state machine prevents invalid transitions and ensures consistency
+  - **Test Coverage**:
+    - Added 35 new tests for domain entities
+    - PdfDocument: 14 tests (100% coverage)
+    - Conversion: 21 tests (100% coverage - state machine, timestamps, validation)
+    - All 616 tests passing (up from 581)
+  - **Files Added**:
+    - src/domain/repositories/IConversionRepository.ts
+    - src/domain/repositories/IStorageRepository.ts
+    - src/domain/repositories/IDownloadRepository.ts
+    - src/domain/entities/PdfDocument.ts + tests
+    - src/domain/entities/Conversion.ts + tests
+    - src/infrastructure/repositories/MarkerConversionRepository.ts
+    - src/infrastructure/repositories/LocalStorageRepository.ts
+    - src/infrastructure/repositories/FileSystemDownloadRepository.ts
+  - **Architecture Impact**:
+    - Establishes Clean Architecture layers (domain, infrastructure)
+    - Repository pattern decouples domain from infrastructure
+    - Domain entities encapsulate business rules
+    - Prepares codebase for future phases (DI container, use cases)
+  - **Next Steps**: Phase 4 (Break Down God Components) - extract page components to use hooks and repositories
+
 - **Comprehensive Error Handling Improvements** (2025-11-16):
   - **API Route Error Handling**:
     - Added FormData parsing error handling with explicit try-catch blocks
