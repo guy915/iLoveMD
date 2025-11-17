@@ -5,10 +5,13 @@
  * This is a domain entity that encapsulates business rules about PDF files.
  *
  * Business Rules:
- * - Must be a valid PDF file (MIME type + magic bytes)
+ * - Must be a valid PDF file (MIME type + file extension)
  * - Cannot exceed 200MB (Marker API limit)
  * - Cannot be empty
  * - Has validation state that determines if it can be converted
+ *
+ * Note: PDF magic bytes (%PDF-) validation should be performed separately
+ * using fileValidationService.validatePdfMagicBytes()
  */
 
 import type { FileMetadata } from '@/types'
