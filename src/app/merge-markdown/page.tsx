@@ -591,11 +591,11 @@ export default function MergeMarkdownPage() {
   return (
     <>
       {/* Hide footer on this page only */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         footer {
           display: none;
         }
-      `}</style>
+      `}} />
 
       <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
         {/* Canvas Area - Left Side */}
@@ -637,7 +637,7 @@ export default function MergeMarkdownPage() {
         <div className="max-w-6xl mx-auto h-full flex flex-col">
           <h1 className="text-3xl font-bold mb-2">Merge Markdown Files</h1>
           <p className="text-gray-600 mb-8">
-            Combine multiple markdown files into one document
+            Combine multiple Markdown files into one document
           </p>
 
           {/* File Grid */}
@@ -841,7 +841,7 @@ export default function MergeMarkdownPage() {
                   }}
                   className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
                 />
-                <span className="text-sm text-gray-700">Add file headers (# filename)</span>
+                <span className="text-sm text-gray-700">Add file headers</span>
               </label>
 
               {/* Separator Style */}
@@ -862,7 +862,7 @@ export default function MergeMarkdownPage() {
                       }}
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                     />
-                    <span className="text-sm text-gray-700">Newlines only</span>
+                    <span className="text-sm text-gray-700">Newline</span>
                   </label>
 
                   <label className="flex items-center space-x-2 cursor-pointer">
@@ -873,11 +873,11 @@ export default function MergeMarkdownPage() {
                       checked={separatorStyle === 'page-break'}
                       onChange={(e) => {
                         setSeparatorStyle(e.target.value as SeparatorStyle)
-                        addLog('info', 'Separator changed to: page breaks')
+                        addLog('info', 'Separator changed to: horizontal rule')
                       }}
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                     />
-                    <span className="text-sm text-gray-700">Page breaks (---)</span>
+                    <span className="text-sm text-gray-700">Horizontal rule</span>
                   </label>
                 </div>
               </div>
@@ -894,7 +894,7 @@ export default function MergeMarkdownPage() {
             disabled={files.length === 0}
             className="w-full"
           >
-            Merge & Download
+            Merge
           </Button>
 
           {/* Clear All Button */}
@@ -904,7 +904,7 @@ export default function MergeMarkdownPage() {
             disabled={files.length === 0}
             className="w-full"
           >
-            Clear All Files
+            Clear All
           </Button>
         </div>
       </div>
