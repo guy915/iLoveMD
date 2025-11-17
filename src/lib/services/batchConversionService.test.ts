@@ -22,11 +22,14 @@ vi.mock('@/lib/utils/downloadUtils', () => ({
 
 // Mock JSZip to avoid actual ZIP generation in tests
 vi.mock('jszip', () => {
+  // Create a mock class constructor
+  const MockJSZip = class {
+    file = vi.fn()
+    generateAsync = vi.fn().mockResolvedValue(new Blob(['mock zip content']))
+  }
+
   return {
-    default: vi.fn().mockImplementation(() => ({
-      file: vi.fn(),
-      generateAsync: vi.fn().mockResolvedValue(new Blob(['mock zip content'])),
-    })),
+    default: MockJSZip,
   }
 })
 
@@ -192,7 +195,7 @@ describe('batchConversionService', () => {
       vi.restoreAllMocks()
     })
 
-    it.skip('should convert single file successfully', async () => {
+    it('should convert single file successfully', async () => {
       const file = createMockFile('doc.pdf', 1000)
       const options: BatchConversionOptions = {
         apiKey: 'test-api-key-12345678901234567890',
@@ -205,28 +208,19 @@ describe('batchConversionService', () => {
         markdown: '# Test',
       })
 
-      // Mock JSZip
-      const mockZipFile = vi.fn()
-      const mockGenerateAsync = vi.fn().mockResolvedValue(new Blob(['zip content']))
-      vi.doMock('jszip', () => ({
-        default: vi.fn(() => ({
-          file: mockZipFile,
-          generateAsync: mockGenerateAsync,
-        })),
-      }))
+      const result = await convertBatchPdfToMarkdown([file], options)
 
-      const promise = convertBatchPdfToMarkdown([file], options)
-
-      // Run all pending timers
-      await vi.runAllTimersAsync()
-
-      const result = await promise
+      // Debug: log result if test fails
+      if (!result.success) {
+        console.log('Test failed, result:', result)
+      }
 
       expect(result.success).toBe(true)
       expect(result.completed).toHaveLength(1)
       expect(result.failed).toHaveLength(0)
       expect(result.completed[0].status).toBe('complete')
       expect(result.completed[0].markdown).toBe('# Test')
+      expect(result.zipBlob).toBeDefined()
     })
 
     it('should handle conversion failure with retries', async () => {
@@ -370,7 +364,7 @@ describe('batchConversionService', () => {
       expect(result.success).toBe(false)
     })
 
-    it.skip('should retry failed conversions with exponential backoff', async () => {
+    it('should retry failed conversions with exponential backoff', async () => {
       const file = createMockFile('doc.pdf', 1000)
       const options: BatchConversionOptions = {
         apiKey: 'test-api-key-12345678901234567890',
