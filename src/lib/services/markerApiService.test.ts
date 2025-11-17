@@ -441,7 +441,7 @@ describe('markerApiService', () => {
       const result = await promise
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Conversion failed on server')
+      expect(result.error).toBe('Conversion failed on API')
     })
 
     it('should handle missing check URL from submit', async () => {
