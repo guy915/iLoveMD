@@ -39,6 +39,19 @@ ilovellm/
 │   │   ├── useFileSelection.ts       # File selection and validation logic
 │   │   ├── useConversionWorkflow.ts  # PDF conversion workflow orchestration
 │   │   └── useMergeMarkdown.ts       # Markdown merging logic
+│   ├── domain/                 # Clean Architecture - Domain Layer
+│   │   ├── entities/           # Domain entities with business logic
+│   │   │   ├── PdfDocument.ts       # PDF file with validation state
+│   │   │   └── Conversion.ts        # Conversion workflow state machine
+│   │   └── repositories/       # Repository interfaces (abstractions)
+│   │       ├── IConversionRepository.ts    # Conversion operations contract
+│   │       ├── IStorageRepository.ts       # Storage operations contract
+│   │       └── IDownloadRepository.ts      # Download operations contract
+│   ├── infrastructure/         # Clean Architecture - Infrastructure Layer
+│   │   └── repositories/       # Concrete repository implementations
+│   │       ├── MarkerConversionRepository.ts   # Wraps markerApiService
+│   │       ├── LocalStorageRepository.ts       # localStorage implementation
+│   │       └── FileSystemDownloadRepository.ts # File download implementation
 │   ├── lib/                    # Business logic
 │   │   ├── constants.ts        # Centralized constants
 │   │   ├── services/           # Business services
@@ -581,14 +594,68 @@ downloadService.downloadFile(content, 'output.md')
    - Hooks accept dependencies as parameters
    - Future: Can implement DI container if needed
 
+### Clean Architecture Implementation
+
+**Phase 3: Repository Pattern & Domain Entities**
+
+The project now follows Clean Architecture principles with clear separation between domain, infrastructure, and presentation layers.
+
+**1. Domain Layer** (`src/domain/`):
+   - **Entities**: Business objects with intrinsic identity and lifecycle
+     - `PdfDocument` - Represents a PDF file with validation state, size checks, type validation
+     - `Conversion` - State machine for conversion workflow (pending → submitted → processing → complete/failed/cancelled)
+   - **Repository Interfaces**: Contracts for external dependencies (Dependency Inversion Principle)
+     - `IConversionRepository` - PDF to Markdown conversion operations
+     - `IStorageRepository` - Persistent storage operations (localStorage, sessionStorage)
+     - `IDownloadRepository` - File download operations (File System Access API, blob downloads)
+
+**2. Infrastructure Layer** (`src/infrastructure/`):
+   - **Concrete Repositories**: Implement domain interfaces using external services
+     - `MarkerConversionRepository` - Wraps existing markerApiService and batchConversionService
+     - `LocalStorageRepository` - Browser localStorage implementation (SSR-safe, error handling)
+     - `FileSystemDownloadRepository` - File System Access API with fallback
+
+**3. Benefits**:
+   - **Testability**: Domain logic can be tested without external dependencies (mock repositories)
+   - **Flexibility**: Swap implementations without changing business logic (localStorage → IndexedDB → API)
+   - **Maintainability**: Domain rules in one place, infrastructure details separated
+   - **Type Safety**: Repository interfaces enforce contracts at compile time
+
+**4. State Machine Design** (Conversion entity):
+   ```
+   pending → submitted → processing → complete
+                                   ↘ failed
+                                   ↘ cancelled
+   ```
+   - Prevents invalid state transitions (e.g., cannot complete after cancelled)
+   - Tracks timestamps for each state change
+   - Enforces business rules (e.g., must submit before processing)
+
+**5. Example Usage**:
+   ```typescript
+   // Use repository through interface
+   const repo: IConversionRepository = new MarkerConversionRepository()
+   const result = await repo.convert(file, apiKey, options, 'paid')
+
+   // Or create domain entity
+   const pdf = new PdfDocument(file)
+   pdf.setValidationResult({ valid: true, errors: [] })
+   if (pdf.isValid()) {
+     const conversion = new Conversion(id, pdf, options, 'paid')
+     conversion.markAsSubmitted(requestId, checkUrl)
+     conversion.markAsProcessing()
+     // ...
+   }
+   ```
+
 ### Future Improvements
 
-**Phase 3+ Candidates** (not yet implemented):
-- Extract page components to use new hooks/services
-- Implement repository pattern for API access
-- Create domain models and value objects
-- Implement error handling middleware
+**Phase 4+ Candidates** (not yet implemented):
+- Extract page components to use repositories directly
+- Implement DI container for automatic dependency injection
+- Create use case layer for complex workflows
 - Break down large page components into smaller pieces
+- Add domain events for cross-cutting concerns
 
 ## Error Handling Strategy
 
