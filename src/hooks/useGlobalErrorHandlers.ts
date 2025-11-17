@@ -145,8 +145,14 @@ export function useGlobalErrorHandlers({
     const originalWarn = console.warn
     const originalLog = console['log']
 
+    // Track which methods were wrapped by this hook instance
+    let wrappedConsoleError = false
+    let wrappedConsoleWarn = false
+    let wrappedConsoleLog = false
+
     // Wrap console methods
     if (interceptConsole && !(console.error as any).__wrapped__) {
+      wrappedConsoleError = true
       const wrappedError = (...args: unknown[]) => {
         onLog('error', 'Console Error', {
           message: args.map(arg =>
@@ -162,6 +168,7 @@ export function useGlobalErrorHandlers({
     }
 
     if (interceptConsole && !(console.warn as any).__wrapped__) {
+      wrappedConsoleWarn = true
       const wrappedWarn = (...args: unknown[]) => {
         onLog('error', 'Console Warning', {
           message: args.map(arg =>
@@ -177,6 +184,7 @@ export function useGlobalErrorHandlers({
     }
 
     if (interceptConsole && !(console['log'] as any).__wrapped__) {
+      wrappedConsoleLog = true
       const wrappedLog = (...args: unknown[]) => {
         const message = args.map(arg =>
           typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : String(arg)
@@ -198,7 +206,9 @@ export function useGlobalErrorHandlers({
 
     // Intercept fetch()
     const originalFetch = window.fetch
+    let didWrapFetch = false
     if (interceptNetwork && !(window.fetch as any).__wrapped__) {
+      didWrapFetch = true
       const wrappedFetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
         const startTime = Date.now()
         const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || 'Unknown URL'
@@ -284,8 +294,10 @@ export function useGlobalErrorHandlers({
     const xhrMetaMap = new WeakMap<XMLHttpRequest, XHRMetadata>()
     const originalXHROpen = XMLHttpRequest.prototype.open
     const originalXHRSend = XMLHttpRequest.prototype.send
+    let didWrapXHR = false
 
     if (interceptNetwork && !(XMLHttpRequest.prototype.open as any).__wrapped__) {
+      didWrapXHR = true
       const wrappedXHROpen = function(
         this: XMLHttpRequest,
         method: string,
@@ -378,12 +390,24 @@ export function useGlobalErrorHandlers({
         window.removeEventListener('error', handleError, true)
         window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       }
-      console.error = originalError
-      console.warn = originalWarn
-      console['log'] = originalLog
-      window.fetch = originalFetch
-      XMLHttpRequest.prototype.open = originalXHROpen
-      XMLHttpRequest.prototype.send = originalXHRSend
+      // Only restore console methods if we wrapped them
+      if (wrappedConsoleError) {
+        console.error = originalError
+      }
+      if (wrappedConsoleWarn) {
+        console.warn = originalWarn
+      }
+      if (wrappedConsoleLog) {
+        console['log'] = originalLog
+      }
+      // Only restore network methods if we wrapped them
+      if (didWrapFetch) {
+        window.fetch = originalFetch
+      }
+      if (didWrapXHR) {
+        XMLHttpRequest.prototype.open = originalXHROpen
+        XMLHttpRequest.prototype.send = originalXHRSend
+      }
     }
   }, [onLog, interceptConsole, interceptNetwork, captureGlobalErrors])
 }

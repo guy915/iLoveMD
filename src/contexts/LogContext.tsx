@@ -63,6 +63,11 @@ export function LogProvider({ children }: LogProviderProps) {
 
   // Save logs to sessionStorage with debouncing
   useEffect(() => {
+    // Store original console methods to avoid recursive logging when storage fails
+    // (useGlobalErrorHandlers wraps console.warn, which would create infinite loops)
+    const originalConsoleWarn = console.warn
+    const originalConsoleError = console.error
+
     const timeoutId = setTimeout(() => {
       try {
         const options = {
@@ -70,12 +75,14 @@ export function LogProvider({ children }: LogProviderProps) {
           maxItemsOnTrim: 30,
           onError: (error: Error) => {
             // Silent failure - logs continue in memory
-            console.warn('Failed to save logs to sessionStorage:', error)
+            // Use original console.warn to avoid recursive logging via useGlobalErrorHandlers
+            originalConsoleWarn.call(console, 'Failed to save logs to sessionStorage:', error)
           }
         }
         storageAdapter.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs), options)
       } catch (error) {
-        console.error('Error stringifying logs for sessionStorage:', error)
+        // Use original console.error to avoid recursive logging
+        originalConsoleError.call(console, 'Error stringifying logs for sessionStorage:', error)
       }
     }, 1000) // Wait 1 second after last log before saving
 
@@ -112,10 +119,12 @@ export function LogProvider({ children }: LogProviderProps) {
     }
 
     const timestamp = new Date().toLocaleTimeString()
-    // Use current counter value, then increment both ref and state (ensures sequential IDs)
+    // Use current ref value for ID, then increment ref synchronously
+    // This ensures sequential IDs even with rapid calls
     const id = counterRef.current
     counterRef.current = id + 1
-    setLogCounter(id + 1)
+    // Update state to keep it in sync (functional update ensures correctness)
+    setLogCounter(prev => prev + 1)
 
     const newLog: LogEntry = { timestamp, type, message, data, id }
     // Keep only last 50 logs (sliding window)
@@ -123,7 +132,7 @@ export function LogProvider({ children }: LogProviderProps) {
       const newLogs = [...prev, newLog]
       return newLogs.length > MAX_LOGS ? newLogs.slice(-MAX_LOGS) : newLogs
     })
-  }, [recentLogs])
+  }, [recentLogs, setLogCounter])
 
   const clearLogs = useCallback(() => {
     setLogs([])
