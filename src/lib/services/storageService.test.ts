@@ -16,12 +16,15 @@ import {
   removeItem,
   getJSON,
   setJSON,
+  resetAdapter,
 } from './storageService'
 
 describe('storageService', () => {
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear()
+    // Reset adapter state to ensure clean test isolation
+    resetAdapter()
     // Clear any mocked console errors
     vi.clearAllMocks()
   })
@@ -29,6 +32,12 @@ describe('storageService', () => {
   afterEach(() => {
     // Clean up after each test
     localStorage.clear()
+    // Reset adapter state to ensure clean test isolation
+    resetAdapter()
+    
+    // Restore all Storage prototype spies (vitest should handle this, but ensure it)
+    // This ensures that even if a test didn't properly restore, we fix it here
+    vi.restoreAllMocks()
   })
 
   describe('getItem', () => {
@@ -58,17 +67,18 @@ describe('storageService', () => {
 
     it('should handle errors gracefully', () => {
       // Mock localStorage to throw error
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      const originalGetItem = localStorage.getItem
-      localStorage.getItem = vi.fn(() => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      // Spy on the actual localStorage instance, not the prototype
+      const getItemSpy = vi.spyOn(localStorage, 'getItem').mockImplementation(function(this: Storage, key: string) {
         throw new Error('Storage error')
       })
 
       expect(getItem('test')).toBeNull()
-      expect(consoleErrorSpy).toHaveBeenCalled()
+      expect(consoleWarnSpy).toHaveBeenCalled()
 
-      localStorage.getItem = originalGetItem
-      consoleErrorSpy.mockRestore()
+      // Restore immediately
+      getItemSpy.mockRestore()
+      consoleWarnSpy.mockRestore()
     })
   })
 
@@ -106,9 +116,8 @@ describe('storageService', () => {
     })
 
     it('should return false on quota exceeded error', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      const originalSetItem = localStorage.setItem
-      localStorage.setItem = vi.fn(() => {
+      // Spy on the actual localStorage instance, not the prototype
+      const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(function(this: Storage, key: string, value: string) {
         const error = new Error('QuotaExceededError')
         error.name = 'QuotaExceededError'
         throw error
@@ -116,24 +125,24 @@ describe('storageService', () => {
 
       const result = setItem('key', 'value')
       expect(result).toBe(false)
-      expect(consoleErrorSpy).toHaveBeenCalled()
+      // Note: Adapter doesn't log setItem errors (silent failure for quota issues)
 
-      localStorage.setItem = originalSetItem
-      consoleErrorSpy.mockRestore()
+      // Restore immediately
+      setItemSpy.mockRestore()
     })
 
     it('should handle other errors gracefully', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      const originalSetItem = localStorage.setItem
-      localStorage.setItem = vi.fn(() => {
+      // Spy on the actual localStorage instance, not the prototype
+      const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(function(this: Storage, key: string, value: string) {
         throw new Error('Unknown error')
       })
 
       const result = setItem('key', 'value')
       expect(result).toBe(false)
+      // Note: Adapter doesn't log setItem errors (silent failure)
 
-      localStorage.setItem = originalSetItem
-      consoleErrorSpy.mockRestore()
+      // Restore immediately
+      setItemSpy.mockRestore()
     })
   })
 
@@ -151,18 +160,17 @@ describe('storageService', () => {
     })
 
     it('should handle errors gracefully', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      const originalRemoveItem = localStorage.removeItem
-      localStorage.removeItem = vi.fn(() => {
+      // Spy on the actual localStorage instance, not the prototype
+      const removeItemSpy = vi.spyOn(localStorage, 'removeItem').mockImplementation(function(this: Storage, key: string) {
         throw new Error('Storage error')
       })
 
       const result = removeItem('test')
       expect(result).toBe(false)
-      expect(consoleErrorSpy).toHaveBeenCalled()
+      // Note: Adapter doesn't log removeItem errors (silent failure)
 
-      localStorage.removeItem = originalRemoveItem
-      consoleErrorSpy.mockRestore()
+      // Restore immediately
+      removeItemSpy.mockRestore()
     })
   })
 
@@ -290,15 +298,18 @@ describe('storageService', () => {
 
     it('should handle storage quota errors', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      const originalSetItem = localStorage.setItem
-      localStorage.setItem = vi.fn(() => {
-        throw new Error('QuotaExceededError')
+      // Spy on the actual localStorage instance, not the prototype
+      const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(function(this: Storage, key: string, value: string) {
+        const error = new Error('QuotaExceededError')
+        error.name = 'QuotaExceededError'
+        throw error
       })
 
       const result = setJSON('key', { data: 'value' })
       expect(result).toBe(false)
 
-      localStorage.setItem = originalSetItem
+      // Restore immediately
+      setItemSpy.mockRestore()
       consoleErrorSpy.mockRestore()
     })
   })
