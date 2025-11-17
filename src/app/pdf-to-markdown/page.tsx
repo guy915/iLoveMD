@@ -398,7 +398,7 @@ export default function PdfToMarkdownPage() {
         // Batch conversion
         if (mode === 'free') {
           // Free mode: use batch service with parallel processing (up to 10 concurrent)
-          setStatus('Processing batch...')
+          setStatus('Uploading...')
 
           // Dynamically import batch service with error handling
           let convertBatchPdfToMarkdownLocal: typeof import('@/lib/services/batchConversionService').convertBatchPdfToMarkdownLocal
@@ -450,12 +450,12 @@ export default function PdfToMarkdownPage() {
           if (isMountedRef.current) {
             setBatchZipBlob(result.zipBlob)
             setBatchZipFilename(zipName)
-            setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted. Click Download.`)
+            setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted.`)
             setProcessing(false)
           }
         } else {
           // Paid mode - use batch service
-          setStatus('Processing batch...')
+          setStatus('Uploading...')
 
           // Dynamically import batch service with error handling
           let convertBatchPdfToMarkdown: typeof import('@/lib/services/batchConversionService').convertBatchPdfToMarkdown
@@ -515,12 +515,12 @@ export default function PdfToMarkdownPage() {
       } else {
         // Single file conversion
         const file = files[0]
-        setStatus(mode === 'paid' ? 'Submitting to Marker API...' : 'Submitting to Modal...')
+        setStatus('Uploading...')
 
         const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
           if (!isMountedRef.current) return
           const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
-          setStatus(`Processing PDF... (${attemptNumber}/${maxAttempts} checks, ${elapsedSeconds.toFixed(0)}s elapsed)`)
+          setStatus(`Processing...`)
         }
 
         // Call appropriate conversion function based on mode
@@ -555,7 +555,7 @@ export default function PdfToMarkdownPage() {
         if (isMountedRef.current) {
           setConvertedMarkdown(result.markdown)
           setOutputFilename(filename)
-          setStatus('Conversion complete! Click Download to save the file.')
+          setStatus('Conversion complete!')
           setProcessing(false)
         }
       }
@@ -751,8 +751,6 @@ export default function PdfToMarkdownPage() {
         >
           <div className="bg-white rounded-2xl shadow-2xl p-12 border-4 border-dashed border-blue-500 pointer-events-none">
             <p className="text-3xl font-bold text-blue-600 mb-2">Drop PDF files here</p>
-            <p className="text-lg text-gray-600">Release to upload</p>
-            <p className="text-sm text-gray-500 mt-2">Note: Use &quot;Browse Folders&quot; button for folders</p>
           </div>
         </div>
       )}
@@ -765,7 +763,7 @@ export default function PdfToMarkdownPage() {
           PDF to Markdown
         </h1>
         <p className="text-lg text-gray-600">
-          Convert PDF files to Markdown format using Marker
+          Convert PDF files into clean Markdown
         </p>
       </div>
 
@@ -845,7 +843,7 @@ export default function PdfToMarkdownPage() {
             >
               Get one here
             </a>
-            {' '}(Free credits available for testing)
+            {' '}($5 free credits available)
           </p>
         </div>
       )}
@@ -869,18 +867,18 @@ export default function PdfToMarkdownPage() {
           <p className="mt-2 text-sm text-gray-500">
             {options.use_llm ? (
               <>
-                Required when using LLM enhancement in free mode.{' '}
+                Don't have an API key?{' '}
                 <a
                   href="https://aistudio.google.com/app/apikey"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-700 underline"
                 >
-                  Get a free Gemini API key
+                  Get a free one here
                 </a>
               </>
             ) : (
-              'Enable "Use LLM enhancement" option below to activate this field'
+              'Enable "Use LLM enhancement" to activate this field'
             )}
           </p>
         </div>
@@ -945,7 +943,7 @@ export default function PdfToMarkdownPage() {
                 Browse Folders
               </span>
               <span className="text-sm text-gray-500 mt-1">
-                Select entire folder
+                Select entire folders
               </span>
             </label>
           </div>
@@ -1076,7 +1074,7 @@ export default function PdfToMarkdownPage() {
                 <span className="text-blue-600 animate-spin text-2xl">⟳</span>
               )}
               <p className="text-base font-semibold text-gray-900">
-                {status || 'Converting PDF to Markdown...'}
+                {status || 'Converting to Markdown...'}
               </p>
             </div>
             {processing && (
@@ -1107,7 +1105,7 @@ export default function PdfToMarkdownPage() {
               )}
               <p className="text-base font-semibold text-gray-900">
                 {batchProgress && processing
-                  ? `Converting ${batchProgress.completed}/${batchProgress.total} files`
+                  ? `Processing ${batchProgress.completed}/${batchProgress.total} files...`
                   : status}
               </p>
             </div>
@@ -1158,7 +1156,7 @@ export default function PdfToMarkdownPage() {
             onClick={handleDownload}
             variant="primary"
           >
-            Download Markdown
+            Download
           </Button>
         )}
 
@@ -1170,56 +1168,6 @@ export default function PdfToMarkdownPage() {
           >
             Download ZIP
           </Button>
-        )}
-      </div>
-
-      {/* Info Section */}
-      <div className="mt-12 bg-gray-50 rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          How it works
-        </h2>
-        {mode === 'paid' ? (
-          <>
-            <ul className="space-y-2 text-gray-600">
-              <li>1. Enter your Marker API key (test key provided by default)</li>
-              <li>2. Upload PDF file(s) or select a folder (up to 200MB per file)</li>
-              <li>3. Configure conversion options (optional)</li>
-              <li>4. Click &quot;Convert to Markdown&quot;</li>
-              <li>5. Wait for processing (batch: 200 files processed in parallel)</li>
-              <li>6. Click &quot;Download&quot; to save your file(s)</li>
-            </ul>
-            <p className="mt-4 text-sm text-gray-500">
-              <strong>Batch Processing:</strong> Select multiple files or folders for automatic batch conversion.
-              Output is a ZIP file containing all converted markdowns.
-              Supports up to 10,000 files or 100GB total.
-            </p>
-            <p className="mt-2 text-sm text-gray-500">
-              Note: Your files are never stored on our servers - processing happens through the Marker API.
-              Batch conversions process up to 200 files concurrently with automatic retry on failure.
-            </p>
-          </>
-        ) : (
-          <>
-            <ul className="space-y-2 text-gray-600">
-              <li>1. Select &quot;Free&quot; mode (GPU-powered via Modal)</li>
-              <li>2. If using LLM enhancement, enter your Gemini API key</li>
-              <li>3. Upload PDF file(s)</li>
-              <li>4. Configure conversion options</li>
-              <li>5. Click &quot;Convert to Markdown&quot;</li>
-              <li>6. Wait 30-90 seconds (first run may take longer)</li>
-              <li>7. Click &quot;Download&quot; to save your file</li>
-            </ul>
-            <p className="mt-4 text-sm text-gray-500">
-              <strong>Free Mode:</strong> Uses Modal.com serverless GPU (NVIDIA T4) with $30/month in free credits.
-              Processing takes 30-90 seconds per PDF. May have a 20-30 second &quot;cold start&quot; if the service was idle.
-              Free tier covers ~100-200 PDFs/month, no API key required!
-            </p>
-            <p className="mt-2 text-sm text-gray-500">
-              <strong>Batch Processing:</strong> Select multiple files or folders for automatic batch conversion.
-              Output is a ZIP file containing all converted markdowns.
-              Free mode processes up to 10 files concurrently (slower but free).
-            </p>
-          </>
         )}
       </div>
       </div>
