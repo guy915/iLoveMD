@@ -34,7 +34,7 @@ const ToolTile = memo(function ToolTile({ title, description, href, icon }: Tool
   return (
     <Link
       href={href}
-      className="flex flex-col items-center text-center h-full p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
+      className="flex flex-col items-center text-center h-full min-h-[280px] p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
       onClick={handleClick}
     >
       {/* Icon */}
