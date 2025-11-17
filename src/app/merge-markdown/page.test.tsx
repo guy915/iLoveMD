@@ -755,16 +755,16 @@ describe('MergeMarkdownPage', () => {
     it('should change separator to newlines only', () => {
       render(<MergeMarkdownPage />)
       const newlineRadio = screen.getByRole('radio', { name: /Newline/ })
-      const pageBreakRadio = screen.getByRole('radio', { name: /Horizontal rule/ })
+      const horizontalRuleRadio = screen.getByRole('radio', { name: /^Horizontal rule$/ })
 
       expect(newlineRadio).toBeChecked() // Default
 
-      fireEvent.click(pageBreakRadio)
+      fireEvent.click(horizontalRuleRadio)
       expect(mockAddLog).toHaveBeenCalledWith('info', 'Separator changed to: horizontal rule')
-      expect(pageBreakRadio).toBeChecked()
+      expect(horizontalRuleRadio).toBeChecked()
 
       fireEvent.click(newlineRadio)
-      expect(mockAddLog).toHaveBeenCalledWith('info', 'Separator changed to: newlines')
+      expect(mockAddLog).toHaveBeenCalledWith('info', 'Separator changed to: newline')
       expect(newlineRadio).toBeChecked()
     })
   })
@@ -874,8 +874,8 @@ describe('MergeMarkdownPage', () => {
         expect(screen.getByText('test.md')).toBeInTheDocument()
       })
 
-      // Change to horizontal rule
-      const pageBreakRadio = screen.getByRole('radio', { name: /Horizontal rule/ })
+      // Change to page break
+      const pageBreakRadio = screen.getByRole('radio', { name: /^Page break$/ })
       fireEvent.click(pageBreakRadio)
 
       const mergeButton = screen.getByRole('button', { name: 'Merge' })

@@ -271,7 +271,12 @@ export default function PdfToMarkdownPage() {
             onProgress: (progress: BatchProgress) => {
               if (isMountedRef.current) {
                 setBatchProgress(progress)
-                setStatus(`Processing... ${progress.completed}/${progress.total} complete (${progress.inProgress} in progress)`)
+                // Show "Uploading..." initially, then switch to "Processing..." once files start completing
+                if (progress.completed === 0 && progress.inProgress > 0) {
+                  setStatus('Uploading...')
+                } else {
+                  setStatus(`Processing... ${progress.completed}/${progress.total} complete (${progress.inProgress} in progress)`)
+                }
               }
             },
             signal: abortControllerRef.current.signal
@@ -304,6 +309,8 @@ export default function PdfToMarkdownPage() {
             setBatchZipFilename(zipName)
             setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted.`)
             setProcessing(false)
+            // Auto-clear uploaded files after successful batch conversion
+            handleClearFiles()
           }
         } else {
           // Paid mode - use batch service
@@ -328,7 +335,12 @@ export default function PdfToMarkdownPage() {
             onProgress: (progress: BatchProgress) => {
               if (isMountedRef.current) {
                 setBatchProgress(progress)
-                setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+                // Show "Uploading..." initially, then switch to "Processing..." once files start completing
+                if (progress.completed === 0 && progress.inProgress > 0) {
+                  setStatus('Uploading...')
+                } else {
+                  setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+                }
               }
             },
             signal: abortControllerRef.current.signal
@@ -361,6 +373,8 @@ export default function PdfToMarkdownPage() {
             setBatchZipFilename(zipName)
             setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted.`)
             setProcessing(false)
+            // Auto-clear uploaded files after successful batch conversion
+            handleClearFiles()
           }
         }
 
@@ -409,6 +423,8 @@ export default function PdfToMarkdownPage() {
           setOutputFilename(filename)
           setStatus('Conversion complete!')
           setProcessing(false)
+          // Auto-clear uploaded files after successful conversion
+          handleClearFiles()
         }
       }
 
@@ -424,7 +440,7 @@ export default function PdfToMarkdownPage() {
     } finally {
       abortControllerRef.current = null
     }
-  }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, filenameMap, addLog])
+  }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, filenameMap, addLog, handleClearFiles])
 
   const handleDownload = useCallback(async () => {
     if (!convertedMarkdown || !outputFilename) return

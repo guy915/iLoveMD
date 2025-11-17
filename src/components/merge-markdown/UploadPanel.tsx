@@ -137,7 +137,7 @@ export function UploadPanel({
                     checked={separatorStyle === 'newline'}
                     onChange={(e) => {
                       onSeparatorChange(e.target.value as SeparatorStyle)
-                      addLog('info', 'Separator changed to: newlines')
+                      addLog('info', 'Separator changed to: newline')
                     }}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                   />
@@ -148,8 +148,8 @@ export function UploadPanel({
                   <input
                     type="radio"
                     name="separator"
-                    value="page-break"
-                    checked={separatorStyle === 'page-break'}
+                    value="horizontal-rule"
+                    checked={separatorStyle === 'horizontal-rule'}
                     onChange={(e) => {
                       onSeparatorChange(e.target.value as SeparatorStyle)
                       addLog('info', 'Separator changed to: horizontal rule')
@@ -157,6 +157,21 @@ export function UploadPanel({
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                   />
                   <span className="text-sm text-gray-700">Horizontal rule</span>
+                </label>
+
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="separator"
+                    value="page-break"
+                    checked={separatorStyle === 'page-break'}
+                    onChange={(e) => {
+                      onSeparatorChange(e.target.value as SeparatorStyle)
+                      addLog('info', 'Separator changed to: page break')
+                    }}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-gray-700">Page break</span>
                 </label>
               </div>
             </div>
