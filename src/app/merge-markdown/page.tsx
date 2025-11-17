@@ -1,25 +1,19 @@
 'use client'
 
-import { useState, useCallback, ChangeEvent, DragEvent } from 'react'
+import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 import { formatFileSize } from '@/lib/utils/formatUtils'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import { useFileDragAndDrop } from '@/hooks/useFileDragAndDrop'
 import { FileCard, UploadPanel } from '@/components/merge-markdown'
-
-interface MarkdownFile {
-  id: string
-  file: File
-  content: string
-}
-
-type SeparatorStyle = 'newline' | 'page-break'
+import type { MarkdownFile, SeparatorStyle } from '@/types/markdown'
 
 export default function MergeMarkdownPage() {
   const { addLog } = useLogs()
   const [separatorStyle, setSeparatorStyle] = useState<SeparatorStyle>('newline')
   const [addHeaders, setAddHeaders] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Use custom hooks
   const {
@@ -88,7 +82,7 @@ export default function MergeMarkdownPage() {
   // Handle click on empty canvas area
   const handleEmptyCanvasClick = useCallback(() => {
     addLog('info', 'Empty canvas area clicked - opening file browser')
-    // This will be handled by the UploadPanel component
+    fileInputRef.current?.click()
   }, [addLog])
 
   // Drag and drop handlers for canvas
@@ -292,6 +286,16 @@ export default function MergeMarkdownPage() {
 
   return (
     <>
+      {/* Hidden file input for empty canvas click */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".md,.markdown"
+        multiple
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
       {/* Hide footer on this page only */}
       <style dangerouslySetInnerHTML={{ __html: `
         footer {
