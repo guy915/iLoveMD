@@ -26,8 +26,8 @@ export default function PdfToMarkdownPage() {
 
   // Use custom hooks for state management
   const { mode, setMode, mounted } = useConversionMode()
-  const { apiKey, setApiKey, geminiApiKey, setGeminiApiKey, hasLoadedKeys } = useApiKeys()
-  const { options, handleOptionChange, hasLoadedOptions } = useConversionOptions()
+  const { apiKey, setApiKey, geminiApiKey, setGeminiApiKey } = useApiKeys()
+  const { options, handleOptionChange } = useConversionOptions()
 
   // File state - supports both single and batch
   const [files, setFiles] = useState<File[]>([])
