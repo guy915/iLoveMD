@@ -210,11 +210,6 @@ describe('batchConversionService', () => {
 
       const result = await convertBatchPdfToMarkdown([file], options)
 
-      // Debug: log result if test fails
-      if (!result.success) {
-        console.log('Test failed, result:', result)
-      }
-
       expect(result.success).toBe(true)
       expect(result.completed).toHaveLength(1)
       expect(result.failed).toHaveLength(0)
