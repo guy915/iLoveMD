@@ -28,7 +28,7 @@ const isVitest =
 /**
  * Status of an individual file conversion
  */
-export type FileConversionStatus = 'pending' | 'processing' | 'complete' | 'failed'
+export type FileConversionStatus = 'pending' | 'processing' | 'complete' | 'failed' | 'cancelled'
 
 /**
  * Result of a single file conversion
@@ -52,6 +52,7 @@ export interface BatchProgress {
   total: number
   completed: number
   failed: number
+  cancelled: number
   inProgress: number
   results: FileConversionResult[]
 }
@@ -179,6 +180,7 @@ function initializeBatchProgress(files: File[]): { results: FileConversionResult
     total: files.length,
     completed: 0,
     failed: 0,
+    cancelled: 0,
     inProgress: 0,
     results
   }
@@ -222,7 +224,7 @@ async function convertFileWithRetry(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     if (signal?.aborted) {
-      result.status = 'failed'
+      result.status = 'cancelled'
       result.error = 'Conversion cancelled'
       break
     }
@@ -324,6 +326,12 @@ export async function convertBatchPdfToMarkdown(
             signal
           )
 
+          // Check if cancelled after conversion (even if it completed)
+          if (signal?.aborted) {
+            result.status = 'cancelled'
+            result.error = 'Conversion cancelled'
+          }
+
           // Update result
           results[resultIndex] = result
 
@@ -333,6 +341,8 @@ export async function convertBatchPdfToMarkdown(
             progress.completed++
           } else if (result.status === 'failed') {
             progress.failed++
+          } else if (result.status === 'cancelled') {
+            progress.cancelled++
           }
 
           updateProgress()
@@ -434,6 +444,11 @@ export async function convertBatchPdfToMarkdownLocal(
   // Process files with concurrency control
   const processFile = async (index: number): Promise<void> => {
     if (signal?.aborted) {
+      // Mark file as cancelled and update progress counters
+      results[index].status = 'cancelled'
+      results[index].error = 'Conversion cancelled'
+      progress.cancelled++
+      updateProgress()
       return
     }
 
@@ -452,14 +467,22 @@ export async function convertBatchPdfToMarkdownLocal(
       signal
     )
 
+    // Check if cancelled after conversion (even if it completed)
+    if (signal?.aborted) {
+      result.status = 'cancelled'
+      result.error = 'Conversion cancelled'
+    }
+
     results[index] = result
-    
+
     if (result.status === 'complete') {
       progress.completed++
-    } else {
+    } else if (result.status === 'failed') {
       progress.failed++
+    } else if (result.status === 'cancelled') {
+      progress.cancelled++
     }
-    
+
     // Remove this promise from active set
     activePromises.delete(index)
     progress.inProgress = activePromises.size
@@ -481,21 +504,30 @@ export async function convertBatchPdfToMarkdownLocal(
     // Process first file alone (no delay)
     await processFile(0)
     currentIndex = 1
-    
+
     // Start remaining files with staggered delays (5 seconds between each)
     // This gives each container time to initialize models before the next one starts
     // Combined with Modal-side retry logic, this should eliminate meta tensor errors
     const remainingFiles = files.length - 1
     for (let i = 0; i < remainingFiles; i++) {
+      // Check if cancelled before queuing more files
+      if (signal?.aborted) {
+        break
+      }
+
       const fileIndex = i + 1
       currentIndex = fileIndex + 1
-      
+
       // Stagger starts: delay between each file submission
       // This prevents multiple cold containers from hitting model init simultaneously
       if (i > 0) {
         await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.BATCH.STAGGER_DELAY_MS))
+        // Check again after delay in case user cancelled during wait
+        if (signal?.aborted) {
+          break
+        }
       }
-      
+
       const promise = processFile(fileIndex)
       activePromises.set(fileIndex, promise)
       allPromises.push(promise)
@@ -506,6 +538,11 @@ export async function convertBatchPdfToMarkdownLocal(
   // We need to wait for all promises, including those added dynamically in the finally blocks
   // Keep waiting until all files have been processed
   while (activePromises.size > 0 || currentIndex < files.length) {
+    // Check if cancelled - stop waiting for new files to queue
+    if (signal?.aborted) {
+      break
+    }
+
     // Wait for at least one promise to complete
     if (activePromises.size > 0) {
       await Promise.race(Array.from(activePromises.values()))
