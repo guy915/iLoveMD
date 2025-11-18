@@ -307,31 +307,31 @@ Page 4`)
                 })
 
                 describe('edge cases', () => {
-                        it('should IGNORE markers with incorrect dash counts', () => {
-                                const input = `{0}---
+                        it('should handle markers with varying dash counts (at least 40)', () => {
+                                const input = `{0}----------------------------------------
 Content 1
 
-${mk(1)}
+{1}------------------------------------------------
 Content 2
 
-{2}------
+{2}---------------------------------------
 Content 3`
 
-                                // Should only process the valid marker {1}
-                                // {0}--- and {2}------ should be treated as normal text
+                                // {0} has 40 dashes (valid)
+                                // {1} has 48 dashes (valid)
+                                // {2} has 39 dashes (invalid)
+
                                 const result = cleanupPdfMarkdown(input, 'separators_only')
 
-                                expect(result).toBe(`{0}---
-Content 1
+                                expect(result).toBe(`Content 1
 
 ---
 
 Content 2
 
-{2}------
+{2}---------------------------------------
 Content 3`)
                         })
-
                         it('should normalize excessive newlines', () => {
                                 const input = `${mk(0)}
 

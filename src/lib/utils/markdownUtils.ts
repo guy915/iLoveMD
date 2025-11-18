@@ -35,8 +35,10 @@ export function cleanupPdfMarkdown(
 ): string {
   if (!markdown) return ''
 
-  // EXACT pattern: {x}------------------------------------------------ (exactly 48 dashes)
-  const pageMarkerPattern = /\{(\d+)\}-{48}/g
+  // Pattern: {x} followed by at least 40 dashes
+  // We relax this slightly from 48 to handle potential off-by-one errors or variations
+  // while still being long enough to avoid false positives.
+  const pageMarkerPattern = /\{(\d+)\}-{40,}/g
 
   if (pageFormat === 'none') {
     let withoutMarkers = markdown.replace(pageMarkerPattern, '')
@@ -68,7 +70,7 @@ export function cleanupPdfMarkdown(
     const marker = markers[i]
 
     if (marker.pageNum === 0) {
-      // First marker ({0}---): remove entirely
+      // Remove {0}--- entirely
       result = result.substring(0, marker.index) + result.substring(marker.index + marker.length)
     } else {
       let replacement = ''
@@ -94,6 +96,9 @@ export function cleanupPdfMarkdown(
     const lastPageNum = markers[markers.length - 1].pageNum
     result = `${result}\n\nPage ${lastPageNum + 1}`
   }
+
+  // DEBUG: Add footer to verify function call
+  // result += `\n\n<!-- DEBUG: cleanupPdfMarkdown called with format: ${pageFormat}, markers found: ${markers.length} -->`
 
   return result
 }
