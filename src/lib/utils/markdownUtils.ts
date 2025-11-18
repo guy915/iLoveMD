@@ -35,22 +35,18 @@ export function cleanupPdfMarkdown(
 ): string {
   if (!markdown) return ''
 
-  // Pattern to match {x}------------------------------------------------ or {x}---...
-  const pageMarkerPattern = /\{(\d+)\}[-]+/g
+  // EXACT pattern: {x}------------------------------------------------ (exactly 48 dashes)
+  const pageMarkerPattern = /\{(\d+)\}-{48}/g
 
-  // If no page format needed, just remove markers and trim
   if (pageFormat === 'none') {
     let withoutMarkers = markdown.replace(pageMarkerPattern, '')
-    // Normalize excessive newlines that were left behind by removing markers
     withoutMarkers = withoutMarkers.replace(/\n{3,}/g, '\n\n')
     return trimMarkdown(withoutMarkers)
   }
 
-  // Find all page markers
+  // Find all markers
   const markers: Array<{ pageNum: number; index: number; length: number }> = []
   let match: RegExpExecArray | null
-
-  // Reset regex state
   pageMarkerPattern.lastIndex = 0
 
   while ((match = pageMarkerPattern.exec(markdown)) !== null) {
@@ -62,42 +58,38 @@ export function cleanupPdfMarkdown(
   }
 
   if (markers.length === 0) {
-    // No markers found, just trim
     return trimMarkdown(markdown)
   }
 
   let result = markdown
 
-  // Process markers in reverse order to avoid index shifting
+  // Process in reverse to avoid index shifting
   for (let i = markers.length - 1; i >= 0; i--) {
     const marker = markers[i]
-    let replacement = ''
 
-    if (i === 0) {
+    if (marker.pageNum === 0) {
       // First marker ({0}---): remove entirely
-      replacement = ''
+      result = result.substring(0, marker.index) + result.substring(marker.index + marker.length)
     } else {
-      // Subsequent markers: replace based on format
+      let replacement = ''
+
       if (pageFormat === 'with_numbers') {
-        // Format: \n\nPage x\n\n---\n\n (blank line before, blank line after)
+        // Format: \nPage x\n\n---\n
         replacement = `\n\nPage ${marker.pageNum}\n\n---\n\n`
       } else if (pageFormat === 'separators_only') {
-        // Format: \n\n---\n\n (blank line before, blank line after)
-        replacement = '\n\n---\n\n'
+        // Format: \n---\n
+        replacement = `\n\n---\n\n`
       }
-    }
 
-    result = result.substring(0, marker.index) + replacement + result.substring(marker.index + marker.length)
+      result = result.substring(0, marker.index) + replacement + result.substring(marker.index + marker.length)
+    }
   }
 
-  // Normalize excessive whitespace around markers
-  // Replace 3+ newlines with exactly 2 newlines (one blank line)
+  // Normalize excessive whitespace
   result = result.replace(/\n{3,}/g, '\n\n')
+  result = trimMarkdown(result)
 
-  // Trim the entire result
-  result = result.trim()
-
-  // Add final page number at the end (if using page numbers and we have markers)
+  // Add final page number
   if (pageFormat === 'with_numbers' && markers.length > 0) {
     const lastPageNum = markers[markers.length - 1].pageNum
     result = `${result}\n\nPage ${lastPageNum + 1}`
