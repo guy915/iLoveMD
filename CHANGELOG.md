@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **PDF to Markdown Cancel Button** (2025-11-17):
+  - Fixed cancel button not working properly in batch conversion mode (especially free mode)
+  - Fixed race condition where `processing` state was set to false before conversion actually stopped
+  - Fixed stagger loop in free mode batch conversion not checking abort signal during delays
+  - Fixed files being left in 'processing' state when cancelled (now properly marked as 'cancelled')
+  - Fixed cancelled files being counted as failed when API calls completed after cancellation
+  - Fixed waiting loop continuing to wait for files even after cancellation
+  - Added diagnostic logging to cancel button to track cancellation progress
+  - **UI Improvements**:
+    - Fixed red error background appearing on cancellation (now shows normal status)
+    - Cancellation now shows neutral "Conversion cancelled" message without error styling
+    - Only actual errors show red background, cancellations are handled gracefully
+    - "Failed: x" message no longer shows cancelled files (only shows actual failures)
+  - **Page Unload Protection**:
+    - Added automatic cancellation on page unload/refresh/close
+    - Browser warning dialog appears when closing during active conversion
+    - Prevents accidental loss of conversion progress
+  - **Cost Savings**:
+    - Frontend cancellation prevents new conversions from starting
+    - Already-running backend operations complete but no new ones are queued
+    - Note: Backend cancellation not supported by Marker API or Modal API
+  - All 616 tests passing, build successful
 - **UI/UX Improvements** (2025-11-17):
   - Fixed Next.js Image warning for logo SVG by adding `height: 'auto'` style
   - Fixed homepage tool cards to have better proportions (240px min-height instead of 280px)
