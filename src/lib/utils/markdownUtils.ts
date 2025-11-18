@@ -87,15 +87,16 @@ export function cleanupPdfMarkdown(
 
   // Normalize excessive whitespace
   result = result.replace(/\n{3,}/g, '\n\n')
-  result = trimMarkdown(result)
 
   // Add final page number
   if (pageFormat === 'with_numbers' && markers.length > 0) {
     const lastPageNum = markers[markers.length - 1].pageNum
+    // Ensure we append to a trimmed string to avoid double newlines
+    result = trimMarkdown(result)
     result = `${result}\n\nPage: ${lastPageNum + 1}`
   }
 
-  return result
+  return trimMarkdown(result)
 }
 
 /**
