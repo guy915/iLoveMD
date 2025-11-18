@@ -32,9 +32,7 @@ export function ConversionStatus({
             <span className="text-blue-600 animate-spin text-2xl">⟳</span>
           )}
           <p className="text-base font-semibold text-gray-900">
-            {isBatch && batchProgress && processing
-              ? `Processing ${batchProgress.completed}/${batchProgress.total} files...`
-              : status || 'Converting to Markdown...'}
+            {status || 'Converting to Markdown...'}
           </p>
         </div>
         {processing && (
