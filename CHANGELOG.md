@@ -15,6 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed files being left in 'processing' state when cancelled (now properly marked as 'failed')
   - Fixed waiting loop continuing to wait for files even after cancellation
   - Added diagnostic logging to cancel button to track cancellation progress
+  - **UI Improvements**:
+    - Fixed red error background appearing on cancellation (now shows normal status)
+    - Cancellation now shows neutral "Conversion cancelled" message without error styling
+    - Only actual errors show red background, cancellations are handled gracefully
+  - **Page Unload Protection**:
+    - Added automatic cancellation on page unload/refresh/close
+    - Browser warning dialog appears when closing during active conversion
+    - Prevents accidental loss of conversion progress
+  - **Cost Savings**:
+    - Frontend cancellation prevents new conversions from starting
+    - Already-running backend operations complete but no new ones are queued
+    - Note: Backend cancellation not supported by Marker API or Modal API
   - All 616 tests passing, build successful
 
 ### Added
