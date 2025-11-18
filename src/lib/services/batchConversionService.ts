@@ -326,6 +326,12 @@ export async function convertBatchPdfToMarkdown(
             signal
           )
 
+          // Check if cancelled after conversion (even if it completed)
+          if (signal?.aborted) {
+            result.status = 'cancelled'
+            result.error = 'Conversion cancelled'
+          }
+
           // Update result
           results[resultIndex] = result
 
@@ -460,6 +466,12 @@ export async function convertBatchPdfToMarkdownLocal(
       maxRetries,
       signal
     )
+
+    // Check if cancelled after conversion (even if it completed)
+    if (signal?.aborted) {
+      result.status = 'cancelled'
+      result.error = 'Conversion cancelled'
+    }
 
     results[index] = result
 
