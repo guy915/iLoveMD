@@ -593,11 +593,17 @@ export default function PdfToMarkdownPage() {
 
   const handleCancel = useCallback(() => {
     if (abortControllerRef.current) {
+      addLog('info', 'User clicked cancel button', {
+        filesInProgress: batchProgress?.inProgress || 0,
+        filesCompleted: batchProgress?.completed || 0,
+        filesFailed: batchProgress?.failed || 0
+      })
       abortControllerRef.current.abort()
       setStatus('Cancelling...')
-      setProcessing(false)
+      // Don't set processing(false) here - let the conversion promise complete
+      // The catch/finally blocks will handle cleanup properly
     }
-  }, [])
+  }, [addLog, batchProgress])
 
   return (
     <>
