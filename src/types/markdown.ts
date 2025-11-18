@@ -8,4 +8,4 @@ export interface MarkdownFile {
 
 export type SortMode = 'none' | 'alphabetical' | 'reverseAlphabetical'
 
-export type SeparatorStyle = 'newline' | 'page-break'
+export type SeparatorStyle = 'newline' | 'horizontal-rule' | 'page-break'

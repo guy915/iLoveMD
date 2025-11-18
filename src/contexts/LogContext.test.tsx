@@ -124,10 +124,26 @@ describe('LogContext', () => {
       )
     })
 
-    it.skip('should restore log counter from sessionStorage', () => {
-      // Skip: Global counter variable makes this test non-deterministic in test environment
-      // Counter restoration is tested via integration testing and manual verification
-      // The implementation properly reads from sessionStorage (line 92-97)
+    it('should restore log counter from sessionStorage', () => {
+      // Set a counter value in sessionStorage before creating the provider
+      mockStorage.setItem('diagnosticLogCounter', '42')
+
+      // Create a fresh wrapper to get a new provider instance
+      function FreshWrapper({ children }: { children: ReactNode }) {
+        return <LogProvider>{children}</LogProvider>
+      }
+
+      const { result } = renderHook(() => useLogs(), {
+        wrapper: FreshWrapper
+      })
+
+      // Add a log and verify it uses the restored counter value
+      act(() => {
+        result.current.addLog('info', 'Test after restore')
+      })
+
+      // The log should have ID 42 (the restored counter value)
+      expect(result.current.logs[0].id).toBe(42)
     })
   })
 
@@ -409,16 +425,80 @@ describe('LogContext', () => {
   })
 
   describe('sessionStorage error handling', () => {
-    it.skip('should handle quota exceeded error gracefully', () => {
-      // Skip: Complex interaction between storage errors and console interception in test environment
-      // The implementation properly handles quota errors (line 52-60)
-      // Verified manually and via browser testing
+    it('should handle quota exceeded error gracefully', async () => {
+      // Suppress console warnings for this test
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const { result } = renderHook(() => useLogs(), {
+        wrapper: createWrapper()
+      })
+
+      // Add initial log
+      act(() => {
+        result.current.addLog('info', 'Before quota error')
+      })
+
+      // Mock setItem to throw QuotaExceededError
+      mockStorage.setItem.mockImplementationOnce(() => {
+        const error = new Error('QuotaExceededError')
+        error.name = 'QuotaExceededError'
+        throw error
+      })
+
+      // Add log that will trigger quota error during debounced save
+      act(() => {
+        result.current.addLog('info', 'During quota error')
+      })
+
+      // Wait for debounce and storage attempt
+      await waitFor(() => {
+        expect(mockStorage.setItem).toHaveBeenCalled()
+      }, { timeout: 2000 })
+
+      // Should still have both logs in memory
+      expect(result.current.logs).toHaveLength(2)
+      expect(result.current.logs[0].message).toBe('Before quota error')
+      expect(result.current.logs[1].message).toBe('During quota error')
+
+      consoleWarnSpy.mockRestore()
     })
 
-    it.skip('should handle storage unavailable error gracefully', () => {
-      // Skip: Complex interaction between storage errors and module state in test environment
-      // The implementation properly handles storage unavailable (line 61-69)
-      // Verified manually and via browser testing
+    it('should handle storage unavailable error gracefully', () => {
+      // Temporarily make sessionStorage return null (SSR-like environment)
+      const originalSessionStorage = Object.getOwnPropertyDescriptor(window, 'sessionStorage')
+      Object.defineProperty(window, 'sessionStorage', {
+        get() {
+          return undefined as unknown as Storage
+        },
+        configurable: true
+      })
+
+      // Suppress console warnings for this test
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      // Create fresh wrapper with unavailable storage
+      function FreshWrapper({ children }: { children: ReactNode }) {
+        return <LogProvider>{children}</LogProvider>
+      }
+
+      const { result } = renderHook(() => useLogs(), {
+        wrapper: FreshWrapper
+      })
+
+      // Should still be able to add logs (they just won't persist)
+      act(() => {
+        result.current.addLog('info', 'Test without storage')
+      })
+
+      expect(result.current.logs).toHaveLength(1)
+      expect(result.current.logs[0].message).toBe('Test without storage')
+
+      // Restore sessionStorage
+      if (originalSessionStorage) {
+        Object.defineProperty(window, 'sessionStorage', originalSessionStorage)
+      }
+
+      consoleWarnSpy.mockRestore()
     })
 
     it('should continue working after storage errors', () => {
@@ -552,10 +632,31 @@ describe('LogContext', () => {
       expect(result.current.logs).toHaveLength(0)
     })
 
-    it.skip('should capture unhandled promise rejections', () => {
-      // Skip: PromiseRejectionEvent is not available in jsdom test environment
-      // This functionality is tested in browser environment via manual testing
-      // The event handler is properly set up in the implementation (line 510)
+    it('should capture unhandled promise rejections', () => {
+      const { result } = renderHook(() => useLogs(), {
+        wrapper: createWrapper()
+      })
+
+      // Create a mock PromiseRejectionEvent
+      const testError = new Error('Test rejection')
+      const rejectionEvent = new Event('unhandledrejection') as PromiseRejectionEvent
+      Object.defineProperty(rejectionEvent, 'reason', {
+        value: testError,
+        writable: false
+      })
+
+      act(() => {
+        window.dispatchEvent(rejectionEvent)
+      })
+
+      // Should capture the promise rejection
+      const rejectionLog = result.current.logs.find(log =>
+        log.message === 'Unhandled Promise Rejection'
+      )
+
+      expect(rejectionLog).toBeDefined()
+      expect(rejectionLog?.type).toBe('error')
+      expect(rejectionLog?.data?.reason).toContain('Test rejection')
     })
 
     it('should prevent infinite error loops during error logging', () => {
@@ -752,16 +853,75 @@ describe('LogContext', () => {
       expect(result.current.logs).toHaveLength(0)
     })
 
-    it.skip('should redact sensitive headers in fetch logs', () => {
-      // Skip: Fetch wrapping in test environment with mocked fetch is complex
-      // The implementation properly redacts headers (line 345-350)
-      // Verified via integration testing and manual verification
+    it('should redact sensitive headers in fetch logs', async () => {
+      const { result } = renderHook(() => useLogs(), {
+        wrapper: createWrapper()
+      })
+
+      const mockResponse = new Response('{"data": "test"}', { status: 200 })
+      fetchMock.mockResolvedValue(mockResponse)
+
+      // Wait a bit for provider to mount and wrap fetch
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 10))
+      })
+
+      // Make fetch call with sensitive headers
+      await act(async () => {
+        await fetch('https://api.example.com/test', {
+          headers: {
+            'Authorization': 'Bearer secret-token',
+            'X-API-Key': 'my-api-key',
+            'Content-Type': 'application/json'
+          }
+        })
+      })
+
+      // Find the request log
+      const requestLog = result.current.logs.find(log =>
+        log.message === 'Network Request (fetch)'
+      )
+
+      expect(requestLog).toBeDefined()
+
+      // Parse headers and verify redaction
+      const headersStr = requestLog?.data?.headers as string
+      const headers = JSON.parse(headersStr)
+
+      expect(headers.Authorization).toBe('[REDACTED]')
+      expect(headers['X-API-Key']).toBe('[REDACTED]')
+      expect(headers['Content-Type']).toBe('application/json')
     })
 
-    it.skip('should include timing information in fetch logs', () => {
-      // Skip: Fetch wrapping in test environment with mocked fetch is complex
-      // The implementation properly includes timing (line 368, 377)
-      // Verified via integration testing and manual verification
+    it('should include timing information in fetch logs', async () => {
+      const { result } = renderHook(() => useLogs(), {
+        wrapper: createWrapper()
+      })
+
+      const mockResponse = new Response('{"data": "test"}', { status: 200 })
+      fetchMock.mockResolvedValue(mockResponse)
+
+      // Wait for provider to mount and wrap fetch
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 10))
+      })
+
+      // Make fetch call
+      await act(async () => {
+        await fetch('https://api.example.com/test')
+      })
+
+      // Find the response log
+      const responseLog = result.current.logs.find(log =>
+        log.message === 'Network Response (fetch)'
+      )
+
+      expect(responseLog).toBeDefined()
+      expect(responseLog?.data).toHaveProperty('duration')
+
+      // Duration should be a string ending with 'ms'
+      const duration = responseLog?.data?.duration as string
+      expect(duration).toMatch(/^\d+ms$/)
     })
   })
 

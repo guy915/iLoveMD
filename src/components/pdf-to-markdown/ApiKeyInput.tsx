@@ -70,25 +70,19 @@ export function ApiKeyInput({
           onChange={(e: ChangeEvent<HTMLInputElement>) => setGeminiApiKey(e.target.value)}
           placeholder="Enter your Gemini API key"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-          disabled={disabled || !useLlm}
+          disabled={disabled}
           aria-label="Gemini API Key"
         />
         <p className="mt-2 text-sm text-gray-500">
-          {useLlm ? (
-            <>
-              Don&apos;t have an API key?{' '}
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-700 underline"
-              >
-                Get a free one here
-              </a>
-            </>
-          ) : (
-            'Enable "Use LLM enhancement" to activate this field'
-          )}
+          Don&apos;t have an API key?{' '}
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-700 underline"
+          >
+            Get a free one here
+          </a>
         </p>
       </div>
     )

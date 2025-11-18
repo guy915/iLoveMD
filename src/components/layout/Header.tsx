@@ -97,6 +97,7 @@ export default function Header() {
                 alt="iLoveLLM"
                 width={120}
                 height={40}
+                style={{ height: 'auto' }}
                 priority
               />
             </Link>
