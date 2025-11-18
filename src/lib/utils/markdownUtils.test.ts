@@ -179,29 +179,29 @@ ${mk(4)}
                                 expect(result).toBe(`### Data Mining CSE2525
 Nov 10, 2025 -2026
 
-Page 1
+Page: 1
 
 ---
 
-Page 2
+Page: 2
 
 ---
 
 ### Sicco Verwer
 
-Page 3
+Page: 3
 
 ---
 
 ### Avishek Anand
 
-Page 4
+Page: 4
 
 ---
 
 ### Nergis Tömen
 
-Page 5`)
+Page: 5`)
                         })
 
                         it('should add page numbers with separators between them', () => {
@@ -218,19 +218,19 @@ Page 2 content`
 
                                 expect(result).toBe(`Page 0 content
 
-Page 1
+Page: 1
 
 ---
 
 Page 1 content
 
-Page 2
+Page: 2
 
 ---
 
 Page 2 content
 
-Page 3`)
+Page: 3`)
                         })
 
                         it('should handle single marker', () => {
@@ -241,7 +241,7 @@ Only content`
                                 // With only {0}, add Page 1 at the end
                                 expect(result).toBe(`Only content
 
-Page 1`)
+Page: 1`)
                         })
 
                         it('should add final page number at the end', () => {
@@ -258,19 +258,19 @@ Third`
 
                                 expect(result).toBe(`First
 
-Page 1
+Page: 1
 
 ---
 
 Second
 
-Page 2
+Page: 2
 
 ---
 
 Third
 
-Page 3`)
+Page: 3`)
                         })
 
                         it('should handle empty pages between markers', () => {
@@ -288,27 +288,27 @@ Fourth page`
 
                                 expect(result).toBe(`First page
 
-Page 1
+Page: 1
 
 ---
 
-Page 2
+Page: 2
 
 ---
 
-Page 3
+Page: 3
 
 ---
 
 Fourth page
 
-Page 4`)
+Page: 4`)
                         })
                 })
 
                 describe('edge cases', () => {
-                        it('should handle markers with varying dash counts (at least 40)', () => {
-                                const input = `{0}----------------------------------------
+                        it('should handle markers with varying dash counts (must be exactly 48)', () => {
+                                const input = `{0}------------------------------------------------
 Content 1
 
 {1}------------------------------------------------
@@ -317,9 +317,9 @@ Content 2
 {2}---------------------------------------
 Content 3`
 
-                                // {0} has 40 dashes (valid)
+                                // {0} has 48 dashes (valid)
                                 // {1} has 48 dashes (valid)
-                                // {2} has 39 dashes (invalid)
+                                // {2} has 39 dashes (invalid, ignored)
 
                                 const result = cleanupPdfMarkdown(input, 'separators_only')
 
@@ -332,6 +332,39 @@ Content 2
 {2}---------------------------------------
 Content 3`)
                         })
+
+                        it('should trim blank lines from beginning and end', () => {
+                                const input = `
+        
+${mk(0)}
+
+Content starts here
+
+${mk(1)}
+
+Content ends here
+
+        `
+                                // Should remove leading newlines/spaces before content
+                                // Should remove trailing newlines/spaces after content
+                                // Should normalize internal newlines
+
+                                const result = cleanupPdfMarkdown(input, 'separators_only')
+
+                                // Expected:
+                                // No leading whitespace
+                                // Content starts here
+                                // \n\n---\n\n
+                                // Content ends here
+                                // No trailing whitespace
+
+                                expect(result).toBe(`Content starts here
+
+---
+
+Content ends here`)
+                        })
+
                         it('should normalize excessive newlines', () => {
                                 const input = `${mk(0)}
 
@@ -361,25 +394,20 @@ More`)
                         })
 
                         it('should handle markers at the very end', () => {
-                                const input = `${mk(0)}
-Content
-
+                                const input = `Content
 ${mk(1)}`
-
                                 const result = cleanupPdfMarkdown(input, 'with_numbers')
-
                                 expect(result).toBe(`Content
 
-Page 1
+Page: 1
 
 ---
 
-Page 2`)
+Page: 2`)
                         })
 
                         it('should preserve markdown formatting within content', () => {
-                                const input = `${mk(0)}
-# Heading
+                                const input = `# Heading
 
 **Bold text**
 
@@ -394,7 +422,9 @@ code block
 
 ${mk(2)}
 
-[Link](https://example.com)`
+[Link](https://example.com)
+
+${mk(3)}`
 
                                 const result = cleanupPdfMarkdown(input, 'with_numbers')
 
@@ -405,7 +435,7 @@ ${mk(2)}
 - List item 1
 - List item 2
 
-Page 1
+Page: 1
 
 ---
 
@@ -413,15 +443,18 @@ Page 1
 code block
 \`\`\`
 
-Page 2
+Page: 2
 
 ---
 
 [Link](https://example.com)
 
-Page 3`)
+Page: 3
+
+---
+
+Page: 4`)
                         })
                 })
         })
 })
-
