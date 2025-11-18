@@ -176,6 +176,14 @@ export default function PdfToMarkdownPage() {
     setBatchZipFilename(null)
   }, [addLog, files, filenameMap, generateUniqueFilename])
 
+  const clearInputFiles = useCallback(() => {
+    // Only clear input files, keep conversion results intact
+    setFiles([])
+    setFolderName(null)
+    setFilenameMap(new Map())
+    addLog('info', 'Cleared uploaded files')
+  }, [addLog])
+
   const handleClearFiles = useCallback(() => {
     setFiles([])
     setFolderName(null)
@@ -310,7 +318,7 @@ export default function PdfToMarkdownPage() {
             setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted.`)
             setProcessing(false)
             // Auto-clear uploaded files after successful batch conversion
-            handleClearFiles()
+            clearInputFiles()
           }
         } else {
           // Paid mode - use batch service
@@ -374,7 +382,7 @@ export default function PdfToMarkdownPage() {
             setStatus(`Conversion complete! ${result.completed.length}/${files.length} files converted.`)
             setProcessing(false)
             // Auto-clear uploaded files after successful batch conversion
-            handleClearFiles()
+            clearInputFiles()
           }
         }
 
@@ -424,7 +432,7 @@ export default function PdfToMarkdownPage() {
           setStatus('Conversion complete!')
           setProcessing(false)
           // Auto-clear uploaded files after successful conversion
-          handleClearFiles()
+          clearInputFiles()
         }
       }
 
@@ -440,7 +448,7 @@ export default function PdfToMarkdownPage() {
     } finally {
       abortControllerRef.current = null
     }
-  }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, filenameMap, addLog, handleClearFiles])
+  }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, filenameMap, addLog, clearInputFiles])
 
   const handleDownload = useCallback(async () => {
     if (!convertedMarkdown || !outputFilename) return
