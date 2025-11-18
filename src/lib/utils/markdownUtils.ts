@@ -82,8 +82,6 @@ export function cleanupPdfMarkdown(
   // Process markers in reverse order to avoid index shifting
   for (let i = markers.length - 1; i >= 0; i--) {
     const marker = markers[i]
-    const markerText = markdown.substring(marker.index, marker.index + marker.length)
-
     let replacement = ''
 
     if (i === 0) {
