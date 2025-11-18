@@ -83,11 +83,6 @@ export function ApiKeyInput({
           >
             Get a free one here
           </a>
-          {!useLlm && (
-            <span className="block mt-1 text-gray-400 italic">
-              (Only used when &quot;Use LLM enhancement&quot; is enabled)
-            </span>
-          )}
         </p>
       </div>
     )
