@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { MarkerOptions, PageFormatOption } from '@/types'
 import type { ConversionMode } from '@/hooks/useConversionMode'
 
@@ -21,9 +21,16 @@ export function ConversionOptions({
 }: ConversionOptionsProps) {
   // Track user's intent for dependent options separately from their enabled state
   // This allows checkboxes to remain checked (but disabled) when dependencies are off
-  // IMPORTANT: Do NOT sync these with external options - intent should only change on user click
-  const [pageNumbersIntent, setPageNumbersIntent] = useState(options.pageFormat === 'with_numbers')
-  const [imageDescriptionsIntent, setImageDescriptionsIntent] = useState(options.disable_image_extraction)
+  const [pageNumbersIntent, setPageNumbersIntent] = useState(false)
+  const [imageDescriptionsIntent, setImageDescriptionsIntent] = useState(false)
+
+  // Sync intent with loaded options ONCE on mount (to load persisted preferences)
+  // but do NOT re-sync on subsequent changes (to preserve user intent)
+  useEffect(() => {
+    setPageNumbersIntent(options.pageFormat === 'with_numbers')
+    setImageDescriptionsIntent(options.disable_image_extraction)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty deps = only run on mount
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
