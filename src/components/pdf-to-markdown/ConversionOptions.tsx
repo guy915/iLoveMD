@@ -1,4 +1,4 @@
-import type { MarkerOptions } from '@/types'
+import type { MarkerOptions, PageFormatOption } from '@/types'
 import type { ConversionMode } from '@/hooks/useConversionMode'
 
 interface ConversionOptionsProps {
@@ -27,15 +27,61 @@ export function ConversionOptions({
           <input
             type="checkbox"
             checked={options.paginate}
-            onChange={(e) => onOptionChange('paginate', e.target.checked)}
+            onChange={(e) => {
+              const checked = e.target.checked
+              onOptionChange('paginate', checked)
+              // Set default page format when enabling paginate
+              if (checked && !options.pageFormat) {
+                onOptionChange('pageFormat', 'separators_only')
+              }
+            }}
             className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             disabled={disabled}
           />
           <span className="ml-3">
             <span className="block text-sm font-medium text-gray-900">Add page separators</span>
-            <span className="block text-sm text-gray-500">Include page breaks and numbers</span>
+            <span className="block text-sm text-gray-500">Include page breaks in the output</span>
           </span>
         </label>
+
+        {/* Page format options (shown when paginate is enabled) */}
+        {options.paginate && (
+          <div className="ml-7 space-y-2 border-l-2 border-gray-200 pl-4">
+            <div className="text-sm font-medium text-gray-700 mb-2">Page format:</div>
+
+            <label className="flex items-start cursor-pointer">
+              <input
+                type="radio"
+                name="pageFormat"
+                value="separators_only"
+                checked={options.pageFormat === 'separators_only'}
+                onChange={(e) => onOptionChange('pageFormat', e.target.value as PageFormatOption)}
+                className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                disabled={disabled}
+              />
+              <span className="ml-3">
+                <span className="block text-sm text-gray-900">Separators only</span>
+                <span className="block text-xs text-gray-500">Add --- between pages</span>
+              </span>
+            </label>
+
+            <label className="flex items-start cursor-pointer">
+              <input
+                type="radio"
+                name="pageFormat"
+                value="with_numbers"
+                checked={options.pageFormat === 'with_numbers'}
+                onChange={(e) => onOptionChange('pageFormat', e.target.value as PageFormatOption)}
+                className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                disabled={disabled}
+              />
+              <span className="ml-3">
+                <span className="block text-sm text-gray-900">With page numbers</span>
+                <span className="block text-xs text-gray-500">Add &quot;Page X&quot; and --- between pages</span>
+              </span>
+            </label>
+          </div>
+        )}
 
         <label className="flex items-start">
           <input

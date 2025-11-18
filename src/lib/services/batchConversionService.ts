@@ -16,6 +16,7 @@
 
 import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from './markerApiService'
 import { replaceExtension } from '@/lib/utils/downloadUtils'
+import { cleanupPdfMarkdown } from '@/lib/utils/markdownUtils'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
 
@@ -234,7 +235,16 @@ async function convertFileWithRetry(
       const conversionResult = await conversionFn(file, markerOptions, undefined, signal)
 
       if (conversionResult.success && conversionResult.markdown) {
-        result.markdown = conversionResult.markdown
+        // Clean up markdown based on page format option
+        let cleanedMarkdown = conversionResult.markdown
+        if (markerOptions.paginate && markerOptions.pageFormat) {
+          cleanedMarkdown = cleanupPdfMarkdown(conversionResult.markdown, markerOptions.pageFormat)
+        } else if (!markerOptions.paginate) {
+          // If paginate is disabled, always use 'none' to trim whitespace
+          cleanedMarkdown = cleanupPdfMarkdown(conversionResult.markdown, 'none')
+        }
+
+        result.markdown = cleanedMarkdown
         result.status = 'complete'
         result.endTime = Date.now()
         result.duration = result.endTime - (result.startTime || 0)

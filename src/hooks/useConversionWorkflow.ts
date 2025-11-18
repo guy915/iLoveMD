@@ -9,6 +9,7 @@ import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from '@/lib/services/
 import type { BatchProgress } from '@/lib/services/batchConversionService'
 import { formatBytesToMB, formatBytesToKB } from '@/lib/utils/formatUtils'
 import { replaceExtension } from '@/lib/utils/downloadUtils'
+import { cleanupPdfMarkdown } from '@/lib/utils/markdownUtils'
 import { MARKER_CONFIG } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
 
@@ -176,16 +177,31 @@ export function useConversionWorkflow(
       throw new Error(result.error || 'Conversion failed')
     }
 
+    // Clean up markdown based on page format option
+    let cleanedMarkdown = result.markdown
+    if (markerOptions.paginate && markerOptions.pageFormat) {
+      cleanedMarkdown = cleanupPdfMarkdown(result.markdown, markerOptions.pageFormat)
+      addLog('info', 'Applied page formatting', {
+        format: markerOptions.pageFormat,
+        originalSize: formatBytesToKB(result.markdown.length),
+        cleanedSize: formatBytesToKB(cleanedMarkdown.length)
+      })
+    } else if (!markerOptions.paginate) {
+      // If paginate is disabled, always use 'none' to trim whitespace
+      cleanedMarkdown = cleanupPdfMarkdown(result.markdown, 'none')
+      addLog('info', 'Trimmed markdown whitespace')
+    }
+
     const filename = replaceExtension(file.name, 'md')
 
     addLog('success', 'Conversion complete!', {
-      contentSize: formatBytesToKB(result.markdown.length),
+      contentSize: formatBytesToKB(cleanedMarkdown.length),
       filename,
       mode
     })
 
     if (isMountedRef.current) {
-      setConvertedMarkdown(result.markdown)
+      setConvertedMarkdown(cleanedMarkdown)
       setOutputFilename(filename)
       setStatus('Conversion complete! Click Download to save the file.')
       setProcessing(false)
