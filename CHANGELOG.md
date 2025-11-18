@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed cancel button not working properly in batch conversion mode (especially free mode)
   - Fixed race condition where `processing` state was set to false before conversion actually stopped
   - Fixed stagger loop in free mode batch conversion not checking abort signal during delays
-  - Fixed files being left in 'processing' state when cancelled (now properly marked as 'failed')
+  - Fixed files being left in 'processing' state when cancelled (now properly marked as 'cancelled')
+  - Fixed cancelled files being counted as failed when API calls completed after cancellation
   - Fixed waiting loop continuing to wait for files even after cancellation
   - Added diagnostic logging to cancel button to track cancellation progress
   - **UI Improvements**:
