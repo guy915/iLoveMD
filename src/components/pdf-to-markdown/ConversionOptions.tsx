@@ -1,4 +1,4 @@
-import type { MarkerOptions } from '@/types'
+import type { MarkerOptions, PageFormatOption } from '@/types'
 import type { ConversionMode } from '@/hooks/useConversionMode'
 
 interface ConversionOptionsProps {
@@ -27,13 +27,46 @@ export function ConversionOptions({
           <input
             type="checkbox"
             checked={options.paginate}
-            onChange={(e) => onOptionChange('paginate', e.target.checked)}
+            onChange={(e) => {
+              const checked = e.target.checked
+              onOptionChange('paginate', checked)
+              // Set appropriate page format when toggling paginate
+              if (checked) {
+                onOptionChange('pageFormat', 'separators_only')
+              } else {
+                onOptionChange('pageFormat', 'none')
+              }
+            }}
             className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             disabled={disabled}
           />
           <span className="ml-3">
             <span className="block text-sm font-medium text-gray-900">Add page separators</span>
-            <span className="block text-sm text-gray-500">Include page breaks and numbers</span>
+            <span className="block text-sm text-gray-500">Add page breaks to the output</span>
+          </span>
+        </label>
+
+        <label className="flex items-start">
+          <input
+            type="checkbox"
+            checked={options.pageFormat === 'with_numbers'}
+            onChange={(e) => {
+              const checked = e.target.checked
+              // Can only enable page numbers if paginate is enabled
+              if (options.paginate) {
+                onOptionChange('pageFormat', checked ? 'with_numbers' : 'separators_only')
+              }
+            }}
+            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            disabled={disabled || !options.paginate}
+          />
+          <span className="ml-3">
+            <span className="block text-sm font-medium text-gray-900">Add page numbers</span>
+            <span className="block text-sm text-gray-500">
+              {options.paginate
+                ? 'Add page numbering to the output'
+                : 'Requires page separators to be enabled'}
+            </span>
           </span>
         </label>
 

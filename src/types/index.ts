@@ -83,6 +83,14 @@ export interface MarkerPollResponse {
 }
 
 /**
+ * Page format options for paginated PDFs
+ * - 'none': No page formatting (paginate must be false)
+ * - 'separators_only': Add horizontal separators between pages
+ * - 'with_numbers': Add page numbers and horizontal separators
+ */
+export type PageFormatOption = 'none' | 'separators_only' | 'with_numbers'
+
+/**
  * Marker API request options
  */
 export interface MarkerOptions {
@@ -92,6 +100,8 @@ export interface MarkerOptions {
   langs: 'English'
   /** Add pagination markers */
   paginate: boolean
+  /** Page format style (only applies when paginate is true) */
+  pageFormat?: PageFormatOption
   /** Apply line formatting */
   format_lines: boolean
   /** Use LLM for better extraction */

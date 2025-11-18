@@ -9,6 +9,7 @@ import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from '@/lib/services/
 import type { BatchProgress } from '@/lib/services/batchConversionService'
 import { formatBytesToMB, formatBytesToKB } from '@/lib/utils/formatUtils'
 import { replaceExtension } from '@/lib/utils/downloadUtils'
+import { cleanupPdfMarkdown } from '@/lib/utils/markdownUtils'
 import { MARKER_CONFIG } from '@/lib/constants'
 import type { MarkerOptions } from '@/types'
 
@@ -158,34 +159,52 @@ export function useConversionWorkflow(
     // Call appropriate conversion function based on mode
     const result = mode === 'paid'
       ? await convertPdfToMarkdown(
-          file,
-          apiKey,
-          markerOptions,
-          onProgress,
-          abortControllerRef.current!.signal
-        )
+        file,
+        apiKey,
+        markerOptions,
+        onProgress,
+        abortControllerRef.current!.signal
+      )
       : await convertPdfToMarkdownLocal(
-          file,
-          markerOptions.use_llm ? geminiApiKey : null,
-          markerOptions,
-          onProgress,
-          abortControllerRef.current!.signal
-        )
+        file,
+        markerOptions.use_llm ? geminiApiKey : null,
+        markerOptions,
+        onProgress,
+        abortControllerRef.current!.signal
+      )
 
     if (!result.success || !result.markdown) {
       throw new Error(result.error || 'Conversion failed')
     }
 
+    // Clean up markdown based on page format option
+    let cleanedMarkdown = result.markdown
+    const pageFormat = markerOptions.paginate
+      ? (markerOptions.pageFormat || 'separators_only')
+      : 'none'
+
+    cleanedMarkdown = cleanupPdfMarkdown(result.markdown, pageFormat)
+
+    if (pageFormat !== 'none') {
+      addLog('info', 'Applied page formatting', {
+        format: pageFormat,
+        originalSize: formatBytesToKB(result.markdown.length),
+        cleanedSize: formatBytesToKB(cleanedMarkdown.length)
+      })
+    } else {
+      addLog('info', 'Trimmed markdown whitespace')
+    }
+
     const filename = replaceExtension(file.name, 'md')
 
     addLog('success', 'Conversion complete!', {
-      contentSize: formatBytesToKB(result.markdown.length),
+      contentSize: formatBytesToKB(cleanedMarkdown.length),
       filename,
       mode
     })
 
     if (isMountedRef.current) {
-      setConvertedMarkdown(result.markdown)
+      setConvertedMarkdown(cleanedMarkdown)
       setOutputFilename(filename)
       setStatus('Conversion complete! Click Download to save the file.')
       setProcessing(false)
@@ -214,19 +233,19 @@ export function useConversionWorkflow(
 
     const result = mode === 'free'
       ? await convertBatchPdfToMarkdownLocal(files, {
-          geminiApiKey: markerOptions.use_llm ? geminiApiKey : null,
-          markerOptions,
-          filenameMap,
-          onProgress,
-          signal: abortControllerRef.current!.signal
-        })
+        geminiApiKey: markerOptions.use_llm ? geminiApiKey : null,
+        markerOptions,
+        filenameMap,
+        onProgress,
+        signal: abortControllerRef.current!.signal
+      })
       : await convertBatchPdfToMarkdown(files, {
-          apiKey,
-          markerOptions,
-          filenameMap,
-          onProgress,
-          signal: abortControllerRef.current!.signal
-        })
+        apiKey,
+        markerOptions,
+        filenameMap,
+        onProgress,
+        signal: abortControllerRef.current!.signal
+      })
 
     if (!result.success || !result.zipBlob) {
       const errorMsg = result.error || 'Batch conversion failed'
