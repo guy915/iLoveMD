@@ -329,7 +329,8 @@ Content 3`
 
 Content 2
 
-{2}---------------------------------------
+---
+
 Content 3`)
                         })
                         it('should normalize excessive newlines', () => {
