@@ -42,7 +42,7 @@ export function ConversionOptions({
           />
           <span className="ml-3">
             <span className="block text-sm font-medium text-gray-900">Add page separators</span>
-            <span className="block text-sm text-gray-500">Include page breaks in the output</span>
+            <span className="block text-sm text-gray-500">Add page breaks to the output</span>
           </span>
         </label>
 
@@ -64,7 +64,7 @@ export function ConversionOptions({
             <span className="block text-sm font-medium text-gray-900">Add page numbers</span>
             <span className="block text-sm text-gray-500">
               {options.paginate
-                ? 'Add &quot;Page X&quot; labels to page separators'
+                ? 'Add page numbering to the output'
                 : 'Requires page separators to be enabled'}
             </span>
           </span>
