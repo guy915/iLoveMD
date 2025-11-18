@@ -28,7 +28,7 @@ const isVitest =
 /**
  * Status of an individual file conversion
  */
-export type FileConversionStatus = 'pending' | 'processing' | 'complete' | 'failed'
+export type FileConversionStatus = 'pending' | 'processing' | 'complete' | 'failed' | 'cancelled'
 
 /**
  * Result of a single file conversion
@@ -52,6 +52,7 @@ export interface BatchProgress {
   total: number
   completed: number
   failed: number
+  cancelled: number
   inProgress: number
   results: FileConversionResult[]
 }
@@ -179,6 +180,7 @@ function initializeBatchProgress(files: File[]): { results: FileConversionResult
     total: files.length,
     completed: 0,
     failed: 0,
+    cancelled: 0,
     inProgress: 0,
     results
   }
@@ -222,7 +224,7 @@ async function convertFileWithRetry(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     if (signal?.aborted) {
-      result.status = 'failed'
+      result.status = 'cancelled'
       result.error = 'Conversion cancelled'
       break
     }
@@ -333,6 +335,8 @@ export async function convertBatchPdfToMarkdown(
             progress.completed++
           } else if (result.status === 'failed') {
             progress.failed++
+          } else if (result.status === 'cancelled') {
+            progress.cancelled++
           }
 
           updateProgress()
@@ -435,9 +439,9 @@ export async function convertBatchPdfToMarkdownLocal(
   const processFile = async (index: number): Promise<void> => {
     if (signal?.aborted) {
       // Mark file as cancelled and update progress counters
-      results[index].status = 'failed'
+      results[index].status = 'cancelled'
       results[index].error = 'Conversion cancelled'
-      progress.failed++
+      progress.cancelled++
       updateProgress()
       return
     }
@@ -458,13 +462,15 @@ export async function convertBatchPdfToMarkdownLocal(
     )
 
     results[index] = result
-    
+
     if (result.status === 'complete') {
       progress.completed++
-    } else {
+    } else if (result.status === 'failed') {
       progress.failed++
+    } else if (result.status === 'cancelled') {
+      progress.cancelled++
     }
-    
+
     // Remove this promise from active set
     activePromises.delete(index)
     progress.inProgress = activePromises.size
