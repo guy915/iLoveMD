@@ -279,8 +279,8 @@ export default function PdfToMarkdownPage() {
             onProgress: (progress: BatchProgress) => {
               if (isMountedRef.current) {
                 setBatchProgress(progress)
-                // Show "Uploading..." initially, then switch to "Processing..." once files start completing
-                if (progress.completed === 0 && progress.inProgress > 0) {
+                // Show "Uploading..." until first file completes
+                if (progress.completed === 0) {
                   setStatus('Uploading...')
                 } else {
                   setStatus(`Processing... ${progress.completed}/${progress.total} complete (${progress.inProgress} in progress)`)
@@ -343,8 +343,8 @@ export default function PdfToMarkdownPage() {
             onProgress: (progress: BatchProgress) => {
               if (isMountedRef.current) {
                 setBatchProgress(progress)
-                // Show "Uploading..." initially, then switch to "Processing..." once files start completing
-                if (progress.completed === 0 && progress.inProgress > 0) {
+                // Show "Uploading..." until first file completes
+                if (progress.completed === 0) {
                   setStatus('Uploading...')
                 } else {
                   setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
