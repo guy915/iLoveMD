@@ -308,7 +308,7 @@ export default function PdfToMarkdownPage() {
                 if (progress.completed === 0 || elapsedTime < MIN_UPLOADING_DURATION) {
                   setStatus('Uploading...')
                 } else {
-                  setStatus(`Processing... ${progress.completed}/${progress.total} complete (${progress.inProgress} in progress)`)
+                  setStatus(`Processing... ${progress.completed}/${progress.total}`)
                 }
               }
             },
@@ -391,7 +391,7 @@ export default function PdfToMarkdownPage() {
                 if (progress.completed === 0 || elapsedTime < MIN_UPLOADING_DURATION) {
                   setStatus('Uploading...')
                 } else {
-                  setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+                  setStatus(`Processing... ${progress.completed}/${progress.total}`)
                 }
               }
             },
@@ -571,7 +571,7 @@ export default function PdfToMarkdownPage() {
             filename: outputFilename
           })
 
-          setStatus('File saved successfully! You can download again or upload a new file.')
+          setStatus('File saved successfully!')
 
         } catch (apiError: any) {
           // User cancelled or API error
@@ -596,7 +596,7 @@ export default function PdfToMarkdownPage() {
           addLog('success', 'File download triggered', {
             filename: outputFilename
           })
-          setStatus('File download started! Check your downloads folder. You can download again or upload a new file.')
+          setStatus('File saved successfully!')
         } catch (downloadError) {
           // Check if it's an out-of-memory error
           if (downloadError instanceof Error &&
