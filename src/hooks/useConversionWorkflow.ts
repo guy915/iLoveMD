@@ -183,13 +183,6 @@ export function useConversionWorkflow(
       ? (markerOptions.pageFormat || 'separators_only')
       : 'none'
 
-    console.log('[useConversionWorkflow] Cleaning markdown', {
-      paginate: markerOptions.paginate,
-      pageFormat,
-      markdownLength: result.markdown.length,
-      hasMarkers: /\{(\d+)\}-{3,}/.test(result.markdown)
-    })
-
     cleanedMarkdown = cleanupPdfMarkdown(result.markdown, pageFormat)
 
     if (pageFormat !== 'none') {
