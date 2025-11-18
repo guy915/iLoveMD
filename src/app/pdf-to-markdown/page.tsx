@@ -71,6 +71,27 @@ export default function PdfToMarkdownPage() {
     }
   }, [])
 
+  // Cancel ongoing conversions on page unload/refresh/close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (processing && abortControllerRef.current) {
+        // Cancel the ongoing conversion
+        abortControllerRef.current.abort()
+        addLog('info', 'Conversion cancelled due to page unload/refresh')
+
+        // Show browser confirmation dialog to warn user
+        e.preventDefault()
+        // Chrome requires returnValue to be set
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [processing, addLog])
+
   // Log component mount (once)
   useEffect(() => {
     const keyPresent = apiKey.length > 0
@@ -278,6 +299,22 @@ export default function PdfToMarkdownPage() {
           })
 
           if (!result.success || !result.zipBlob) {
+            // Check if operation was cancelled by user
+            if (abortControllerRef.current?.signal.aborted) {
+              addLog('info', 'Batch conversion cancelled by user', {
+                completed: result.completed?.length || 0,
+                failed: result.failed?.length || 0,
+                total: files.length
+              })
+
+              if (isMountedRef.current) {
+                setStatus('Conversion cancelled')
+                setProcessing(false)
+              }
+              return
+            }
+
+            // Handle actual errors
             const errorMsg = result.error || 'Batch conversion failed'
             const failedCount = result.failed?.length || 0
             const totalCount = files.length
@@ -335,6 +372,22 @@ export default function PdfToMarkdownPage() {
           })
 
           if (!result.success || !result.zipBlob) {
+            // Check if operation was cancelled by user
+            if (abortControllerRef.current?.signal.aborted) {
+              addLog('info', 'Batch conversion cancelled by user', {
+                completed: result.completed?.length || 0,
+                failed: result.failed?.length || 0,
+                total: files.length
+              })
+
+              if (isMountedRef.current) {
+                setStatus('Conversion cancelled')
+                setProcessing(false)
+              }
+              return
+            }
+
+            // Handle actual errors
             const errorMsg = result.error || 'Batch conversion failed'
             const failedCount = result.failed?.length || 0
             const totalCount = files.length
@@ -393,6 +446,18 @@ export default function PdfToMarkdownPage() {
             )
 
         if (!result.success || !result.markdown) {
+          // Check if operation was cancelled by user
+          if (abortControllerRef.current?.signal.aborted) {
+            addLog('info', 'Conversion cancelled by user')
+
+            if (isMountedRef.current) {
+              setStatus('Conversion cancelled')
+              setProcessing(false)
+            }
+            return
+          }
+
+          // Handle actual errors
           throw new Error(result.error || 'Conversion failed')
         }
 
