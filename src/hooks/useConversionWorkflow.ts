@@ -159,19 +159,19 @@ export function useConversionWorkflow(
     // Call appropriate conversion function based on mode
     const result = mode === 'paid'
       ? await convertPdfToMarkdown(
-          file,
-          apiKey,
-          markerOptions,
-          onProgress,
-          abortControllerRef.current!.signal
-        )
+        file,
+        apiKey,
+        markerOptions,
+        onProgress,
+        abortControllerRef.current!.signal
+      )
       : await convertPdfToMarkdownLocal(
-          file,
-          markerOptions.use_llm ? geminiApiKey : null,
-          markerOptions,
-          onProgress,
-          abortControllerRef.current!.signal
-        )
+        file,
+        markerOptions.use_llm ? geminiApiKey : null,
+        markerOptions,
+        onProgress,
+        abortControllerRef.current!.signal
+      )
 
     if (!result.success || !result.markdown) {
       throw new Error(result.error || 'Conversion failed')
@@ -182,6 +182,13 @@ export function useConversionWorkflow(
     const pageFormat = markerOptions.paginate
       ? (markerOptions.pageFormat || 'separators_only')
       : 'none'
+
+    console.log('[useConversionWorkflow] Cleaning markdown', {
+      paginate: markerOptions.paginate,
+      pageFormat,
+      markdownLength: result.markdown.length,
+      hasMarkers: /\{(\d+)\}-{3,}/.test(result.markdown)
+    })
 
     cleanedMarkdown = cleanupPdfMarkdown(result.markdown, pageFormat)
 
@@ -233,19 +240,19 @@ export function useConversionWorkflow(
 
     const result = mode === 'free'
       ? await convertBatchPdfToMarkdownLocal(files, {
-          geminiApiKey: markerOptions.use_llm ? geminiApiKey : null,
-          markerOptions,
-          filenameMap,
-          onProgress,
-          signal: abortControllerRef.current!.signal
-        })
+        geminiApiKey: markerOptions.use_llm ? geminiApiKey : null,
+        markerOptions,
+        filenameMap,
+        onProgress,
+        signal: abortControllerRef.current!.signal
+      })
       : await convertBatchPdfToMarkdown(files, {
-          apiKey,
-          markerOptions,
-          filenameMap,
-          onProgress,
-          signal: abortControllerRef.current!.signal
-        })
+        apiKey,
+        markerOptions,
+        filenameMap,
+        onProgress,
+        signal: abortControllerRef.current!.signal
+      })
 
     if (!result.success || !result.zipBlob) {
       const errorMsg = result.error || 'Batch conversion failed'

@@ -35,10 +35,11 @@ export function cleanupPdfMarkdown(
 ): string {
   if (!markdown) return ''
 
-  // Pattern: {x} followed by at least 40 dashes
-  // We relax this slightly from 48 to handle potential off-by-one errors or variations
-  // while still being long enough to avoid false positives.
-  const pageMarkerPattern = /\{(\d+)\}-{40,}/g
+  // Pattern: {x} followed by at least 3 dashes
+  // Extremely permissive to catch any variation of the marker
+  const pageMarkerPattern = /\{(\d+)\}-{3,}/g
+
+  console.log(`[cleanupPdfMarkdown] Called with format: ${pageFormat}`)
 
   if (pageFormat === 'none') {
     let withoutMarkers = markdown.replace(pageMarkerPattern, '')
