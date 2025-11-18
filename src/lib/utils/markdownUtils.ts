@@ -13,32 +13,21 @@ import type { PageFormatOption } from '@/types'
  * etc.
  *
  * This function:
- * 1. Trims empty lines from beginning and end of entire markdown
- * 2. Removes the first {0}--- marker entirely
- * 3. Replaces subsequent markers based on pageFormat option:
- *    - 'with_numbers': Formats as "Page x\n\n---" (last page gets no separator)
- *    - 'separators_only': Formats as "---" (last page gets no separator)
- *    - 'none': Removes all markers and just trims
+ * 1. Removes the first {0}--- marker entirely
+ * 2. Replaces subsequent {x}--- markers based on pageFormat option:
+ *    - 'separators_only': Replaces with "---"
+ *    - 'with_numbers': Replaces with "Page x\n\n---" and adds final "Page n+1" at end
+ *    - 'none': Removes all markers
+ * 3. Trims excessive whitespace and normalizes newlines
  *
  * @param markdown - Raw markdown from Marker API
  * @param pageFormat - How to format page markers
  * @returns Cleaned markdown
  *
  * @example
- * // Input with paginate:
- * // {0}------------------------------------------------
- * // # Title
- * // {1}------------------------------------------------
- * // Content
- * cleanupPdfMarkdown(input, 'with_numbers')
- * // Output:
- * // # Title
- * //
- * // Page 1
- * //
- * // ---
- * //
- * // Content
+ * // Input: {0}---\n### Title\n\n{1}---\n\nContent
+ * // separators_only: ### Title\n\n---\n\nContent
+ * // with_numbers: ### Title\n\nPage 1\n\n---\n\nContent\n\nPage 2
  */
 export function cleanupPdfMarkdown(
   markdown: string,
@@ -90,8 +79,10 @@ export function cleanupPdfMarkdown(
     } else {
       // Subsequent markers: replace based on format
       if (pageFormat === 'with_numbers') {
+        // Format: \n\nPage x\n\n---\n\n (blank line before, blank line after)
         replacement = `\n\nPage ${marker.pageNum}\n\n---\n\n`
       } else if (pageFormat === 'separators_only') {
+        // Format: \n\n---\n\n (blank line before, blank line after)
         replacement = '\n\n---\n\n'
       }
     }
@@ -99,19 +90,20 @@ export function cleanupPdfMarkdown(
     result = result.substring(0, marker.index) + replacement + result.substring(marker.index + marker.length)
   }
 
-  // Trim content before each page marker and after
-  // This handles excessive whitespace around markers
-  result = result.replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines to double
+  // Normalize excessive whitespace around markers
+  // Replace 3+ newlines with exactly 2 newlines (one blank line)
+  result = result.replace(/\n{3,}/g, '\n\n')
 
-  // Add final page number at the end (if using page numbers)
-  // Only add if there are markers beyond {0}
-  if (pageFormat === 'with_numbers' && markers.length > 1) {
+  // Trim the entire result
+  result = result.trim()
+
+  // Add final page number at the end (if using page numbers and we have markers)
+  if (pageFormat === 'with_numbers' && markers.length > 0) {
     const lastPageNum = markers[markers.length - 1].pageNum
-    const trimmedResult = result.trim()
-    result = `${trimmedResult}\n\nPage ${lastPageNum + 1}`
+    result = `${result}\n\nPage ${lastPageNum + 1}`
   }
 
-  return trimMarkdown(result)
+  return result
 }
 
 /**

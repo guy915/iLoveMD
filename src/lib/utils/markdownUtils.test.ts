@@ -235,8 +235,10 @@ Page 3`)
 Only content`
 
         const result = cleanupPdfMarkdown(input, 'with_numbers')
-        // With only {0}, there's no next page, so no page number added
-        expect(result).toBe('Only content')
+        // With only {0}, add Page 1 at the end
+        expect(result).toBe(`Only content
+
+Page 1`)
       })
 
       it('should add final page number at the end', () => {
