@@ -179,16 +179,19 @@ export function useConversionWorkflow(
 
     // Clean up markdown based on page format option
     let cleanedMarkdown = result.markdown
-    if (markerOptions.paginate && markerOptions.pageFormat) {
-      cleanedMarkdown = cleanupPdfMarkdown(result.markdown, markerOptions.pageFormat)
+    const pageFormat = markerOptions.paginate
+      ? (markerOptions.pageFormat || 'separators_only')
+      : 'none'
+
+    cleanedMarkdown = cleanupPdfMarkdown(result.markdown, pageFormat)
+
+    if (pageFormat !== 'none') {
       addLog('info', 'Applied page formatting', {
-        format: markerOptions.pageFormat,
+        format: pageFormat,
         originalSize: formatBytesToKB(result.markdown.length),
         cleanedSize: formatBytesToKB(cleanedMarkdown.length)
       })
-    } else if (!markerOptions.paginate) {
-      // If paginate is disabled, always use 'none' to trim whitespace
-      cleanedMarkdown = cleanupPdfMarkdown(result.markdown, 'none')
+    } else {
       addLog('info', 'Trimmed markdown whitespace')
     }
 

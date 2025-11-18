@@ -236,13 +236,11 @@ async function convertFileWithRetry(
 
       if (conversionResult.success && conversionResult.markdown) {
         // Clean up markdown based on page format option
-        let cleanedMarkdown = conversionResult.markdown
-        if (markerOptions.paginate && markerOptions.pageFormat) {
-          cleanedMarkdown = cleanupPdfMarkdown(conversionResult.markdown, markerOptions.pageFormat)
-        } else if (!markerOptions.paginate) {
-          // If paginate is disabled, always use 'none' to trim whitespace
-          cleanedMarkdown = cleanupPdfMarkdown(conversionResult.markdown, 'none')
-        }
+        const pageFormat = markerOptions.paginate
+          ? (markerOptions.pageFormat || 'separators_only')
+          : 'none'
+
+        const cleanedMarkdown = cleanupPdfMarkdown(conversionResult.markdown, pageFormat)
 
         result.markdown = cleanedMarkdown
         result.status = 'complete'
