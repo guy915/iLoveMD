@@ -12,12 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed Next.js Image warning for logo SVG by adding `height: 'auto'` style
   - Fixed homepage tool cards to have consistent fixed height (280px min-height)
   - Fixed merge markdown separator options: now correctly shows three options (Newline, Horizontal rule, Page break)
-  - Fixed PDF to Markdown to auto-clear uploaded files after successful conversion
+  - Fixed PDF to Markdown to auto-clear uploaded files (not results) after successful conversion
   - Fixed Merge Markdown to auto-clear uploaded files after successful download
   - Fixed batch processing to show "Uploading..." status before "Processing..."
   - Fixed Gemini API key input to be always enabled (not locked when LLM option is disabled)
   - Updated merge logic to support three separator types: `\n` (newline), `\n---\n` (horizontal rule), `\n\n---\n\n` (page break)
   - Updated test cases for new separator options
+  - **Critical fix**: Created `clearInputFiles()` to only clear input files, preserving conversion results for download
 
 ### Added
 - **Phase 5: Refactor Context and Storage** (2025-11-XX):
