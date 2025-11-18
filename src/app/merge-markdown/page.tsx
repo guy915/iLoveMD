@@ -193,10 +193,12 @@ export default function MergeMarkdownPage() {
     files.forEach((markdownFile, index) => {
       // Add separator before file (except for first file)
       if (index > 0) {
-        if (separatorStyle === 'page-break') {
+        if (separatorStyle === 'horizontal-rule') {
+          parts.push('\n---\n')
+        } else if (separatorStyle === 'page-break') {
           parts.push('\n\n---\n\n')
         } else {
-          parts.push('\n\n')
+          parts.push('\n')
         }
       }
 
@@ -267,6 +269,9 @@ export default function MergeMarkdownPage() {
         document.body.removeChild(link)
 
         addLog('success', 'Merged file downloaded', { filename: 'merged.md' })
+
+        // Auto-clear uploaded files after successful download
+        clearAll()
       } finally {
         // Always clean up URL to prevent memory leaks
         try {
@@ -282,7 +287,7 @@ export default function MergeMarkdownPage() {
       addLog('error', `Failed to merge and download: ${errorMessage}`)
       // Note: We don't set an error state in this component, just log it
     }
-  }, [files.length, mergeMarkdownFiles, addLog])
+  }, [files.length, mergeMarkdownFiles, addLog, clearAll])
 
   return (
     <>
