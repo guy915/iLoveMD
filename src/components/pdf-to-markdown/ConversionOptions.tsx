@@ -30,11 +30,9 @@ export function ConversionOptions({
             onChange={(e) => {
               const checked = e.target.checked
               onOptionChange('paginate', checked)
-              // Set appropriate page format when toggling paginate
-              if (checked) {
+              // Preserve user's page number preference when toggling paginate
+              if (checked && options.pageFormat === 'none') {
                 onOptionChange('pageFormat', 'separators_only')
-              } else {
-                onOptionChange('pageFormat', 'none')
               }
             }}
             className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -110,18 +108,13 @@ export function ConversionOptions({
             onChange={(e) => {
               const newValue = e.target.checked
               onOptionChange('use_llm', newValue)
-              // If disabling LLM, must also reset disable_image_extraction
-              // because image extraction requires LLM to be enabled
-              if (!newValue) {
-                onOptionChange('disable_image_extraction', false)
-              }
             }}
             className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             disabled={disabled}
           />
           <span className="ml-3">
-            <span className="block text-sm font-medium text-gray-900">Use LLM enhancement</span>
-            <span className="block text-sm text-gray-500">Improve accuracy with AI (slower, costs more)</span>
+            <span className="block text-sm font-medium text-gray-900">LLM enhancement</span>
+            <span className="block text-sm text-gray-500">Improve accuracy with AI</span>
           </span>
         </label>
 

@@ -24,6 +24,9 @@ export function ConversionStatus({
     return null
   }
 
+  const showBatchProgress =
+    isBatch && batchProgress && processing && !status.toLowerCase().startsWith('uploading')
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mb-6">
       <div className="flex items-center justify-between gap-3">
@@ -32,7 +35,7 @@ export function ConversionStatus({
             <span className="text-blue-600 animate-spin text-2xl">⟳</span>
           )}
           <p className="text-base font-semibold text-gray-900">
-            {isBatch && batchProgress && processing
+            {showBatchProgress
               ? `Processing ${batchProgress.completed}/${batchProgress.total} files...`
               : status || 'Converting to Markdown...'}
           </p>
