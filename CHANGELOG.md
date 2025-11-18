@@ -8,6 +8,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **PDF Markdown Page Cleanup and Formatting** (2025-11-17):
+  - **New Utility: markdownUtils** (cleans up PDF markdown output):
+    - Created `cleanupPdfMarkdown()` function - Processes paginated PDF markdown with three formatting modes
+    - Trims empty lines from beginning and end of markdown
+    - Removes first `{0}---` marker entirely
+    - Replaces subsequent `{x}---` markers based on selected format:
+      - `'none'`: Removes all markers and trims whitespace
+      - `'separators_only'`: Replaces with `---` horizontal separators
+      - `'with_numbers'`: Replaces with `Page X` and `---` separators
+    - Normalizes excessive newlines to maintain clean formatting
+  - **Enhanced UI**:
+    - Added `pageFormat` option to ConversionOptions component
+    - Radio button group shown when pagination is enabled
+    - Two options: "Separators only" and "With page numbers"
+    - Visual nesting with border to show relationship to paginate option
+  - **Type System Updates**:
+    - Added `PageFormatOption` type to types/index.ts
+    - Updated `MarkerOptions` interface with optional `pageFormat` field
+    - Default page format set to `'separators_only'`
+  - **Workflow Integration**:
+    - Applied cleanup in `useConversionWorkflow` for single file conversions
+    - Applied cleanup in `batchConversionService` for batch conversions
+    - Automatically trims whitespace even when pagination is disabled
+    - Logs page formatting operations for debugging
+  - **Test Coverage**:
+    - Added 17 new tests for markdownUtils (100% coverage)
+    - Tests cover all three formatting modes (none, separators_only, with_numbers)
+    - Edge cases: empty strings, single markers, empty pages, excessive newlines
+    - All existing tests still passing (633 tests total)
+  - **Benefits**:
+    - Cleaner PDF markdown output with proper page separation
+    - User choice between page numbers or simple separators
+    - Consistent whitespace handling across all conversions
+    - Better readability for LLM consumption
+  - **Files Added**:
+    - src/lib/utils/markdownUtils.ts + tests
+  - **Files Modified**:
+    - src/types/index.ts (added PageFormatOption type)
+    - src/lib/constants.ts (added pageFormat to DEFAULT_OPTIONS)
+    - src/components/pdf-to-markdown/ConversionOptions.tsx (added UI for page format)
+    - src/hooks/useConversionWorkflow.ts (integrated cleanup)
+    - src/lib/services/batchConversionService.ts (integrated cleanup)
+
 - **Phase 5: Refactor Context and Storage** (2025-11-XX):
   - **Storage Abstraction Layer** (improves testability and flexibility):
     - Created `IStorageAdapter` interface - Defines contract for all storage implementations (localStorage, sessionStorage, IndexedDB, etc.)
