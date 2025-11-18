@@ -7,6 +7,7 @@ import { formatBytesToMB, formatBytesToKB } from '@/lib/utils/formatUtils'
 import { MARKER_CONFIG } from '@/lib/constants'
 import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from '@/lib/services/markerApiService'
 import { filterPdfFiles, filterImmediateFolderFiles, getFolderName, type BatchProgress } from '@/lib/services/batchConversionService'
+import { cleanupPdfMarkdown } from '@/lib/utils/markdownUtils'
 import { useLogs } from '@/contexts/LogContext'
 import { useConversionMode } from '@/hooks/useConversionMode'
 import { useConversionOptions } from '@/hooks/useConversionOptions'
@@ -453,19 +454,19 @@ export default function PdfToMarkdownPage() {
         // Call appropriate conversion function based on mode
         const result = mode === 'paid'
           ? await convertPdfToMarkdown(
-              file,
-              apiKey,
-              options,
-              onProgress,
-              abortControllerRef.current.signal
-            )
+            file,
+            apiKey,
+            options,
+            onProgress,
+            abortControllerRef.current.signal
+          )
           : await convertPdfToMarkdownLocal(
-              file,
-              options.use_llm ? geminiApiKey : null,
-              options,
-              onProgress,
-              abortControllerRef.current.signal
-            )
+            file,
+            options.use_llm ? geminiApiKey : null,
+            options,
+            onProgress,
+            abortControllerRef.current.signal
+          )
 
         if (!result.success || !result.markdown) {
           // Check if operation was cancelled by user
@@ -483,16 +484,23 @@ export default function PdfToMarkdownPage() {
           throw new Error(result.error || 'Conversion failed')
         }
 
+        // Clean up markdown based on page format option
+        const pageFormat = options.paginate
+          ? (options.pageFormat || 'separators_only')
+          : 'none'
+
+        const cleanedMarkdown = cleanupPdfMarkdown(result.markdown, pageFormat)
+
         const filename = replaceExtension(file.name, 'md')
 
         addLog('success', `Conversion complete!`, {
-          contentSize: formatBytesToKB(result.markdown.length),
+          contentSize: formatBytesToKB(cleanedMarkdown.length),
           filename,
           mode
         })
 
         if (isMountedRef.current) {
-          setConvertedMarkdown(result.markdown)
+          setConvertedMarkdown(cleanedMarkdown)
           setOutputFilename(filename)
           setStatus('Conversion complete!')
           setProcessing(false)
@@ -586,7 +594,7 @@ export default function PdfToMarkdownPage() {
         } catch (downloadError) {
           // Check if it's an out-of-memory error
           if (downloadError instanceof Error &&
-              (downloadError.message?.toLowerCase().includes('memory') || downloadError.message?.toLowerCase().includes('allocation'))) {
+            (downloadError.message?.toLowerCase().includes('memory') || downloadError.message?.toLowerCase().includes('allocation'))) {
             addLog('error', 'Out of memory while creating download')
             throw new Error('File too large for browser memory. Try using a different browser or splitting the PDF.')
           }
@@ -665,7 +673,7 @@ export default function PdfToMarkdownPage() {
         } catch (downloadError) {
           // Check if it's an out-of-memory error
           if (downloadError instanceof Error &&
-              (downloadError.message?.toLowerCase().includes('memory') || downloadError.message?.toLowerCase().includes('allocation'))) {
+            (downloadError.message?.toLowerCase().includes('memory') || downloadError.message?.toLowerCase().includes('allocation'))) {
             addLog('error', 'Out of memory while creating ZIP download')
             throw new Error('ZIP file too large for browser memory. Try downloading fewer files at once.')
           }

@@ -77,6 +77,7 @@ export const MARKER_CONFIG = {
   // Default options for PDF conversion
   DEFAULT_OPTIONS: {
     paginate: false,
+    pageFormat: 'none',
     format_lines: false,
     use_llm: false,
     disable_image_extraction: false,
