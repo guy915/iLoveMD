@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Fixed red error background appearing on cancellation (now shows normal status)
     - Cancellation now shows neutral "Conversion cancelled" message without error styling
     - Only actual errors show red background, cancellations are handled gracefully
+    - "Failed: x" message no longer shows cancelled files (only shows actual failures)
   - **Page Unload Protection**:
     - Added automatic cancellation on page unload/refresh/close
     - Browser warning dialog appears when closing during active conversion
