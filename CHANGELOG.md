@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **PDF to Markdown Cancel Button** (2025-11-17):
+  - Fixed cancel button not working properly in batch conversion mode (especially free mode)
+  - Fixed race condition where `processing` state was set to false before conversion actually stopped
+  - Fixed stagger loop in free mode batch conversion not checking abort signal during delays
+  - Fixed files being left in 'processing' state when cancelled (now properly marked as 'failed')
+  - Fixed waiting loop continuing to wait for files even after cancellation
+  - Added diagnostic logging to cancel button to track cancellation progress
+  - All 616 tests passing, build successful
+
 ### Added
 - **Phase 5: Refactor Context and Storage** (2025-11-XX):
   - **Storage Abstraction Layer** (improves testability and flexibility):
