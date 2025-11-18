@@ -281,6 +281,8 @@ export default function PdfToMarkdownPage() {
         if (mode === 'free') {
           // Free mode: use batch service with parallel processing (up to 10 concurrent)
           setStatus('Uploading...')
+          const uploadingStartTime = Date.now()
+          const MIN_UPLOADING_DURATION = 300 // ms - minimum time to show "Uploading..." state
 
           // Dynamically import batch service with error handling
           let convertBatchPdfToMarkdownLocal: typeof import('@/lib/services/batchConversionService').convertBatchPdfToMarkdownLocal
@@ -301,11 +303,12 @@ export default function PdfToMarkdownPage() {
             onProgress: (progress: BatchProgress) => {
               if (isMountedRef.current) {
                 setBatchProgress(progress)
-                // Show "Uploading..." until first file completes
-                if (progress.completed === 0) {
+                const elapsedTime = Date.now() - uploadingStartTime
+                // Show "Uploading..." until first file completes AND minimum duration has passed
+                if (progress.completed === 0 || elapsedTime < MIN_UPLOADING_DURATION) {
                   setStatus('Uploading...')
                 } else {
-                  setStatus(`Processing... ${progress.completed}/${progress.total} complete (${progress.inProgress} in progress)`)
+                  setStatus(`Processing... ${progress.completed}/${progress.total}`)
                 }
               }
             },
@@ -361,6 +364,8 @@ export default function PdfToMarkdownPage() {
         } else {
           // Paid mode - use batch service
           setStatus('Uploading...')
+          const uploadingStartTime = Date.now()
+          const MIN_UPLOADING_DURATION = 300 // ms - minimum time to show "Uploading..." state
 
           // Dynamically import batch service with error handling
           let convertBatchPdfToMarkdown: typeof import('@/lib/services/batchConversionService').convertBatchPdfToMarkdown
@@ -381,11 +386,12 @@ export default function PdfToMarkdownPage() {
             onProgress: (progress: BatchProgress) => {
               if (isMountedRef.current) {
                 setBatchProgress(progress)
-                // Show "Uploading..." until first file completes
-                if (progress.completed === 0) {
+                const elapsedTime = Date.now() - uploadingStartTime
+                // Show "Uploading..." until first file completes AND minimum duration has passed
+                if (progress.completed === 0 || elapsedTime < MIN_UPLOADING_DURATION) {
                   setStatus('Uploading...')
                 } else {
-                  setStatus(`Processing... ${progress.completed}/${progress.total} complete`)
+                  setStatus(`Processing... ${progress.completed}/${progress.total}`)
                 }
               }
             },
@@ -565,7 +571,7 @@ export default function PdfToMarkdownPage() {
             filename: outputFilename
           })
 
-          setStatus('File saved successfully! You can download again or upload a new file.')
+          setStatus('File saved successfully!')
 
         } catch (apiError: any) {
           // User cancelled or API error
@@ -590,7 +596,7 @@ export default function PdfToMarkdownPage() {
           addLog('success', 'File download triggered', {
             filename: outputFilename
           })
-          setStatus('File download started! Check your downloads folder. You can download again or upload a new file.')
+          setStatus('File saved successfully!')
         } catch (downloadError) {
           // Check if it's an out-of-memory error
           if (downloadError instanceof Error &&
