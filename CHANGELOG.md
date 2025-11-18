@@ -30,6 +30,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Already-running backend operations complete but no new ones are queued
     - Note: Backend cancellation not supported by Marker API or Modal API
   - All 616 tests passing, build successful
+- **UI/UX Improvements** (2025-11-17):
+  - Fixed Next.js Image warning for logo SVG by adding `height: 'auto'` style
+  - Fixed homepage tool cards to have better proportions (240px min-height instead of 280px)
+  - Fixed merge markdown separator options: now correctly shows three options (Newline, Horizontal rule, Page break)
+  - Fixed PDF to Markdown to auto-clear uploaded files (not results) after successful conversion
+  - Fixed Merge Markdown to auto-clear uploaded files after successful download
+  - Fixed batch processing "Uploading..." status to persist until first file completes
+  - Fixed Gemini API key input to be always enabled (removed unnecessary hint text)
+  - Updated merge logic to support three separator types: `\n` (newline), `\n---\n` (horizontal rule), `\n\n---\n\n` (page break)
+  - Updated test cases for new separator options
+  - **Critical fix**: Created `clearInputFiles()` to only clear input files, preserving conversion results for download
 
 ### Added
 - **Phase 5: Refactor Context and Storage** (2025-11-XX):
