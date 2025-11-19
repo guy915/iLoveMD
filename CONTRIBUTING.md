@@ -362,7 +362,7 @@ While users can view the logs, the primary purpose is to give complete visibilit
 
 **Application Events:**
 - localStorage operations (API key saves/loads, preference updates)
-- File processing operations (PDF conversion, HTML conversion)
+- File processing operations (PDF conversion)
 - Download triggers (when user downloads converted files)
 - API calls with full timing data (request sent, response received, duration in ms)
 - Polling operations (attempt count, elapsed time)
