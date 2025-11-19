@@ -1,10 +1,10 @@
-# iLoveLLM
+# iLoveMD
 
-A website for preprocessing documents for LLMs and RAG.
+A website for markdown utilities.
 
 ## Overview
 
-iLoveLLM provides simple, single-purpose tools to convert and prepare documents specifically for LLM workflows like ChatGPT, Claude, and other AI assistants. Everything converts to markdown because that's what LLMs digest best.
+iLoveMD provides simple, single-purpose tools to work with markdown files. Convert PDFs to markdown, merge multiple markdown files, and more. All tools run in your browser for maximum privacy and speed.
 
 ## Features
 
@@ -24,8 +24,8 @@ Combine multiple markdown files into one with customizable separators and orderi
 
 ```bash
 # Clone the repository
-git clone https://github.com/guy915/iLoveLLM.git
-cd iLoveLLM
+git clone https://github.com/guy915/iLoveMD.git
+cd iLoveMD
 
 # Install dependencies
 npm install

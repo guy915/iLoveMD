@@ -1,4 +1,4 @@
-# Contributing to iLoveLLM
+# Contributing to iLoveMD
 
 ## Table of Contents
 
@@ -23,8 +23,8 @@
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/iLoveLLM.git
-   cd iLoveLLM
+   git clone https://github.com/YOUR_USERNAME/iLoveMD.git
+   cd iLoveMD
    ```
 
 3. **Install dependencies**:
