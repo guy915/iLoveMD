@@ -80,7 +80,7 @@ export default function GlobalDiagnosticPanel() {
                 // Format metadata section
                 const metadata = `=== ABOUT THESE DIAGNOSTIC LOGS ===
 This is a diagnostic logging system that tracks all user interactions, application
-events, and errors that occur while using iLoveLLM. These logs provide a complete
+events, and errors that occur while using iLoveMD. These logs provide a complete
 timeline of what happened during your session, making it easier to troubleshoot issues
 and understand application behavior. If you encounter problems, share these logs when
 asking for help - they contain valuable context for debugging.
@@ -140,11 +140,8 @@ Log Format: #ID [timestamp] TYPE: message
 === LOGS ===
 `
 
-                // Format logs
                 const logsText = logs.map(log =>
-                  `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${
-                    log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''
-                  }`
+                  `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''}`
                 ).join('\n\n')
 
                 // Combine metadata + logs
@@ -200,11 +197,10 @@ Log Format: #ID [timestamp] TYPE: message
               logs.map((log) => (
                 <div
                   key={log.id}
-                  className={`mb-2 ${
-                    log.type === 'error' ? 'text-red-400' :
-                    log.type === 'success' ? 'text-green-400' :
-                    'text-gray-300'
-                  }`}
+                  className={`mb-2 ${log.type === 'error' ? 'text-red-400' :
+                      log.type === 'success' ? 'text-green-400' :
+                        'text-gray-300'
+                    }`}
                 >
                   <div className="flex items-start gap-2">
                     <span className="text-gray-600 text-xs font-mono select-all" title="Log ID (click to select)">

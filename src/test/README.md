@@ -1,6 +1,6 @@
 # Test Directory
 
-This directory contains test setup and utilities for the iLoveLLM test suite.
+This directory contains test setup and utilities for the iLoveMD test suite.
 
 ## Files
 

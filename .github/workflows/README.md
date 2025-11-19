@@ -1,6 +1,6 @@
 # GitHub Actions CI/CD Workflows
 
-This directory contains automated workflows for the iLoveLLM project, optimized for comprehensive checks with maximum speed through parallelization.
+This directory contains automated workflows for the iLoveMD project, optimized for comprehensive checks with maximum speed through parallelization.
 
 ## Workflows Overview
 

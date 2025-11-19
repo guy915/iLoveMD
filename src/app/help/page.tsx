@@ -20,12 +20,12 @@ export default function Help() {
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              What is iLoveLLM?
+              What is iLoveMD?
             </h3>
             <p className="text-gray-600">
-              iLoveLLM is a web application that helps you prepare documents for Large Language Models (LLMs)
-              like ChatGPT and Claude. It converts PDFs, HTML, and other formats to clean markdown that LLMs can
-              easily process.
+              iLoveMD is a web application that provides markdown utilities. It converts PDFs, HTML, and
+              other formats to clean markdown, and lets you merge multiple markdown files together. All tools
+              are designed to be simple, fast, and privacy-focused.
             </p>
           </div>
 
@@ -117,7 +117,7 @@ export default function Help() {
 
         <div className="bg-white rounded-lg shadow p-6">
           <p className="text-gray-600 mb-4">
-            iLoveLLM includes a comprehensive diagnostic logging system to help troubleshoot issues:
+            iLoveMD includes a comprehensive diagnostic logging system to help troubleshoot issues:
           </p>
           <ul className="list-disc list-inside space-y-2 text-gray-600">
             <li>Click &quot;Diagnostic Logs&quot; in the header to view all application events</li>
