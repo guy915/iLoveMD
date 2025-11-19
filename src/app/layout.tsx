@@ -6,8 +6,8 @@ import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { LogProvider } from '@/contexts/LogContext'
 
 export const metadata: Metadata = {
-  title: 'iLoveLLM',
-  description: 'Prepare documents for LLMs - Convert PDFs, HTML, and merge markdown files',
+  title: 'iLoveMD',
+  description: 'Markdown utilities - Convert PDFs, HTML, and merge markdown files',
   icons: {
     icon: '/favicon.png',
   },

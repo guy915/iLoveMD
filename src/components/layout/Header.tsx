@@ -94,7 +94,7 @@ export default function Header() {
             >
               <Image
                 src="/logo.svg"
-                alt="iLoveLLM"
+                alt="iLoveMD"
                 width={120}
                 height={40}
                 style={{ height: 'auto' }}
