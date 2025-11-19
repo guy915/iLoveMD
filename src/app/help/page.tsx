@@ -23,7 +23,7 @@ export default function Help() {
               What is iLoveMD?
             </h3>
             <p className="text-gray-600">
-              iLoveMD is a web application that provides markdown utilities. It converts PDFs, HTML, and
+              iLoveMD is a web application that provides markdown utilities. It converts PDFs and
               other formats to clean markdown, and lets you merge multiple markdown files together. All tools
               are designed to be simple, fast, and privacy-focused.
             </p>
