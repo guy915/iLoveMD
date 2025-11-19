@@ -1,11 +1,41 @@
 # Changelog
 
-All notable changes to the iLoveLLM project will be documented in this file.
+All notable changes to the iLoveMD project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+- **Rebranded from iLoveLLM to iLoveMD** (2025-11-19):
+  - **Updated project positioning**: Shifted from "LLM/RAG document preparation" to "markdown utility tools" (like iLovePDF but for markdown)
+  - **Updated all branding and references**:
+    - Project name: iLoveLLM → iLoveMD throughout codebase, documentation, and UI
+    - Package name: `ilovellm` → `ilovemd`
+    - GitHub repository: iLoveLLM.git → iLoveMD.git
+    - Logo: Updated from i❤️LLM to i❤️MD (maintaining same blue color #326eff)
+  - **Updated taglines and messaging**:
+    - Homepage: "Prepare your documents for LLMs" → "Your Markdown toolkit"
+    - Footer: "Free tool for preparing documents for LLMs and RAG." → "Markdown utility tools."
+    - Meta description: "Prepare documents for LLMs" → "Markdown utilities"
+  - **Rewrote documentation** to reflect markdown utility focus:
+    - `README.md`: Removed LLM-specific language, positioned as markdown utility toolset
+    - `about/page.tsx`: Updated mission to focus on markdown file utilities (inspired by iLovePDF)
+    - `help/page.tsx`: Updated "What is iLoveMD?" FAQ to describe markdown utilities
+    - `ARCHITECTURE.md`: Updated system overview description
+  - **Files Modified** (comprehensive rebrand across entire codebase):
+    - Configuration: `package.json`, `package-lock.json`
+    - Core app: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/about/page.tsx`, `src/app/help/page.tsx`
+    - Components: `src/components/layout/Header.tsx`, `src/components/layout/Footer.tsx`, `src/components/layout/GlobalDiagnosticPanel.tsx`
+    - Library: `src/lib/constants.ts`, `src/types/index.ts`
+    - Documentation: `README.md`, `CONTRIBUTING.md`, `ARCHITECTURE.md`, `CHANGELOG.md`
+    - Modal deployment: `modal-deployment/README.md`, `modal-deployment/DEPLOYMENT.md`
+    - Test docs: `src/test/README.md`, `assets/README.md`
+    - Logo: `public/logo.svg`
+  - **Rationale**: Broadening project scope from LLM-specific tool to general-purpose markdown utilities
+  - Build: ✅ | Lint: ✅ | Tests: ✅
+
 
 ### Fixed
 - **PDF to Markdown Cancel Button** (2025-11-17):

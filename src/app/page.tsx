@@ -10,7 +10,7 @@ export default function Home() {
         <div className="flex justify-center mb-4">
           <Image
             src="/logo.svg"
-            alt="iLoveLLM"
+            alt="iLoveMD"
             width={297}
             height={100}
             style={{ height: 'auto' }}
@@ -18,7 +18,7 @@ export default function Home() {
           />
         </div>
         <p className="text-xl text-gray-600">
-          Prepare your documents for LLMs
+          Your Markdown toolkit
         </p>
       </div>
 

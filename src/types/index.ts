@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript type definitions for iLoveLLM
+ * Shared TypeScript type definitions for iLoveMD
  */
 
 // ===== Diagnostic Logging Types =====
