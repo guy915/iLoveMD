@@ -11,13 +11,13 @@ export default function Home() {
           <Image
             src="/logo.svg"
             alt="iLoveMD"
-            width={297}
+            width={300}
             height={100}
             style={{ height: 'auto' }}
             priority
           />
         </div>
-        <p className="text-xl text-gray-600">
+        <p className="text-3xl text-gray-600">
           Your Markdown toolkit
         </p>
       </div>
