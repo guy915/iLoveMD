@@ -13,6 +13,7 @@ export default function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-600 hover:text-blue-600 font-medium transition-colors underline"
+            aria-label="iLoveMD (opens in new tab)"
           >
             iLoveMD
           </a>
