@@ -140,10 +140,8 @@ Log Format: #ID [timestamp] TYPE: message
 === LOGS ===
 `
 
-                // Format logs
                 const logsText = logs.map(log =>
-                  `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''
-                  }`
+                  `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''}`
                 ).join('\n\n')
 
                 // Combine metadata + logs
