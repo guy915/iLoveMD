@@ -148,6 +148,9 @@ export default function MergeMarkdownClient() {
                                                 (entry as FileSystemFileEntry).file((file) => {
                                                     allFiles.push(file)
                                                     resolveFile()
+                                                }, (error) => {
+                                                    console.error('Error reading file:', error)
+                                                    resolveFile() // Resolve anyway to prevent hanging
                                                 })
                                             })
                                         )
@@ -198,7 +201,7 @@ export default function MergeMarkdownClient() {
                 } else if (separatorStyle === 'page-break') {
                     parts.push('\n\n---\n\n')
                 } else {
-                    parts.push('\n')
+                    parts.push('\n\n')
                 }
             }
 

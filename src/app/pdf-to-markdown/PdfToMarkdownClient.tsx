@@ -259,7 +259,7 @@ export default function PdfToMarkdownClient() {
             return
         }
 
-        const conversionStartTime = Date.now()
+
         setProcessing(true)
         setError('')
         setBatchProgress(null)
@@ -453,7 +453,7 @@ export default function PdfToMarkdownClient() {
 
                 const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
                     if (!isMountedRef.current) return
-                    const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
+
                     setStatus(`Processing...`)
                 }
 
