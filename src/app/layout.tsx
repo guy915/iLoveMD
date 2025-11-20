@@ -6,10 +6,16 @@ import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { LogProvider } from '@/contexts/LogContext'
 
 export const metadata: Metadata = {
-  title: 'iLoveMD',
-  description: 'Markdown utilities - Convert PDFs, HTML, and merge markdown files',
+  title: 'PDF to Markdown Converter & Merge Tool | iLoveMD',
+  description: 'Free online tool to convert PDF to Markdown and merge multiple Markdown files. Best for preparing documents for LLMs and AI training.',
+  keywords: ['pdf to markdown', 'merge markdown files', 'html to markdown', 'convert pdf to md', 'combine markdown'],
   icons: {
     icon: '/favicon.png',
+  },
+  openGraph: {
+    title: 'PDF to Markdown Converter & Merge Tool',
+    description: 'Convert PDFs to Markdown and merge files instantly for free.',
+    type: 'website',
   },
 }
 

@@ -6,24 +6,28 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Hero Section */}
-      <div className="text-center mb-12">
+      <header className="text-center mb-12">
         <div className="flex justify-center mb-4">
           <Image
             src="/logo.svg"
-            alt="iLoveMD"
+            alt="iLoveMD - PDF to Markdown Converter and Merge Tool"
             width={300}
             height={100}
             style={{ height: 'auto' }}
             priority
           />
         </div>
-        <p className="text-3xl text-gray-600">
+        <h1 className="text-3xl text-gray-600 mb-4">
           Your Markdown toolkit
+        </h1>
+        <p className="text-lg text-gray-500 max-w-3xl mx-auto">
+          Free online tools to convert PDF to Markdown and merge multiple Markdown files. Perfect for preparing documents for LLMs and AI training.
         </p>
-      </div>
+      </header>
 
       {/* Tool Grid */}
-      <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
+      <section className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
+        <h2 className="sr-only">Available Markdown Tools</h2>
         {TOOL_CARDS.map((tool) => (
           <div key={tool.href} className="w-full md:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] flex">
             <ToolTile
@@ -34,7 +38,7 @@ export default function Home() {
             />
           </div>
         ))}
-      </div>
+      </section>
     </div>
   )
 }
