@@ -4,7 +4,7 @@ import { TOOL_CARDS } from '@/lib/constants'
 
 export default function Home() {
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gray-50">
+    <div className="flex-1 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
         <header className="text-center mb-12">
