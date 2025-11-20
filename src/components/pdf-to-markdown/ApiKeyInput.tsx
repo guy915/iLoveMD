@@ -83,6 +83,7 @@ export function ApiKeyInput({
           >
             Get a free one here
           </a>
+          {' '}if you wish to use LLM enhancement
         </p>
       </div>
     )
