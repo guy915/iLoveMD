@@ -4,11 +4,12 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { LogProvider } from '@/contexts/LogContext'
+import { BASE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ilovemd.vercel.app'),
-  title: 'PDF to Markdown Converter & Merge Tool | iLoveMD',
-  description: 'Free online tool to convert PDF to Markdown and merge multiple Markdown files. Best for preparing documents for LLMs and AI training.',
+  metadataBase: new URL(BASE_URL),
+  title: 'iLoveMD',
+  description: 'Free online tool to convert PDF to Markdown and merge multiple Markdown files.',
   keywords: ['pdf to markdown', 'merge markdown files', 'html to markdown', 'convert pdf to md', 'combine markdown'],
   authors: [{ name: 'iLoveMD' }],
   creator: 'iLoveMD',
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     title: 'PDF to Markdown Converter & Merge Tool',
     description: 'Convert PDFs to Markdown and merge files instantly for free.',
     type: 'website',
-    url: 'https://ilovemd.vercel.app',
+    url: BASE_URL,
     siteName: 'iLoveMD',
     images: [
       {
@@ -34,10 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PDF to Markdown Converter & Merge Tool | iLoveMD',
-    description: 'Convert PDFs to Markdown and merge files instantly for free.',
+    title: 'iLoveMD',
+    description: 'Convert PDFs to Markdown and merge Markdown files instantly for free.',
     images: ['/og-image.png'],
-    creator: '@ilovemd',
   },
   robots: {
     index: true,
@@ -49,6 +49,9 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
+  },
+  verification: {
+    google: 'LveIIEZWXDOLICpboq2K5SDSjxoFBoTIHP85aP7DEDg',
   },
 }
 

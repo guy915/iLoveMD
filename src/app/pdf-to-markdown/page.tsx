@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function PdfToMarkdownPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
+    '@type': 'WebApplication',
     name: 'iLoveMD PDF to Markdown',
     applicationCategory: 'UtilitiesApplication',
     operatingSystem: 'Any',
@@ -27,11 +27,6 @@ export default function PdfToMarkdownPage() {
       priceCurrency: 'USD',
     },
     description: 'Convert PDF files to clean Markdown format with AI enhancement.',
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      ratingCount: '1250',
-    },
   }
 
   return (

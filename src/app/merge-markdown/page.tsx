@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function MergeMarkdownPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
+    '@type': 'WebApplication',
     name: 'iLoveMD Merge Markdown',
     applicationCategory: 'UtilitiesApplication',
     operatingSystem: 'Any',
@@ -27,11 +27,6 @@ export default function MergeMarkdownPage() {
       priceCurrency: 'USD',
     },
     description: 'Combine multiple Markdown files into a single document easily.',
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      ratingCount: '850',
-    },
   }
 
   return (
