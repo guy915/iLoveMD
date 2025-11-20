@@ -714,7 +714,7 @@ export default function PdfToMarkdownClient() {
             <FullPageDropOverlay show={showDropOverlay} />
 
             {/* Page content */}
-            <div className="min-h-[calc(100vh-64px)] bg-gray-50">
+            <div className="flex-1 bg-gray-50">
                 <div className="relative max-w-4xl mx-auto px-4 py-12">
                     {/* Header */}
                     <div className="mb-8">
