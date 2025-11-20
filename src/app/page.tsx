@@ -17,12 +17,9 @@ export default function Home() {
             priority
           />
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Convert PDF to Markdown & Merge Files
+        <h1 className="text-3xl text-gray-600">
+          Your Markdown toolkit
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400">
-          The easiest way to prepare documents for LLMs.
-        </p>
       </header>
 
       {/* Tool Grid */}
