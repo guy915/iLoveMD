@@ -714,109 +714,111 @@ export default function PdfToMarkdownClient() {
             <FullPageDropOverlay show={showDropOverlay} />
 
             {/* Page content */}
-            <div className="relative max-w-4xl mx-auto px-4 py-12">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                        PDF to Markdown
-                    </h1>
-                    <p className="text-lg text-gray-600">
-                        Convert PDF files into clean Markdown
-                    </p>
-                </div>
-
-                {/* Mode Toggle Section - Only show after mounted to prevent flicker */}
-                {mounted && (
-                    <>
-                        <ConversionModeToggle
-                            mode={mode}
-                            setMode={setMode}
-                            disabled={processing}
-                        />
-
-                        <ApiKeyInput
-                            mode={mode}
-                            apiKey={apiKey}
-                            setApiKey={setApiKey}
-                            geminiApiKey={geminiApiKey}
-                            setGeminiApiKey={setGeminiApiKey}
-                            useLlm={options.use_llm}
-                            disabled={processing}
-                        />
-                    </>
-                )}
-
-                {/* File Upload Section */}
-                <FileUploadSection
-                    files={files}
-                    folderName={folderName}
-                    onFilesSelect={handleFilesSelect}
-                    onClearFiles={handleClearFiles}
-                    onDrop={handleDrop}
-                />
-
-                {/* Options Section */}
-                <ConversionOptions
-                    mode={mode}
-                    options={options}
-                    onOptionChange={handleOptionChange}
-                    disabled={processing}
-                />
-
-                {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                        <p className="text-red-800">{error}</p>
+            <div className="min-h-[calc(100vh-64px)] bg-gray-50">
+                <div className="relative max-w-4xl mx-auto px-4 py-12">
+                    {/* Header */}
+                    <div className="mb-8">
+                        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                            PDF to Markdown
+                        </h1>
+                        <p className="text-lg text-gray-600">
+                            Convert PDF files into clean Markdown
+                        </p>
                     </div>
-                )}
 
-                {/* Status Display */}
-                <ConversionStatus
-                    isBatch={isBatch}
-                    processing={processing}
-                    status={status}
-                    batchProgress={batchProgress}
-                    onCancel={handleCancel}
-                />
+                    {/* Mode Toggle Section - Only show after mounted to prevent flicker */}
+                    {mounted && (
+                        <>
+                            <ConversionModeToggle
+                                mode={mode}
+                                setMode={setMode}
+                                disabled={processing}
+                            />
 
-                {/* Action Buttons */}
-                <div className="flex justify-center gap-4">
-                    {/* Convert Button - show when no conversion result */}
-                    {!convertedMarkdown && !batchZipBlob && (
-                        <Button
-                            onClick={handleConvert}
-                            disabled={
-                                processing ||
-                                files.length === 0 ||
-                                (mode === 'paid' && !apiKey.trim()) ||
-                                (mode === 'free' && options.use_llm && !geminiApiKey.trim())
-                            }
-                            loading={processing}
-                            loadingText="Converting..."
-                            variant="primary"
-                        >
-                            Convert to Markdown
-                        </Button>
+                            <ApiKeyInput
+                                mode={mode}
+                                apiKey={apiKey}
+                                setApiKey={setApiKey}
+                                geminiApiKey={geminiApiKey}
+                                setGeminiApiKey={setGeminiApiKey}
+                                useLlm={options.use_llm}
+                                disabled={processing}
+                            />
+                        </>
                     )}
 
-                    {/* Download Button - single file */}
-                    {convertedMarkdown && (
-                        <Button
-                            onClick={handleDownload}
-                            variant="primary"
-                        >
-                            Download
-                        </Button>
+                    {/* File Upload Section */}
+                    <FileUploadSection
+                        files={files}
+                        folderName={folderName}
+                        onFilesSelect={handleFilesSelect}
+                        onClearFiles={handleClearFiles}
+                        onDrop={handleDrop}
+                    />
+
+                    {/* Options Section */}
+                    <ConversionOptions
+                        mode={mode}
+                        options={options}
+                        onOptionChange={handleOptionChange}
+                        disabled={processing}
+                    />
+
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                            <p className="text-red-800">{error}</p>
+                        </div>
                     )}
 
-                    {/* Download Button - batch ZIP */}
-                    {batchZipBlob && (
-                        <Button
-                            onClick={handleDownloadBatch}
-                            variant="primary"
-                        >
-                            Download ZIP
-                        </Button>
-                    )}
+                    {/* Status Display */}
+                    <ConversionStatus
+                        isBatch={isBatch}
+                        processing={processing}
+                        status={status}
+                        batchProgress={batchProgress}
+                        onCancel={handleCancel}
+                    />
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-center gap-4">
+                        {/* Convert Button - show when no conversion result */}
+                        {!convertedMarkdown && !batchZipBlob && (
+                            <Button
+                                onClick={handleConvert}
+                                disabled={
+                                    processing ||
+                                    files.length === 0 ||
+                                    (mode === 'paid' && !apiKey.trim()) ||
+                                    (mode === 'free' && options.use_llm && !geminiApiKey.trim())
+                                }
+                                loading={processing}
+                                loadingText="Converting..."
+                                variant="primary"
+                            >
+                                Convert to Markdown
+                            </Button>
+                        )}
+
+                        {/* Download Button - show when conversion successful */}
+                        {convertedMarkdown && (
+                            <Button
+                                onClick={handleDownload}
+                                variant="primary"
+                            >
+                                Download Markdown
+                            </Button>
+                        )}
+
+                        {/* Batch Download Button - show when batch conversion successful */}
+                        {batchZipBlob && (
+                            <Button
+                                onClick={handleDownloadBatch}
+                                variant="primary"
+                            >
+                                Download ZIP
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
         </>
