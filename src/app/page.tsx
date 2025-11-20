@@ -11,14 +11,14 @@ export default function Home() {
           <Image
             src="/logo.svg"
             alt="iLoveMD - PDF to Markdown Converter"
-            width={300}
+            width={298}
             height={100}
             style={{ height: 'auto' }}
             priority
           />
         </div>
         <h1 className="text-3xl text-gray-600">
-          Your Markdown toolkit
+          Your Markdown Toolkit
         </h1>
       </header>
 
