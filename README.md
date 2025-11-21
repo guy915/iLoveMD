@@ -1,9 +1,5 @@
 # iLoveMD
 
-A privacy-focused, browser-based toolkit for markdown utilities. Convert PDFs to markdown, merge multiple markdown files, and more - all without your data leaving your browser.
-
-## Overview
-
 iLoveMD is a collection of simple, single-purpose tools designed to make working with markdown files easier. Inspired by tools like iLovePDF.
 
 ## Features
