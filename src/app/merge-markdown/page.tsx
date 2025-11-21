@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import MergeMarkdownClient from './MergeMarkdownClient'
 
 export const metadata: Metadata = {
-  title: 'Merge Markdown Files - Combine Multiple MD Files Online',
+  title: 'Merge Markdowns',
   description: 'Merge multiple Markdown files into a single document. Drag and drop interface, sort files, and download the combined result. Free and runs entirely in your browser.',
   alternates: {
     canonical: 'https://ilovemd.vercel.app/merge-markdown',
