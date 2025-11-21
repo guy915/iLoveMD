@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: 'iLoveMD',
   description: 'Free online tool to convert PDF to Markdown and merge multiple Markdown files.',
-  keywords: ['pdf to markdown', 'merge markdown', 'html to markdown', 'convert pdf to md', 'combine markdown', 'i love markdown', 'markdown tools', 'convert pdf'],
+  keywords: ['pdf to markdown', 'merge markdown', 'html to markdown', 'convert pdf to md', 'combine markdown', 'i love markdown', 'markdown tools', 'convert pdf', 'markdown tools', 'markdown utility', 'pdf2md', 'markdown', 'md', 'pdf2md', 'md merge', 'md tools'],
   authors: [{ name: 'iLoveMD' }],
   creator: 'iLoveMD',
   publisher: 'iLoveMD',
