@@ -1,16 +1,17 @@
 import { Metadata } from 'next'
+import { BASE_URL } from '@/lib/constants'
 import MergeMarkdownClient from './MergeMarkdownClient'
 
 export const metadata: Metadata = {
   title: 'Merge Markdown',
   description: 'Merge multiple Markdown files into a single document. Drag and drop interface, sort files, and download the combined result. Free and runs entirely in your browser.',
   alternates: {
-    canonical: 'https://ilovemd.vercel.app/merge-markdown',
+    canonical: `${BASE_URL}/merge-markdown`,
   },
   openGraph: {
     title: 'Merge Markdown Files - Combine Multiple MD Files Online',
     description: 'Merge multiple Markdown files into a single document. Drag and drop interface, sort files, and download the combined result.',
-    url: 'https://ilovemd.vercel.app/merge-markdown',
+    url: `${BASE_URL}/merge-markdown`,
   },
 }
 
