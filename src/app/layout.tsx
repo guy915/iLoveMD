@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   publisher: 'iLoveMD',
   icons: {
     icon: '/favicon.png',
-    apple: '/apple-icon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
   },
   openGraph: {
     title: 'PDF to Markdown Converter & Merge Tool',
