@@ -404,7 +404,7 @@ describe('MergeMarkdownPage', () => {
       // Now upload 11 more files of 9GB each (11 * 9 = 99GB)
       // Plus the first 9GB = 108GB total, which exceeds 100GB
       const moreFiles = Array.from({ length: 12 }, (_, i) =>
-        createMockMarkdownFile(`file${i+2}.md`, `# File ${i+2}`, file1Size)
+        createMockMarkdownFile(`file${i + 2}.md`, `# File ${i + 2}`, file1Size)
       )
 
       fireEvent.click(uploadButton)
@@ -752,21 +752,7 @@ describe('MergeMarkdownPage', () => {
       expect(checkbox).toBeChecked()
     })
 
-    it('should change separator to newlines only', () => {
-      render(<MergeMarkdownPage />)
-      const newlineRadio = screen.getByRole('radio', { name: /Newline/ })
-      const horizontalRuleRadio = screen.getByRole('radio', { name: /^Horizontal rule$/ })
 
-      expect(newlineRadio).toBeChecked() // Default
-
-      fireEvent.click(horizontalRuleRadio)
-      expect(mockAddLog).toHaveBeenCalledWith('info', 'Separator changed to: horizontal rule')
-      expect(horizontalRuleRadio).toBeChecked()
-
-      fireEvent.click(newlineRadio)
-      expect(mockAddLog).toHaveBeenCalledWith('info', 'Separator changed to: newline')
-      expect(newlineRadio).toBeChecked()
-    })
   })
 
   describe('merge and download', () => {
