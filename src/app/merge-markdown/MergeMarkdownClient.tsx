@@ -196,9 +196,7 @@ export default function MergeMarkdownClient() {
         files.forEach((markdownFile, index) => {
             // Add separator before file (except for first file)
             if (index > 0) {
-                if (separatorStyle === 'horizontal-rule') {
-                    parts.push('\n---\n')
-                } else if (separatorStyle === 'page-break') {
+                if (separatorStyle === 'page-break') {
                     parts.push('\n\n---\n\n')
                 } else {
                     parts.push('\n\n')
