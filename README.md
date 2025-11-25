@@ -9,7 +9,7 @@ Convert PDF files to clean, high-quality markdown using the Marker API.
 - **High Accuracy**: Uses Marker API for state-of-the-art conversion.
 - **Configurable**: Options for pagination, image extraction, and math formatting.
 - **Batch Processing**: Convert multiple PDFs at once.
-- **Privacy First**: Your API keys are stored locally. Files are sent directly to the Marker API, never to our servers.
+- **Privacy**: Your API keys are stored locally. Files are sent directly to the Marker API, never to our servers.
 
 ### Merge Markdowns
 Combine multiple markdown files into a single document.
