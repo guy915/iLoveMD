@@ -5,7 +5,7 @@ iLoveMD is a collection of simple, single-purpose tools designed to make working
 ## Features
 
 ### PDF to Markdown
-Convert PDF files to clean, high-quality markdown using the Marker API.
+Convert PDF files to high-quality markdown using the Marker API.
 
 ### Merge Markdowns
 Combine multiple markdown files into a single document.
