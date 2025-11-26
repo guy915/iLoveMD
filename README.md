@@ -6,16 +6,9 @@ iLoveMD is a collection of simple, single-purpose tools designed to make working
 
 ### PDF to Markdown
 Convert PDF files to clean, high-quality markdown using the Marker API.
-- **High Accuracy**: Uses Marker API for state-of-the-art conversion.
-- **Configurable**: Options for pagination, image extraction, and math formatting.
-- **Batch Processing**: Convert multiple PDFs at once.
-- **Privacy**: Your API keys are stored locally. Files are sent directly to the Marker API, never to our servers.
 
 ### Merge Markdowns
 Combine multiple markdown files into a single document.
-- **Drag & Drop**: Easy interface to manage multiple files.
-- **Customizable**: Add separators, file names, or custom text between files.
-- **Client-Side**: Processing happens entirely in your browser.
 
 ## Getting Started
 
