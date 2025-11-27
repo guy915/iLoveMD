@@ -16,9 +16,8 @@
 
 ### Prerequisites
 
-- Node.js 18+ and npm
-- Git
-- A code editor (VS Code, Cursor, etc.)
+- npm
+- Node.js 18+
 
 ### Setting Up Your Development Environment
 
