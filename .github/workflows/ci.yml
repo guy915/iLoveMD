@@ -220,7 +220,7 @@ jobs:
 
     steps:
       - name: Download Node 20 artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: build-node-20
           path: artifact-download
