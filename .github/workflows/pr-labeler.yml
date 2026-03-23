@@ -24,7 +24,7 @@ jobs:
           configuration-path: .github/labeler.yml
 
       - name: Add size label
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { data: pullRequest } = await github.rest.pulls.get({
