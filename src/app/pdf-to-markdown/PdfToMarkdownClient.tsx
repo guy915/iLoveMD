@@ -8,6 +8,7 @@ import { MARKER_CONFIG } from '@/lib/constants'
 import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from '@/lib/services/markerApiService'
 import { filterPdfFiles, filterImmediateFolderFiles, getFolderName, type BatchProgress } from '@/lib/services/batchConversionService'
 import { cleanupPdfMarkdown } from '@/lib/utils/markdownUtils'
+import { isLikelyApiKey } from '@/lib/utils/apiKeyUtils'
 import { useLogs } from '@/contexts/LogContext'
 import { useConversionMode } from '@/hooks/useConversionMode'
 import { useConversionOptions } from '@/hooks/useConversionOptions'
@@ -246,9 +247,9 @@ export default function PdfToMarkdownClient() {
             }
         } else if (mode === 'free') {
             // Validate Gemini API key for free mode with LLM
-            if (options.use_llm && !geminiApiKey.trim()) {
-                setError('Please enter your Gemini API key to use LLM enhancement in free mode')
-                addLog('error', 'Conversion blocked: No Gemini API key provided for free LLM mode')
+            if (options.use_llm && !isLikelyApiKey(geminiApiKey)) {
+                setError('Please enter a valid Gemini API key to use LLM enhancement in free mode')
+                addLog('error', 'Conversion blocked: Missing or invalid Gemini API key for free LLM mode')
                 return
             }
         }
@@ -762,6 +763,7 @@ export default function PdfToMarkdownClient() {
                         options={options}
                         onOptionChange={handleOptionChange}
                         disabled={processing}
+                        isLlmAvailable={mode !== 'free' || isLikelyApiKey(geminiApiKey)}
                     />
 
                     {error && (
@@ -789,7 +791,7 @@ export default function PdfToMarkdownClient() {
                                     processing ||
                                     files.length === 0 ||
                                     (mode === 'paid' && !apiKey.trim()) ||
-                                    (mode === 'free' && options.use_llm && !geminiApiKey.trim())
+                                    (mode === 'free' && options.use_llm && !isLikelyApiKey(geminiApiKey))
                                 }
                                 loading={processing}
                                 loadingText="Converting..."

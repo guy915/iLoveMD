@@ -7,6 +7,13 @@ interface ConversionOptionsProps {
   options: MarkerOptions
   onOptionChange: (key: keyof MarkerOptions, value: boolean | string) => void
   disabled?: boolean
+  /**
+   * Whether LLM enhancement can be toggled on.
+   * In free mode this should reflect whether a plausible Gemini API key has
+   * been entered. Defaults to true to preserve behaviour for callers that
+   * don't provide it (e.g. paid mode, which doesn't use Gemini).
+   */
+  isLlmAvailable?: boolean
 }
 
 /**
@@ -17,7 +24,8 @@ export function ConversionOptions({
   mode,
   options,
   onOptionChange,
-  disabled = false
+  disabled = false,
+  isLlmAvailable = true
 }: ConversionOptionsProps) {
   // Track user's intent for dependent options separately from their enabled state
   // This allows checkboxes to remain checked (but disabled) when dependencies are off
@@ -31,6 +39,12 @@ export function ConversionOptions({
     setImageDescriptionsIntent(options.disable_image_extraction)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Empty deps = only run on mount
+
+  // "Create image descriptions" is a derivative of "LLM enhancement":
+  // it is only meaningful when LLM is both toggled on AND actually usable
+  // (i.e. a valid API key is present in free mode). When LLM is unavailable,
+  // cascade the grayed-out state to this dependent option as well.
+  const llmEffective = options.use_llm && isLlmAvailable
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -134,12 +148,16 @@ export function ConversionOptions({
                 onOptionChange('disable_image_extraction', false)
               }
             }}
-            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            disabled={disabled}
+            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:cursor-not-allowed"
+            disabled={disabled || !isLlmAvailable}
           />
-          <span className="ml-3">
+          <span className={`ml-3 ${!isLlmAvailable ? 'opacity-50' : ''}`}>
             <span className="block text-sm font-medium text-gray-900">LLM enhancement</span>
-            <span className="block text-sm text-gray-500">Improve accuracy with AI</span>
+            <span className="block text-sm text-gray-500">
+              {isLlmAvailable
+                ? 'Improve accuracy with AI'
+                : 'Enter a valid Gemini API key above to enable'}
+            </span>
           </span>
         </label>
 
@@ -150,20 +168,22 @@ export function ConversionOptions({
             onChange={(e) => {
               const checked = e.target.checked
               setImageDescriptionsIntent(checked)
-              // Only update actual option if use_llm is enabled
-              if (options.use_llm) {
+              // Only update actual option if LLM is effectively enabled
+              if (llmEffective) {
                 onOptionChange('disable_image_extraction', checked)
               }
             }}
-            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            disabled={disabled || !options.use_llm}
+            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:cursor-not-allowed"
+            disabled={disabled || !llmEffective}
           />
-          <span className="ml-3">
+          <span className={`ml-3 ${!llmEffective ? 'opacity-50' : ''}`}>
             <span className="block text-sm font-medium text-gray-900">Create image descriptions</span>
             <span className="block text-sm text-gray-500">
-              {options.use_llm
+              {llmEffective
                 ? 'Replace images with text descriptions'
-                : 'Requires LLM enhancement to be enabled'}
+                : !isLlmAvailable
+                  ? 'Enter a valid Gemini API key above to enable'
+                  : 'Requires LLM enhancement to be enabled'}
             </span>
           </span>
         </label>

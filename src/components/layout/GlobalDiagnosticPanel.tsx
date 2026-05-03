@@ -56,10 +56,10 @@ export default function GlobalDiagnosticPanel() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 bg-gray-900 rounded-lg shadow-2xl overflow-hidden z-50 w-[95vw] max-w-xl md:w-[500px]">
+        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden z-50 w-[95vw] max-w-xl md:w-[500px]">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-white">
+          <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
               Diagnostic Logs
             </h3>
             <button
@@ -159,7 +159,7 @@ Log Format: #ID [timestamp] TYPE: message
                     })
                   })
               }}
-              className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
+              className="text-gray-700 hover:text-gray-900 text-sm px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
             >
               Copy
             </button>
@@ -190,20 +190,20 @@ Log Format: #ID [timestamp] TYPE: message
             }}
           >
             {logs.length === 0 ? (
-              <div className="text-gray-400 text-center py-8 select-none">
+              <div className="text-gray-500 text-center py-8 select-none">
                 No logs yet. Logs will appear here as you interact with the website.
               </div>
             ) : (
               logs.map((log) => (
                 <div
                   key={log.id}
-                  className={`mb-2 ${log.type === 'error' ? 'text-red-400' :
-                      log.type === 'success' ? 'text-green-400' :
-                        'text-gray-300'
+                  className={`mb-2 ${log.type === 'error' ? 'text-red-600' :
+                      log.type === 'success' ? 'text-green-600' :
+                        'text-gray-700'
                     }`}
                 >
                   <div className="flex items-start gap-2">
-                    <span className="text-gray-600 text-xs font-mono select-all" title="Log ID (click to select)">
+                    <span className="text-gray-400 text-xs font-mono select-all" title="Log ID (click to select)">
                       #{log.id}
                     </span>
                     <div className="flex-1">
@@ -213,7 +213,7 @@ Log Format: #ID [timestamp] TYPE: message
                       </span>{' '}
                       {log.message}
                       {log.data && (
-                        <pre className="ml-4 mt-1 text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap break-words">
+                        <pre className="ml-4 mt-1 text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap break-words">
                           {JSON.stringify(log.data, null, 2)}
                         </pre>
                       )}
