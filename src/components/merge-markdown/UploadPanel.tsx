@@ -87,18 +87,18 @@ export function UploadPanel({
         </div>
 
         {/* Row 2: Sort + Options inline */}
-        <div className="flex flex-wrap items-center gap-3 text-sm">
+        <div className="flex items-center gap-3 text-sm min-w-0">
           {/* Sort toggle */}
           <button
             onClick={onToggleAlphabetical}
             aria-pressed={sortMode !== 'none'}
-            className="px-3 py-1.5 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+            className="px-2.5 py-1.5 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 transition-colors shrink-0"
           >
             {sortMode === 'reverseAlphabetical' ? 'Z → A' : 'A → Z'}
           </button>
 
           {/* Headers toggle */}
-          <label className="flex items-center gap-1.5 cursor-pointer">
+          <label className="flex items-center gap-1 cursor-pointer shrink-0">
             <input
               type="checkbox"
               checked={addHeaders}
@@ -106,17 +106,17 @@ export function UploadPanel({
                 onHeadersChange(e.target.checked)
                 addLog('info', `File headers ${e.target.checked ? 'enabled' : 'disabled'}`)
               }}
-              className="w-4 h-4 text-primary-600 rounded"
+              className="w-3.5 h-3.5 text-primary-600 rounded"
             />
             <span className="text-xs text-gray-700">Headers</span>
           </label>
 
           {/* Separator selector */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500 truncate max-w-[55px] sm:max-w-none inline-block" title="Separation">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-xs text-gray-500 truncate min-w-0 inline-block" title="Separation">
               Separation:
             </span>
-            <label className="flex items-center gap-1 cursor-pointer">
+            <label className="flex items-center gap-1 cursor-pointer shrink-0">
               <input
                 type="radio"
                 name="separator-mobile"
@@ -130,7 +130,7 @@ export function UploadPanel({
               />
               <span className="text-xs text-gray-700">Newline</span>
             </label>
-            <label className="flex items-center gap-1 cursor-pointer">
+            <label className="flex items-center gap-1 cursor-pointer shrink-0">
               <input
                 type="radio"
                 name="separator-mobile"
