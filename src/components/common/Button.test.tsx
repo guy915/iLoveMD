@@ -28,7 +28,7 @@ describe('Button', () => {
       render(<Button className="custom-class">Click me</Button>)
       const button = screen.getByRole('button')
       expect(button).toHaveClass('custom-class')
-      expect(button).toHaveClass('px-6') // Should still have base classes
+      expect(button).toHaveClass('px-4') // Should still have base classes
     })
 
     it('should render with type button by default', () => {
@@ -164,8 +164,8 @@ describe('Button', () => {
     it('should always have base classes', () => {
       render(<Button>Click me</Button>)
       const button = screen.getByRole('button')
-      expect(button).toHaveClass('px-6')
-      expect(button).toHaveClass('py-3')
+      expect(button).toHaveClass('px-4')
+      expect(button).toHaveClass('py-2.5')
       expect(button).toHaveClass('rounded-lg')
       expect(button).toHaveClass('font-medium')
       expect(button).toHaveClass('transition-colors')

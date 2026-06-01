@@ -7,6 +7,9 @@ const nextConfig = {
 
   // Security headers
   async headers() {
+    if (process.env.NODE_ENV === 'development') {
+      return []
+    }
     return [
       {
         source: '/:path*',
@@ -19,13 +22,15 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for KaTeX and Tailwind
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://www.datalab.to https://*.modal.run https://generativelanguage.googleapis.com",
+              process.env.NODE_ENV === 'development'
+                ? "connect-src 'self' ws://localhost:* http://localhost:* https://www.datalab.to https://*.modal.run https://generativelanguage.googleapis.com"
+                : "connect-src 'self' https://www.datalab.to https://*.modal.run https://generativelanguage.googleapis.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
               "object-src 'none'",
-              "upgrade-insecure-requests"
-            ].join('; ')
+              process.env.NODE_ENV === 'production' ? "upgrade-insecure-requests" : ""
+            ].filter(Boolean).join('; ')
           },
           {
             key: 'X-Frame-Options',

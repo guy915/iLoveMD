@@ -2,8 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   color: #111827;
   background: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Prevent horizontal overflow on mobile */
+  overflow-x: hidden;
+}
+
+/* Remove blue tap highlight on iOS/Android */
+a,
+button,
+label,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent double-tap zoom delay on interactive elements */
+  touch-action: manipulation;
 }

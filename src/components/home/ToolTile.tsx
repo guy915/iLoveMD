@@ -34,7 +34,7 @@ const ToolTile = memo(function ToolTile({ title, description, href, icon }: Tool
   return (
     <Link
       href={href}
-      className="flex flex-col items-center text-center w-[325px] h-[250px] p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
+      className="flex flex-col items-center text-center w-full min-h-[240px] sm:min-h-[250px] p-6 sm:p-8 bg-white rounded-lg border border-gray-200 hover:border-primary-500 hover:shadow-lg transition-all"
       onClick={handleClick}
     >
       {/* Icon */}
@@ -44,11 +44,12 @@ const ToolTile = memo(function ToolTile({ title, description, href, icon }: Tool
           alt={`${title} icon`}
           width={80}
           height={80}
+          className="w-14 h-14 sm:w-20 sm:h-20"
         />
       </div>
 
       {/* Title */}
-      <h3 className="text-xl font-semibold mb-3">{title}</h3>
+      <h3 className="text-lg sm:text-xl font-semibold mb-3">{title}</h3>
 
       {/* Description */}
       <p className="text-gray-600 text-sm leading-relaxed">{description}</p>

@@ -47,7 +47,7 @@ export function ConversionOptions({
   const llmEffective = options.use_llm && isLlmAvailable
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Options</h2>
 
       <div className="space-y-3">

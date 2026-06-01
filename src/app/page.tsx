@@ -5,28 +5,32 @@ import { TOOL_CARDS } from '@/lib/constants'
 export default function Home() {
   return (
     <div className="flex-1 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Hero Section */}
-        <header className="text-center mb-12">
+        <header className="text-center mb-8 sm:mb-12">
           <div className="flex justify-center mb-4">
             <Image
               src="/logo.svg"
               alt="iLoveMD - PDF to Markdown Converter"
               width={297}
               height={100}
+              className="w-48 sm:w-[297px]"
               style={{ height: 'auto' }}
               priority
             />
           </div>
-          <h1 className="text-3xl text-gray-600">
+          <h1 className="text-2xl sm:text-3xl text-gray-600">
             Your Markdown Toolkit
           </h1>
         </header>
 
         {/* Tool Grid */}
-        <section className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto" aria-label="Markdown Tools">
+        <section
+          className="flex flex-wrap justify-center gap-4 sm:gap-6 max-w-5xl mx-auto"
+          aria-label="Markdown Tools"
+        >
           {TOOL_CARDS.map((tool) => (
-            <div key={tool.href} className="w-full md:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] flex">
+            <div key={tool.href} className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-[350px] sm:max-w-none flex">
               <ToolTile
                 title={tool.title}
                 description={tool.description}

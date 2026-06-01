@@ -80,13 +80,13 @@ describe('MergeMarkdownPage', () => {
 
     it('should render upload buttons', () => {
       render(<MergeMarkdownPage />)
-      expect(screen.getByRole('button', { name: 'Upload Files' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Upload Folder' })).toBeInTheDocument()
+      expect(screen.getAllByRole('button', { name: 'Upload Files' })[0]).toBeInTheDocument()
+      expect(screen.getAllByRole('button', { name: 'Upload Folder' })[0]).toBeInTheDocument()
     })
 
     it('should render sort button', () => {
       render(<MergeMarkdownPage />)
-      expect(screen.getByText('A → Z')).toBeInTheDocument()
+      expect(screen.getAllByText('A → Z')[0]).toBeInTheDocument()
     })
 
     it('should render merge options', () => {
@@ -98,8 +98,8 @@ describe('MergeMarkdownPage', () => {
 
     it('should render merge and clear buttons', () => {
       render(<MergeMarkdownPage />)
-      expect(screen.getByRole('button', { name: 'Merge' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Clear All' })).toBeInTheDocument()
+      expect(screen.getAllByRole('button', { name: 'Merge' })[0]).toBeInTheDocument()
+      expect(screen.getAllByRole('button', { name: 'Clear All' })[0]).toBeInTheDocument()
     })
 
     it('should show empty state when no files uploaded', () => {
@@ -115,14 +115,14 @@ describe('MergeMarkdownPage', () => {
 
     it('should disable merge button when no files', () => {
       render(<MergeMarkdownPage />)
-      const mergeButton = screen.getByRole('button', { name: 'Merge' })
-      expect(mergeButton).toBeDisabled()
+      const mergeButtons = screen.getAllByRole('button', { name: 'Merge' })
+      mergeButtons.forEach(btn => expect(btn).toBeDisabled())
     })
 
     it('should disable clear button when no files', () => {
       render(<MergeMarkdownPage />)
-      const clearButton = screen.getByRole('button', { name: 'Clear All' })
-      expect(clearButton).toBeDisabled()
+      const clearButtons = screen.getAllByRole('button', { name: 'Clear All' })
+      clearButtons.forEach(btn => expect(btn).toBeDisabled())
     })
   })
 
@@ -131,7 +131,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', '# Hello World', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -148,7 +148,7 @@ describe('MergeMarkdownPage', () => {
 
     it('should log when upload button is clicked', () => {
       render(<MergeMarkdownPage />)
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       expect(mockAddLog).toHaveBeenCalledWith('info', 'Upload Files button clicked')
@@ -157,7 +157,7 @@ describe('MergeMarkdownPage', () => {
     it('should log when file selection is cancelled', async () => {
       const { container } = render(<MergeMarkdownPage />)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -173,7 +173,7 @@ describe('MergeMarkdownPage', () => {
       const file1 = createMockMarkdownFile('file1.md', '# File 1', 1000)
       const file2 = createMockMarkdownFile('file2.md', '# File 2', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -189,7 +189,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.markdown', '# Test', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -212,7 +212,7 @@ describe('MergeMarkdownPage', () => {
       Object.defineProperty(file1, 'webkitRelativePath', { value: 'folder/test1.md' })
       Object.defineProperty(file2, 'webkitRelativePath', { value: 'folder/test2.md' })
 
-      const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
+      const folderButton = screen.getAllByRole('button', { name: 'Upload Folder' })[0]
       fireEvent.click(folderButton)
 
       const folderInput = container.querySelectorAll('input[type="file"]')[2] as HTMLInputElement
@@ -230,7 +230,7 @@ describe('MergeMarkdownPage', () => {
 
     it('should log when folder upload button is clicked', () => {
       render(<MergeMarkdownPage />)
-      const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
+      const folderButton = screen.getAllByRole('button', { name: 'Upload Folder' })[0]
       fireEvent.click(folderButton)
 
       expect(mockAddLog).toHaveBeenCalledWith('info', 'Upload Folder button clicked')
@@ -245,7 +245,7 @@ describe('MergeMarkdownPage', () => {
       Object.defineProperty(file1, 'webkitRelativePath', { value: 'folder/test1.md' })
       Object.defineProperty(file2, 'webkitRelativePath', { value: 'folder/subfolder/test2.md' })
 
-      const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
+      const folderButton = screen.getAllByRole('button', { name: 'Upload Folder' })[0]
       fireEvent.click(folderButton)
 
       const folderInput = container.querySelectorAll('input[type="file"]')[2] as HTMLInputElement
@@ -267,7 +267,7 @@ describe('MergeMarkdownPage', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: 'folder/test.txt' })
       Object.defineProperty(file, 'name', { value: 'test.txt' })
 
-      const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
+      const folderButton = screen.getAllByRole('button', { name: 'Upload Folder' })[0]
       fireEvent.click(folderButton)
 
       const folderInput = container.querySelectorAll('input[type="file"]')[2] as HTMLInputElement
@@ -281,7 +281,7 @@ describe('MergeMarkdownPage', () => {
     it('should log when folder selection is cancelled', async () => {
       const { container } = render(<MergeMarkdownPage />)
 
-      const folderButton = screen.getByRole('button', { name: 'Upload Folder' })
+      const folderButton = screen.getAllByRole('button', { name: 'Upload Folder' })[0]
       fireEvent.click(folderButton)
 
       const folderInput = container.querySelectorAll('input[type="file"]')[2] as HTMLInputElement
@@ -301,7 +301,7 @@ describe('MergeMarkdownPage', () => {
       const file = new File(['content'], 'test.txt', { type: 'text/plain' })
       Object.defineProperty(file, 'size', { value: 1000 })
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -323,7 +323,7 @@ describe('MergeMarkdownPage', () => {
 
       const largeFile = createMockMarkdownFile('large.md', '# Large', FILE_SIZE.MAX_MERGE_FILE_SIZE + 1)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -348,7 +348,7 @@ describe('MergeMarkdownPage', () => {
         createMockMarkdownFile(`file${i}.md`, `# File ${i}`, 1000)
       )
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -384,7 +384,7 @@ describe('MergeMarkdownPage', () => {
       // Upload first batch of files
       const file1 = createMockMarkdownFile('file1.md', '# File 1', file1Size)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       let input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -434,7 +434,7 @@ describe('MergeMarkdownPage', () => {
       const file3 = createMockMarkdownFile('test3.md', '# Test', 1000)
       Object.defineProperty(file3, 'type', { value: '' })
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -453,7 +453,7 @@ describe('MergeMarkdownPage', () => {
       const file = createMockMarkdownFile('test.md', '# Test', 1000)
       Object.defineProperty(file, 'type', { value: 'application/pdf' })
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -474,7 +474,7 @@ describe('MergeMarkdownPage', () => {
   describe('drag and drop files', () => {
     it('should show drag overlay on drag enter', () => {
       const { container } = render(<MergeMarkdownPage />)
-      const canvas = container.querySelector('.flex-1') as HTMLElement
+      const canvas = container.querySelector('.overflow-y-auto.relative.bg-gray-50') as HTMLElement
 
       fireEvent.dragEnter(canvas, {
         dataTransfer: { types: ['Files'] }
@@ -486,7 +486,7 @@ describe('MergeMarkdownPage', () => {
 
     it('should hide drag overlay on drag leave', () => {
       const { container } = render(<MergeMarkdownPage />)
-      const canvas = container.querySelector('.flex-1') as HTMLElement
+      const canvas = container.querySelector('.overflow-y-auto.relative.bg-gray-50') as HTMLElement
 
       fireEvent.dragEnter(canvas, {
         dataTransfer: { types: ['Files'] }
@@ -504,7 +504,7 @@ describe('MergeMarkdownPage', () => {
 
     it('should upload files on drop', async () => {
       const { container } = render(<MergeMarkdownPage />)
-      const canvas = container.querySelector('.flex-1') as HTMLElement
+      const canvas = container.querySelector('.overflow-y-auto.relative.bg-gray-50') as HTMLElement
 
       const file = createMockMarkdownFile('dropped.md', '# Dropped File', 1000)
 
@@ -523,7 +523,7 @@ describe('MergeMarkdownPage', () => {
 
     it('should not show drag overlay when reordering files', () => {
       const { container } = render(<MergeMarkdownPage />)
-      const canvas = container.querySelector('.flex-1') as HTMLElement
+      const canvas = container.querySelector('.overflow-y-auto.relative.bg-gray-50') as HTMLElement
 
       fireEvent.dragEnter(canvas, {
         dataTransfer: { types: ['application/x-file-reorder'] }
@@ -539,7 +539,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', '# Test', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -564,7 +564,7 @@ describe('MergeMarkdownPage', () => {
       const file1 = createMockMarkdownFile('file1.md', '# File 1', 1000)
       const file2 = createMockMarkdownFile('file2.md', '# File 2', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -591,7 +591,7 @@ describe('MergeMarkdownPage', () => {
       const file1 = createMockMarkdownFile('file1.md', '# File 1', 1000)
       const file2 = createMockMarkdownFile('file2.md', '# File 2', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -602,7 +602,7 @@ describe('MergeMarkdownPage', () => {
         expect(screen.getByText('file2.md')).toBeInTheDocument()
       })
 
-      const clearButton = screen.getByRole('button', { name: 'Clear All' })
+      const clearButton = screen.getAllByRole('button', { name: 'Clear All' })[0]
       fireEvent.click(clearButton)
 
       await waitFor(() => {
@@ -617,7 +617,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', '# Test', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -628,21 +628,21 @@ describe('MergeMarkdownPage', () => {
       })
 
       // Toggle sort mode twice to get to reverseAlphabetical
-      let sortButton = screen.getByText('A → Z')
+      let sortButton = screen.getAllByText('A → Z')[0]
       fireEvent.click(sortButton) // none → alphabetical (still shows A → Z)
       fireEvent.click(sortButton) // alphabetical → reverseAlphabetical (shows Z → A)
 
       await waitFor(() => {
-        expect(screen.getByText('Z → A')).toBeInTheDocument()
+        expect(screen.getAllByText('Z → A')[0]).toBeInTheDocument()
       })
 
       // Clear all
-      const clearButton = screen.getByRole('button', { name: 'Clear All' })
+      const clearButton = screen.getAllByRole('button', { name: 'Clear All' })[0]
       fireEvent.click(clearButton)
 
       // Sort button should reset to 'A → Z'
       await waitFor(() => {
-        expect(screen.getByText('A → Z')).toBeInTheDocument()
+        expect(screen.getAllByText('A → Z')[0]).toBeInTheDocument()
       })
     })
   })
@@ -654,7 +654,7 @@ describe('MergeMarkdownPage', () => {
       const fileA = createMockMarkdownFile('a.md', '# A', 1000)
       const fileB = createMockMarkdownFile('b.md', '# B', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -664,12 +664,12 @@ describe('MergeMarkdownPage', () => {
         expect(screen.getByText('a.md')).toBeInTheDocument()
       })
 
-      const sortButton = screen.getByText('A → Z')
+      const sortButton = screen.getAllByText('A → Z')[0]
       fireEvent.click(sortButton) // none → alphabetical
 
       expect(mockAddLog).toHaveBeenCalledWith('info', 'Sort mode changed to: alphabetical')
       // Button should still show A → Z when in alphabetical mode
-      expect(screen.getByText('A → Z')).toBeInTheDocument()
+      expect(screen.getAllByText('A → Z')[0]).toBeInTheDocument()
     })
 
     it('should sort files alphabetically Z → A', async () => {
@@ -677,7 +677,7 @@ describe('MergeMarkdownPage', () => {
       const fileC = createMockMarkdownFile('c.md', '# C', 1000)
       const fileA = createMockMarkdownFile('a.md', '# A', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -688,15 +688,15 @@ describe('MergeMarkdownPage', () => {
       })
 
       // First click: none → alphabetical (button still shows A → Z)
-      let sortButton = screen.getByText('A → Z')
+      let sortButton = screen.getAllByText('A → Z')[0]
       fireEvent.click(sortButton)
 
       // Second click: alphabetical → reverseAlphabetical (button now shows Z → A)
-      sortButton = screen.getByText('A → Z')
+      sortButton = screen.getAllByText('A → Z')[0]
       fireEvent.click(sortButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Z → A')).toBeInTheDocument()
+        expect(screen.getAllByText('Z → A')[0]).toBeInTheDocument()
       })
 
       expect(mockAddLog).toHaveBeenCalledWith('info', 'Sort mode changed to: reverseAlphabetical')
@@ -706,7 +706,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', '# Test', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -717,19 +717,19 @@ describe('MergeMarkdownPage', () => {
       })
 
       // Click through all sort states
-      let sortButton = screen.getByText('A → Z')
+      let sortButton = screen.getAllByText('A → Z')[0]
       fireEvent.click(sortButton) // none → alphabetical (still A → Z)
       fireEvent.click(sortButton) // alphabetical → reverseAlphabetical (now Z → A)
 
       await waitFor(() => {
-        expect(screen.getByText('Z → A')).toBeInTheDocument()
+        expect(screen.getAllByText('Z → A')[0]).toBeInTheDocument()
       })
 
-      sortButton = screen.getByText('Z → A')
+      sortButton = screen.getAllByText('Z → A')[0]
       fireEvent.click(sortButton) // reverseAlphabetical → alphabetical (back to A → Z)
 
       await waitFor(() => {
-        expect(screen.getByText('A → Z')).toBeInTheDocument()
+        expect(screen.getAllByText('A → Z')[0]).toBeInTheDocument()
       })
 
       expect(mockAddLog).toHaveBeenCalledWith('info', 'Sort mode changed to: alphabetical')
@@ -761,7 +761,7 @@ describe('MergeMarkdownPage', () => {
       const file1 = createMockMarkdownFile('file1.md', '# File 1\n\nContent 1', 1000)
       const file2 = createMockMarkdownFile('file2.md', '# File 2\n\nContent 2', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -776,7 +776,7 @@ describe('MergeMarkdownPage', () => {
       const appendChildSpy = vi.spyOn(document.body, 'appendChild')
       const removeChildSpy = vi.spyOn(document.body, 'removeChild')
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge' })
+      const mergeButton = screen.getAllByRole('button', { name: 'Merge' })[0]
       fireEvent.click(mergeButton)
 
       await waitFor(() => {
@@ -794,7 +794,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', 'Content', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -804,7 +804,7 @@ describe('MergeMarkdownPage', () => {
         expect(screen.getByText('test.md')).toBeInTheDocument()
       })
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge' })
+      const mergeButton = screen.getAllByRole('button', { name: 'Merge' })[0]
       fireEvent.click(mergeButton)
 
       await waitFor(() => {
@@ -820,7 +820,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', 'Content', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -834,7 +834,7 @@ describe('MergeMarkdownPage', () => {
       const checkbox = screen.getByRole('checkbox', { name: /Add file headers/ })
       fireEvent.click(checkbox)
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge' })
+      const mergeButton = screen.getAllByRole('button', { name: 'Merge' })[0]
       fireEvent.click(mergeButton)
 
       await waitFor(() => {
@@ -850,7 +850,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', 'Content', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -861,10 +861,10 @@ describe('MergeMarkdownPage', () => {
       })
 
       // Change to page break
-      const pageBreakRadio = screen.getByRole('radio', { name: /^Page break$/ })
+      const pageBreakRadio = screen.getAllByRole('radio', { name: /^Page break$/ })[0]
       fireEvent.click(pageBreakRadio)
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge' })
+      const mergeButton = screen.getAllByRole('button', { name: 'Merge' })[0]
       fireEvent.click(mergeButton)
 
       await waitFor(() => {
@@ -879,7 +879,7 @@ describe('MergeMarkdownPage', () => {
     it('should show error when trying to merge with no files', () => {
       render(<MergeMarkdownPage />)
 
-      const mergeButton = screen.getByRole('button', { name: 'Merge' })
+      const mergeButton = screen.getAllByRole('button', { name: 'Merge' })[0]
       // Button should be disabled, but try clicking anyway
       expect(mergeButton).toBeDisabled()
     })
@@ -924,7 +924,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', '# Hello World\n\nThis is a test.', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -941,7 +941,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', '# Test', 1234)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -960,7 +960,7 @@ describe('MergeMarkdownPage', () => {
       const file1 = createMockMarkdownFile('file1.md', '# File 1', 1000)
       const file2 = createMockMarkdownFile('file2.md', '# File 2', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -997,7 +997,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', '# Test', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -1011,14 +1011,14 @@ describe('MergeMarkdownPage', () => {
 
     it('should have proper role and aria-pressed for sort button', () => {
       render(<MergeMarkdownPage />)
-      const sortButton = screen.getByText('A → Z')
+      const sortButton = screen.getAllByText('A → Z')[0]
 
       expect(sortButton).toHaveAttribute('aria-pressed', 'false')
     })
 
     it('should have drag overlay with proper ARIA attributes', () => {
       const { container } = render(<MergeMarkdownPage />)
-      const canvas = container.querySelector('.flex-1') as HTMLElement
+      const canvas = container.querySelector('.overflow-y-auto.relative.bg-gray-50') as HTMLElement
 
       fireEvent.dragEnter(canvas, {
         dataTransfer: { types: ['Files'] }
@@ -1073,7 +1073,7 @@ describe('MergeMarkdownPage', () => {
       const file = new File(['# Test'], 'test.md', { type: 'text/markdown' })
       Object.defineProperty(file, 'size', { value: 1000 })
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement
@@ -1104,7 +1104,7 @@ describe('MergeMarkdownPage', () => {
       const { container } = render(<MergeMarkdownPage />)
       const file = createMockMarkdownFile('test.md', '# Test', 1000)
 
-      const uploadButton = screen.getByRole('button', { name: 'Upload Files' })
+      const uploadButton = screen.getAllByRole('button', { name: 'Upload Files' })[0]
       fireEvent.click(uploadButton)
 
       const input = container.querySelector('input[type="file"][accept=".md,.markdown"]') as HTMLInputElement

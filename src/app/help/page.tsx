@@ -5,9 +5,9 @@ import Link from 'next/link'
  */
 export default function Help() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Help & Support</h1>
+        <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">Help & Support</h1>
         <p className="text-xl text-gray-600">
           Find answers to common questions and troubleshooting tips
         </p>

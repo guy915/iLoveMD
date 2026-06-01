@@ -30,9 +30,10 @@ export function FileUploadSection({
           Drop PDF files here
         </p>
 
-        <div className="flex items-stretch gap-0 min-h-[180px] border-t border-gray-300">
-          {/* Files Button (Left Half) */}
-          <label className="flex-1 cursor-pointer flex flex-col items-center justify-center hover:bg-gray-50 transition-colors rounded-bl-lg border-r border-gray-200 py-6">
+        <div
+          className="flex flex-col sm:flex-row items-stretch gap-0 sm:min-h-[180px] border-t border-gray-300"
+        >
+          <label className="flex-1 cursor-pointer flex flex-col items-center justify-center hover:bg-gray-50 transition-colors sm:rounded-bl-lg border-b sm:border-b-0 sm:border-r border-gray-200 py-6">
             <input
               type="file"
               accept=".pdf,application/pdf"
@@ -57,7 +58,7 @@ export function FileUploadSection({
           <div className="w-px bg-gray-200"></div>
 
           {/* Folder Button (Right Half) */}
-          <label className="flex-1 cursor-pointer flex flex-col items-center justify-center hover:bg-gray-50 transition-colors rounded-br-lg border-l border-gray-200 py-6">
+          <label className="flex-1 cursor-pointer flex flex-col items-center justify-center hover:bg-gray-50 transition-colors sm:rounded-br-lg border-l border-gray-200 py-6">
             <input
               type="file"
               accept=".pdf,application/pdf"

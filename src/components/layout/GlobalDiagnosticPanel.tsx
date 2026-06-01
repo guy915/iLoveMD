@@ -6,8 +6,13 @@ import { useLogs } from '@/contexts/LogContext'
 export default function GlobalDiagnosticPanel() {
   const { logs, addLog } = useLogs()
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const logsContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Autoscroll to latest log when logs change and panel is open
   useEffect(() => {
@@ -55,30 +60,37 @@ export default function GlobalDiagnosticPanel() {
       </button>
 
       {/* Dropdown Panel */}
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden z-50 w-[95vw] max-w-xl md:w-[500px]">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Diagnostic Logs
-            </h3>
-            <button
-              onClick={(e: MouseEvent<HTMLButtonElement>) => {
-                e.stopPropagation()
+      {mounted && (
+        <div
+          className={`fixed md:absolute top-[70px] md:top-full left-4 right-4 md:left-0 md:right-auto md:mt-2 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden z-50 md:w-[500px] transition-all duration-200 ease-out origin-top-left ${
+            isOpen
+              ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+          }`}
+          aria-hidden={!isOpen}
+        >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Diagnostic Logs
+          </h3>
+          <button
+            onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.stopPropagation()
 
-                // Calculate log statistics
-                const errorCount = logs.filter(log => log.type === 'error').length
-                const successCount = logs.filter(log => log.type === 'success').length
-                const infoCount = logs.filter(log => log.type === 'info').length
+              // Calculate log statistics
+              const errorCount = logs.filter(log => log.type === 'error').length
+              const successCount = logs.filter(log => log.type === 'success').length
+              const infoCount = logs.filter(log => log.type === 'info').length
 
-                // Get session info
-                const now = new Date()
-                const sessionStart = logs.length > 0 ? logs[0].timestamp : now.toLocaleTimeString()
-                const currentUrl = typeof window !== 'undefined' ? window.location.href : 'Unknown'
-                const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'
+              // Get session info
+              const now = new Date()
+              const sessionStart = logs.length > 0 ? logs[0].timestamp : now.toLocaleTimeString()
+              const currentUrl = typeof window !== 'undefined' ? window.location.href : 'Unknown'
+              const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'
 
-                // Format metadata section
-                const metadata = `=== ABOUT THESE DIAGNOSTIC LOGS ===
+              // Format metadata section
+              const metadata = `=== ABOUT THESE DIAGNOSTIC LOGS ===
 This is a diagnostic logging system that tracks all user interactions, application
 events, and errors that occur while using iLoveMD. These logs provide a complete
 timeline of what happened during your session, making it easier to troubleshoot issues
@@ -140,91 +152,91 @@ Log Format: #ID [timestamp] TYPE: message
 === LOGS ===
 `
 
-                const logsText = logs.map(log =>
-                  `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''}`
-                ).join('\n\n')
+              const logsText = logs.map(log =>
+                `#${log.id} [${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}${log.data ? '\n' + JSON.stringify(log.data, null, 2) : ''}`
+              ).join('\n\n')
 
-                // Combine metadata + logs
-                const fullCopy = metadata + logsText
+              // Combine metadata + logs
+              const fullCopy = metadata + logsText
 
-                // Copy to clipboard with error handling
-                navigator.clipboard.writeText(fullCopy)
-                  .then(() => {
-                    addLog('success', 'Logs copied to clipboard')
+              // Copy to clipboard with error handling
+              navigator.clipboard.writeText(fullCopy)
+                .then(() => {
+                  addLog('success', 'Logs copied to clipboard')
+                })
+                .catch((error) => {
+                  console.error('Failed to copy logs to clipboard:', error)
+                  addLog('error', 'Failed to copy logs to clipboard. Please check browser permissions.', {
+                    error: error instanceof Error ? error.message : String(error)
                   })
-                  .catch((error) => {
-                    console.error('Failed to copy logs to clipboard:', error)
-                    addLog('error', 'Failed to copy logs to clipboard. Please check browser permissions.', {
-                      error: error instanceof Error ? error.message : String(error)
-                    })
-                  })
-              }}
-              className="text-gray-700 hover:text-gray-900 text-sm px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
-            >
-              Copy
-            </button>
-          </div>
-
-          {/* Logs content - user-select-text makes it easy to select and copy */}
-          <div
-            ref={logsContainerRef}
-            className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text"
-            onWheel={(e) => {
-              const container = logsContainerRef.current
-              if (!container) return
-
-              const isScrollingDown = e.deltaY > 0
-              const isScrollingUp = e.deltaY < 0
-              const isAtBottom = container.scrollHeight - container.scrollTop === container.clientHeight
-              const isAtTop = container.scrollTop === 0
-
-              // Only allow page scroll when we're at an edge AND scrolling past it
-              // At top scrolling up -> allow page scroll
-              // At bottom scrolling down -> allow page scroll
-              // All other cases -> stop propagation (scroll panel only)
-              const shouldScrollPage = (isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)
-
-              if (!shouldScrollPage) {
-                e.stopPropagation()
-              }
+                })
             }}
+            className="text-gray-700 hover:text-gray-900 text-sm px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
           >
-            {logs.length === 0 ? (
-              <div className="text-gray-500 text-center py-8 select-none">
-                No logs yet. Logs will appear here as you interact with the website.
-              </div>
-            ) : (
-              logs.map((log) => (
-                <div
-                  key={log.id}
-                  className={`mb-2 ${log.type === 'error' ? 'text-red-600' :
-                      log.type === 'success' ? 'text-green-600' :
-                        'text-gray-700'
-                    }`}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-gray-400 text-xs font-mono select-all" title="Log ID (click to select)">
-                      #{log.id}
-                    </span>
-                    <div className="flex-1">
-                      <span className="text-gray-500">[{log.timestamp}]</span>{' '}
-                      <span className="font-bold">
-                        {log.type.toUpperCase()}:
-                      </span>{' '}
-                      {log.message}
-                      {log.data && (
-                        <pre className="ml-4 mt-1 text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap break-words">
-                          {JSON.stringify(log.data, null, 2)}
-                        </pre>
-                      )}
-                    </div>
+            Copy
+          </button>
+        </div>
+
+        {/* Logs content - user-select-text makes it easy to select and copy */}
+        <div
+          ref={logsContainerRef}
+          className="p-4 overflow-y-auto font-mono text-sm max-h-[320px] select-text cursor-text"
+          onWheel={(e) => {
+            const container = logsContainerRef.current
+            if (!container) return
+
+            const isScrollingDown = e.deltaY > 0
+            const isScrollingUp = e.deltaY < 0
+            const isAtBottom = container.scrollHeight - container.scrollTop === container.clientHeight
+            const isAtTop = container.scrollTop === 0
+
+            // Only allow page scroll when we're at an edge AND scrolling past it
+            // At top scrolling up -> allow page scroll
+            // At bottom scrolling down -> allow page scroll
+            // All other cases -> stop propagation (scroll panel only)
+            const shouldScrollPage = (isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)
+
+            if (!shouldScrollPage) {
+              e.stopPropagation()
+            }
+          }}
+        >
+          {logs.length === 0 ? (
+            <div className="text-gray-500 text-center py-8 select-none">
+              No logs yet. Logs will appear here as you interact with the website.
+            </div>
+          ) : (
+            logs.map((log) => (
+              <div
+                key={log.id}
+                className={`mb-2 ${log.type === 'error' ? 'text-red-600' :
+                    log.type === 'success' ? 'text-green-600' :
+                      'text-gray-700'
+                  }`}
+              >
+                <div className="flex items-start gap-2">
+                  <span className="text-gray-400 text-xs font-mono select-all" title="Log ID (click to select)">
+                    #{log.id}
+                  </span>
+                  <div className="flex-1">
+                    <span className="text-gray-500">[{log.timestamp}]</span>{' '}
+                    <span className="font-bold">
+                      {log.type.toUpperCase()}:
+                    </span>{' '}
+                    {log.message}
+                    {log.data && (
+                      <pre className="ml-4 mt-1 text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap break-words">
+                        {JSON.stringify(log.data, null, 2)}
+                      </pre>
+                    )}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            ))
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    )}
+  </div>
   )
 }

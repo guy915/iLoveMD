@@ -6,6 +6,7 @@ import { formatFileSize } from '@/lib/utils/formatUtils'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import { useFileDragAndDrop } from '@/hooks/useFileDragAndDrop'
 import { FileCard, UploadPanel } from '@/components/merge-markdown'
+import Button from '@/components/common/Button'
 import type { MarkdownFile, SeparatorStyle } from '@/types/markdown'
 
 export default function MergeMarkdownClient() {
@@ -310,10 +311,32 @@ export default function MergeMarkdownClient() {
         }
       `}} />
 
-            <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
-                {/* Canvas Area - Left Side */}
+            {/*
+              Mobile layout: flex-col (toolbar → grid → sticky actions)
+              Desktop (md+): flex-row (canvas + sidebar) with fixed height
+            */}
+            <div className="flex flex-col md:flex-row md:overflow-hidden" style={{ minHeight: 'calc(100vh - 64px)' }}>
+
+                {/* UploadPanel wrapper to handle order: top on mobile, right on desktop */}
+                <div className="order-first md:order-last w-full md:w-auto flex-shrink-0">
+                    <UploadPanel
+                        files={files}
+                        sortMode={sortMode}
+                        separatorStyle={separatorStyle}
+                        addHeaders={addHeaders}
+                        onFileSelect={handleFileSelect}
+                        onFolderSelect={handleFolderSelect}
+                        onToggleAlphabetical={toggleAlphabetical}
+                        onSeparatorChange={setSeparatorStyle}
+                        onHeadersChange={setAddHeaders}
+                        onMergeAndDownload={handleMergeAndDownload}
+                        onClearAll={clearAll}
+                    />
+                </div>
+
+                {/* Canvas Area */}
                 <div
-                    className="flex-1 overflow-y-auto p-8 relative bg-gray-50"
+                    className="flex-1 order-last md:order-first overflow-y-auto p-4 sm:p-8 relative bg-gray-50 flex flex-col"
                     onDragEnter={handleDragEnter}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -347,16 +370,16 @@ export default function MergeMarkdownClient() {
                         </div>
                     )}
 
-                    <div className="max-w-6xl mx-auto h-full flex flex-col">
-                        <h1 className="text-3xl font-bold mb-2">Merge Markdown Files</h1>
-                        <p className="text-gray-600 mb-8">
+                    <div className="max-w-6xl w-full mx-auto flex-1 flex flex-col">
+                        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Merge Markdown Files</h1>
+                        <p className="text-gray-600 mb-6 sm:mb-8">
                             Combine multiple Markdown files into one document
                         </p>
 
                         {/* File Grid */}
                         {files.length === 0 ? (
                             <div
-                                className="flex items-center justify-center flex-1 min-h-[550px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors"
+                                className="flex items-center justify-center flex-1 min-h-[300px] sm:min-h-[550px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-gray-100 transition-colors mb-20 md:mb-0"
                                 onClick={handleEmptyCanvasClick}
                                 role="button"
                                 tabIndex={0}
@@ -375,7 +398,7 @@ export default function MergeMarkdownClient() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-24 md:pb-8">
                                 {files.map((markdownFile) => {
                                     const isDraggedCard = draggedFileId === markdownFile.id
                                     const isDropTarget = dragOverFileId === markdownFile.id
@@ -404,21 +427,26 @@ export default function MergeMarkdownClient() {
                         )}
                     </div>
                 </div>
+            </div>
 
-                {/* Control Panel - Right Side */}
-                <UploadPanel
-                    files={files}
-                    sortMode={sortMode}
-                    separatorStyle={separatorStyle}
-                    addHeaders={addHeaders}
-                    onFileSelect={handleFileSelect}
-                    onFolderSelect={handleFolderSelect}
-                    onToggleAlphabetical={toggleAlphabetical}
-                    onSeparatorChange={setSeparatorStyle}
-                    onHeadersChange={setAddHeaders}
-                    onMergeAndDownload={handleMergeAndDownload}
-                    onClearAll={clearAll}
-                />
+            {/* Mobile sticky bottom action bar */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex gap-3 z-40">
+                <Button
+                    onClick={handleMergeAndDownload}
+                    variant="primary"
+                    disabled={files.length === 0}
+                    className="flex-1"
+                >
+                    Merge
+                </Button>
+                <Button
+                    onClick={clearAll}
+                    variant="secondary"
+                    disabled={files.length === 0}
+                    className="flex-1"
+                >
+                    Clear All
+                </Button>
             </div>
         </>
     )

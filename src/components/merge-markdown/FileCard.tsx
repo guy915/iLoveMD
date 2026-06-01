@@ -55,10 +55,10 @@ export function FileCard({
           : 'cursor-grab border-gray-200'
       }`}
     >
-      {/* Remove button */}
+      {/* Remove button - large enough touch target (44×44px min) */}
       <button
         onClick={() => onRemove(markdownFile.id)}
-        className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors z-10"
+        className="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors z-10"
         aria-label={`Remove ${markdownFile.file.name}`}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

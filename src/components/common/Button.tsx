@@ -19,7 +19,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 // Define class constants outside component to avoid recreation on each render
-const BASE_CLASSES = "px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+const BASE_CLASSES = "px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 const PRIMARY_CLASSES = "bg-primary-600 text-white hover:bg-primary-700"
 const SECONDARY_CLASSES = "bg-gray-200 text-gray-900 hover:bg-gray-300"
 

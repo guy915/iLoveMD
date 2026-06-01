@@ -115,7 +115,7 @@ export default function FileUpload({
   return (
     <div>
       <div
-        className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-6 sm:p-12 text-center cursor-pointer transition-colors ${
           dragActive
             ? 'border-primary-500 bg-primary-50'
             : 'border-gray-300 hover:border-primary-400'
@@ -139,7 +139,7 @@ export default function FileUpload({
           className="hidden"
           aria-label={label}
         />
-        <p className="text-lg mb-2 font-medium">{label}</p>
+        <p className="text-base sm:text-lg mb-2 font-medium">{label}</p>
         {selectedFile && (
           <p className="text-sm text-primary-600 font-medium">
             Selected: {selectedFile.name}

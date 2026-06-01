@@ -129,21 +129,25 @@ export default function Header() {
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 space-y-2">
-            {NAV_LINKS.map((link) => (
-              <NavLinkItem
-                key={link.href}
-                link={link}
-                onClick={() => {
-                  handleNavClick(link.shortLabel, link.href)
-                  closeMobileMenu()
-                }}
-                className="block py-2"
-              />
-            ))}
-          </div>
-        )}
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-200 ease-in-out border-gray-100 ${
+            mobileMenuOpen
+              ? 'max-h-[300px] opacity-100 border-t py-2'
+              : 'max-h-0 opacity-0 border-t-0 py-0 pointer-events-none'
+          }`}
+        >
+          {NAV_LINKS.map((link) => (
+            <NavLinkItem
+              key={link.href}
+              link={link}
+              onClick={() => {
+                handleNavClick(link.shortLabel, link.href)
+                closeMobileMenu()
+              }}
+              className="block py-3 px-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-lg transition-colors"
+            />
+          ))}
+        </div>
       </nav>
     </header>
   )

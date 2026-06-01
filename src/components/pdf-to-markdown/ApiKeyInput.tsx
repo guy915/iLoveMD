@@ -27,7 +27,7 @@ export function ApiKeyInput({
 }: ApiKeyInputProps) {
   if (mode === 'paid') {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
         <label htmlFor="api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
           Marker API Key
         </label>
@@ -59,7 +59,7 @@ export function ApiKeyInput({
 
   if (mode === 'free') {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
         <label htmlFor="gemini-api-key-input" className="block text-sm font-medium text-gray-700 mb-2">
           Gemini API Key
         </label>

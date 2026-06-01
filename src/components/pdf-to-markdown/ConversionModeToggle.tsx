@@ -12,13 +12,13 @@ interface ConversionModeToggleProps {
  */
 export function ConversionModeToggle({ mode, setMode, disabled = false }: ConversionModeToggleProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversion Mode</h2>
       <div className="flex items-center gap-4">
         <button
           onClick={() => setMode('free')}
           disabled={disabled}
-          className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+          className={`flex-1 px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-medium transition-colors ${
             mode === 'free'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -33,7 +33,7 @@ export function ConversionModeToggle({ mode, setMode, disabled = false }: Conver
         <button
           onClick={() => setMode('paid')}
           disabled={disabled}
-          className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors ${
+          className={`flex-1 px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-medium transition-colors ${
             mode === 'paid'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

@@ -1,4 +1,4 @@
-import { Metadata } from 'next'
+import { Metadata, Viewport } from 'next'
 import './globals.css'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -54,6 +54,12 @@ export const metadata: Metadata = {
   verification: {
     google: 'LveIIEZWXDOLICpboq2K5SDSjxoFBoTIHP85aP7DEDg',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 interface RootLayoutProps {

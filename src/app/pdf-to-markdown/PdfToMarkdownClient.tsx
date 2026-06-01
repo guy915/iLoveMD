@@ -716,10 +716,10 @@ export default function PdfToMarkdownClient() {
 
             {/* Page content */}
             <div className="flex-1 bg-gray-50">
-                <div className="relative max-w-4xl mx-auto px-4 py-12">
+                <div className="relative max-w-4xl mx-auto px-4 py-6 sm:py-12">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">
                             PDF to Markdown
                         </h1>
                         <p className="text-lg text-gray-600">
@@ -782,7 +782,7 @@ export default function PdfToMarkdownClient() {
                     />
 
                     {/* Action Buttons */}
-                    <div className="flex justify-center gap-4">
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                         {/* Convert Button - show when no conversion result */}
                         {!convertedMarkdown && !batchZipBlob && (
                             <Button

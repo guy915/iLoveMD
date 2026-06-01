@@ -5,9 +5,9 @@ import Link from 'next/link'
  */
 export default function About() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">About iLoveMD</h1>
+        <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">About iLoveMD</h1>
         <p className="text-xl text-gray-600">
           Simple, privacy-focused markdown utilities for everyone
         </p>
@@ -116,14 +116,14 @@ export default function About() {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Current Status</h2>
         <div className="bg-white rounded-lg shadow p-8">
           <div className="space-y-4">
-            <div className="flex items-start">
-              <span className="inline-block w-32 text-sm font-semibold text-gray-700">PDF to Markdown:</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">PDF to Markdown:</span>
               <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
                 Available
               </span>
             </div>
-            <div className="flex items-start">
-              <span className="inline-block w-32 text-sm font-semibold text-gray-700">Merge Markdown:</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">Merge Markdown:</span>
               <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
                 Available
               </span>
