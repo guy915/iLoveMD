@@ -25,3 +25,36 @@ label,
   /* Prevent double-tap zoom delay on interactive elements */
   touch-action: manipulation;
 }
+
+.processing-spinner {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  animation: processing-spinner-spin 780ms cubic-bezier(.55, .2, .45, .8) infinite;
+}
+
+.processing-spinner::before,
+.processing-spinner::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 9999px;
+}
+
+.processing-spinner::before {
+  border: 3px solid transparent;
+}
+
+.processing-spinner::after {
+  border: 3px solid transparent;
+  border-top-color: #2563eb;
+  border-left-color: #2563eb;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+}
+
+@keyframes processing-spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

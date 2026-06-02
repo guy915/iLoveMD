@@ -29,7 +29,7 @@ export function ConversionStatus({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {processing && (
-            <span className="text-blue-600 animate-spin text-2xl">⟳</span>
+            <span className="processing-spinner" aria-hidden="true" />
           )}
           <p className="text-base font-semibold text-gray-900">
             {status || 'Converting to Markdown...'}
