@@ -55,6 +55,23 @@ export interface MarkerSubmitResponse {
 }
 
 /**
+ * Presigned upload URL response (POST /api/marker/upload-url)
+ */
+export interface MarkerUploadUrlResponse {
+  success: boolean
+  /** Presigned URL the browser PUTs the PDF to */
+  upload_url?: string
+  /** Datalab file ID, used to confirm the upload */
+  file_id?: string
+  /** File reference passed to Marker as file_url, e.g. "datalab://file-abc123" */
+  reference?: string
+  /** Error message if the request failed */
+  error?: string
+  /** Additional error details */
+  details?: Record<string, unknown>
+}
+
+/**
  * Marker API status values during polling
  */
 export type MarkerStatus = 'pending' | 'processing' | 'complete' | 'error'

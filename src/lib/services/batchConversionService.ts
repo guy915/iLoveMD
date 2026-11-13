@@ -190,6 +190,23 @@ function initializeBatchProgress(files: File[]): { results: FileConversionResult
 }
 
 /**
+ * Mark files that never started (still pending after an abort) as cancelled.
+ * Returns true if any file was changed.
+ */
+function markUnstartedAsCancelled(results: FileConversionResult[], progress: BatchProgress): boolean {
+  let changed = false
+  for (const result of results) {
+    if (result.status === 'pending') {
+      result.status = 'cancelled'
+      result.error = 'Conversion cancelled'
+      progress.cancelled++
+      changed = true
+    }
+  }
+  return changed
+}
+
+/**
  * Type for progress callback used by conversion functions
  */
 type ProgressCallback = (status: string, attemptNumber: number, elapsedSeconds: number) => void
@@ -203,6 +220,21 @@ type ConversionFunction = (
   onProgress?: ProgressCallback,
   signal?: AbortSignal
 ) => Promise<{ success: boolean; markdown?: string; error?: string }>
+
+/**
+ * Whether a failed conversion is worth retrying.
+ * Client errors (bad API key, invalid or too-large file) fail the same way every time,
+ * so retrying them only multiplies requests and delays for every file in the batch.
+ * Timeouts (408) and rate limits (429) are retried.
+ */
+export function isRetryableError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  if (message === 'Conversion cancelled') return false
+  const match = message.match(/request failed: (\d{3})/i)
+  if (!match) return true
+  const status = Number(match[1])
+  return !(status >= 400 && status < 500) || status === 408 || status === 429
+}
 
 /**
  * Generic function to convert a single file with retry logic
@@ -253,13 +285,14 @@ async function convertFileWithRetry(
         throw new Error(conversionResult.error || 'Conversion failed')
       }
     } catch (error) {
-      const isLastAttempt = attempt === maxRetries
+      const isLastAttempt = attempt === maxRetries || !isRetryableError(error) || !!signal?.aborted
 
       if (isLastAttempt) {
         result.status = 'failed'
         result.error = error instanceof Error ? error.message : 'Unknown error'
         result.endTime = Date.now()
         result.duration = result.endTime - (result.startTime || 0)
+        break
       } else {
         // Wait before retrying with exponential backoff
         const delay = getRetryDelay(attempt)
@@ -382,6 +415,10 @@ export async function convertBatchPdfToMarkdown(
   // Wait for all remaining conversions to complete
   await Promise.all(inProgress)
 
+  if (markUnstartedAsCancelled(results, progress)) {
+    updateProgress()
+  }
+
   // Separate completed and failed results
   const completed = results.filter(r => r.status === 'complete')
   const failed = results.filter(r => r.status === 'failed')
@@ -444,29 +481,16 @@ export async function convertBatchPdfToMarkdownLocal(
     convertPdfToMarkdownLocal(file, geminiApiKey, markerOpts, onProg, sig)
 
   // Process files in parallel with concurrency limit (Modal allows up to 10 concurrent)
-  const MAX_CONCURRENT = 10
-  let currentIndex = 0
-  const activePromises = new Map<number, Promise<void>>()
-  const allPromises: Promise<void>[] = []
+  const maxConcurrent = Math.max(1, options.maxConcurrent ?? 10)
+  const maxRetries = options.maxRetries ?? 0
+  let nextIndex = 0
 
-  // Process files with concurrency control
   const processFile = async (index: number): Promise<void> => {
-    if (signal?.aborted) {
-      // Mark file as cancelled and update progress counters
-      results[index].status = 'cancelled'
-      results[index].error = 'Conversion cancelled'
-      progress.cancelled++
-      updateProgress()
-      return
-    }
-
     const file = files[index]
     results[index].status = 'processing'
-    progress.inProgress = activePromises.size
+    progress.inProgress++
     updateProgress()
 
-    // Use retry logic if maxRetries is specified, otherwise single attempt
-    const maxRetries = options.maxRetries ?? 0
     const result = await convertFileWithRetry(
       file,
       markerOptions,
@@ -482,6 +506,7 @@ export async function convertBatchPdfToMarkdownLocal(
     }
 
     results[index] = result
+    progress.inProgress--
 
     if (result.status === 'complete') {
       progress.completed++
@@ -491,77 +516,35 @@ export async function convertBatchPdfToMarkdownLocal(
       progress.cancelled++
     }
 
-    // Remove this promise from active set
-    activePromises.delete(index)
-    progress.inProgress = activePromises.size
     updateProgress()
+  }
 
-    // Process next file if available
-    if (currentIndex < files.length && !signal?.aborted) {
-      const nextIndex = currentIndex++
-      const nextPromise = processFile(nextIndex)
-      activePromises.set(nextIndex, nextPromise)
-      allPromises.push(nextPromise)
+  // Each worker takes the next unclaimed file until the queue is empty,
+  // so every file is converted exactly once and at most `maxConcurrent` run at a time.
+  const worker = async (workerIndex: number): Promise<void> => {
+    // Stagger worker start-up so cold Modal containers don't all initialize
+    // their models at the same moment
+    if (workerIndex > 0) {
+      await sleep(workerIndex * MARKER_CONFIG.BATCH.STAGGER_DELAY_MS)
+    }
+
+    while (!signal?.aborted && nextIndex < files.length) {
+      const index = nextIndex++
+      await processFile(index)
     }
   }
-  
-  // Process files with staggered starts to prevent simultaneous cold container initialization
-  // Even with retry logic, if multiple containers start at the exact same time, they can all fail
-  // Staggering ensures containers initialize models at different times
-  if (files.length > 0) {
-    // Process first file alone (no delay)
+
+  if (files.length > 0 && !signal?.aborted) {
+    // Convert the first file alone so a cold container warms up before the rest start
+    nextIndex = 1
     await processFile(0)
-    currentIndex = 1
 
-    // Start remaining files with staggered delays (5 seconds between each)
-    // This gives each container time to initialize models before the next one starts
-    // Combined with Modal-side retry logic, this should eliminate meta tensor errors
-    const remainingFiles = files.length - 1
-    for (let i = 0; i < remainingFiles; i++) {
-      // Check if cancelled before queuing more files
-      if (signal?.aborted) {
-        break
-      }
-
-      const fileIndex = i + 1
-      currentIndex = fileIndex + 1
-
-      // Stagger starts: delay between each file submission
-      // This prevents multiple cold containers from hitting model init simultaneously
-      if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.BATCH.STAGGER_DELAY_MS))
-        // Check again after delay in case user cancelled during wait
-        if (signal?.aborted) {
-          break
-        }
-      }
-
-      const promise = processFile(fileIndex)
-      activePromises.set(fileIndex, promise)
-      allPromises.push(promise)
-    }
+    const workerCount = Math.min(maxConcurrent, files.length - 1)
+    await Promise.all(Array.from({ length: workerCount }, (_, i) => worker(i)))
   }
 
-  // Wait for all conversions to complete
-  // We need to wait for all promises, including those added dynamically in the finally blocks
-  // Keep waiting until all files have been processed
-  while (activePromises.size > 0 || currentIndex < files.length) {
-    // Check if cancelled - stop waiting for new files to queue
-    if (signal?.aborted) {
-      break
-    }
-
-    // Wait for at least one promise to complete
-    if (activePromises.size > 0) {
-      await Promise.race(Array.from(activePromises.values()))
-    } else {
-      // No active promises but files still pending - wait a bit for new promises to start
-      await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.BATCH.QUEUE_CHECK_INTERVAL_MS))
-    }
-  }
-  
-  // Ensure all promises have completed
-  await Promise.all(allPromises)
+  markUnstartedAsCancelled(results, progress)
+  updateProgress()
 
   // Separate completed and failed results
   const completed = results.filter(r => r.status === 'complete')

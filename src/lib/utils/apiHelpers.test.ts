@@ -82,7 +82,7 @@ describe('apiHelpers', () => {
 
     it('should return timeout message for local service', () => {
       const message = getNetworkErrorMessage('timeout', true)
-      expect(message).toContain('local Marker instance')
+      expect(message).toContain('free conversion service')
       expect(message).toContain('timed out')
     })
 
@@ -92,11 +92,11 @@ describe('apiHelpers', () => {
       expect(message).toContain('temporarily unavailable')
     })
 
-    it('should return connection message for local service with Docker instructions', () => {
+    it('should return connection message for free service without Docker instructions', () => {
       const message = getNetworkErrorMessage('connection', true)
-      expect(message).toContain('local Marker instance')
-      expect(message).toContain('Docker')
-      expect(message).toContain('http://localhost:8000')
+      expect(message).toContain('free conversion service')
+      expect(message).not.toContain('Docker')
+      expect(message).not.toContain('localhost')
     })
 
     it('should return dns message for cloud service', () => {
@@ -107,7 +107,7 @@ describe('apiHelpers', () => {
 
     it('should return dns message for local service', () => {
       const message = getNetworkErrorMessage('dns', true)
-      expect(message).toContain('local Marker instance')
+      expect(message).toContain('free conversion service')
       expect(message).toContain('configuration')
     })
 
@@ -120,7 +120,7 @@ describe('apiHelpers', () => {
     it('should return generic message for unknown error type (local)', () => {
       const message = getNetworkErrorMessage('unknown', true)
       expect(message).toContain('Network error')
-      expect(message).toContain('Docker and Marker are running')
+      expect(message).toContain('internet connection')
     })
 
     it('should default to cloud service when isLocal not specified', () => {
