@@ -320,22 +320,22 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       )
     }
 
-    // Validate checkUrl is from expected domains (prevent SSRF)
-    const allowedDomains = ['modal.run', 'localhost', '127.0.0.1']
+    // Only poll our own Modal instance's status endpoint (prevents SSRF: without this,
+    // anyone could make this server fetch any *.modal.run app or a localhost port).
+    // A local Marker server on localhost is allowed only in development.
     try {
       const url = new URL(checkUrl)
-      const isAllowed = allowedDomains.some(domain => {
-        // For localhost and IP addresses, require exact match only
-        // This prevents "evil-localhost" or "fake127.0.0.1" from passing
-        if (domain === 'localhost' || domain === '127.0.0.1') {
-          return url.hostname === domain
-        }
-        // For modal.run, allow exact match or proper subdomains
-        // This prevents "evil-modal.run" from passing
-        return url.hostname === domain || url.hostname.endsWith(`.${domain}`)
-      })
+      const allowedOrigins = [new URL(API_ENDPOINTS.LOCAL_MARKER_INSTANCE).origin]
+      if (process.env.NODE_ENV === 'development') {
+        allowedOrigins.push('http://localhost:8000', 'http://127.0.0.1:8000')
+      }
+      const isAllowed =
+        allowedOrigins.includes(url.origin) &&
+        url.pathname.startsWith('/status/') &&
+        !url.username &&
+        !url.password
       if (!isAllowed) {
-        console.warn('SSRF attempt detected:', { checkUrl, hostname: url.hostname })
+        console.warn('Rejected check URL:', { hostname: url.hostname })
         return NextResponse.json(
           { success: false, error: 'Invalid check URL domain' },
           { status: 400 }
