@@ -26,19 +26,25 @@ This folder contains the Modal deployment for providing **FREE** GPU-powered PDF
    modal token new
    ```
 
-3. **Deploy:**
+3. **Create the access-token secret** (once). Use the same random value as the `MODAL_TOKEN_SECRET` environment variable on Vercel:
+   ```bash
+   modal secret create ilovemd-modal-token MODAL_TOKEN_SECRET=$(openssl rand -hex 32)
+   ```
+   The `/marker` endpoint then only accepts short-lived tokens signed by the iLoveMD server, each usable once, with limits of 20 conversions per IP per hour and 150 per day. The GPU function runs at most 2 containers.
+
+4. **Deploy:**
    ```bash
    cd modal-deployment
    modal deploy modal_app.py
    ```
 
-4. **Get your URL:**
+5. **Get your URL:**
    Modal will give you a URL like:
    ```
    https://YOUR-USERNAME--marker-pdf-converter-create-app.modal.run
    ```
 
-5. **Update your website:**
+6. **Update your website:**
    Add the URL to `src/lib/constants.ts`:
    ```typescript
    LOCAL_MARKER_INSTANCE: 'https://YOUR-USERNAME--marker-pdf-converter-create-app.modal.run'

@@ -72,6 +72,11 @@ export class FreeModeStrategy implements IConversionStrategy {
       formData.append('api_key', this.geminiApiKey.trim())
     }
 
+    const token = await this.getDirectUploadToken()
+    if (token) {
+      formData.append('token', token)
+    }
+
     let response: Response
     try {
       response = await fetch(`${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/marker`, {
@@ -101,6 +106,26 @@ export class FreeModeStrategy implements IConversionStrategy {
     this.directCheckUrls.add(checkUrl)
 
     return { success: true, request_id: data.request_id, request_check_url: checkUrl }
+  }
+
+  /**
+   * Get a short-lived token from our server; the Modal endpoint rejects direct
+   * uploads without one (this stops others from using the free GPU directly).
+   */
+  private async getDirectUploadToken(): Promise<string | null> {
+    let response: Response
+    try {
+      response = await fetch(API_ENDPOINTS.MARKER_TOKEN, { method: 'POST' })
+    } catch (networkError) {
+      const reason = networkError instanceof Error ? networkError.message : String(networkError)
+      throw new Error(`Unable to prepare the upload: ${reason}`)
+    }
+    if (!response.ok) {
+      const detail = await getResponseErrorDetail(response)
+      throw new Error(`Unable to prepare the upload: ${response.status}${detail ? ` - ${detail}` : ''}`)
+    }
+    const data = await response.json() as { token?: string | null }
+    return data.token ?? null
   }
 
   async pollStatus(checkUrl: string): Promise<MarkerPollResponse> {

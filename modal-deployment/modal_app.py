@@ -36,13 +36,86 @@ image = (
 volume = modal.Volume.from_name("marker-temp", create_if_missing=True)
 job_storage_volume = modal.Volume.from_name("marker-jobs", create_if_missing=True)
 
+# --- Abuse protection -------------------------------------------------------
+# The /marker endpoint is public (the browser calls it directly for large PDFs), so
+# it only accepts a short-lived token signed by the iLoveMD server with a shared
+# secret (see src/lib/server/modalToken.ts). Each token works once, and conversions
+# are counted per client IP (hashed) and in total per day to cap GPU spending.
+#
+# Create the secret once (same value as MODAL_TOKEN_SECRET on Vercel):
+#   modal secret create ilovemd-modal-token MODAL_TOKEN_SECRET=<random string>
+token_secret = modal.Secret.from_name("ilovemd-modal-token")
+rate_limits = modal.Dict.from_name("ilovemd-rate-limits", create_if_missing=True)
+
+MAX_CONVERSIONS_PER_IP_PER_HOUR = 20
+MAX_CONVERSIONS_PER_DAY = 150
+TOKEN_MAX_TTL_SECONDS = 15 * 60
+
+
+def check_request_token(token: Optional[str]) -> Optional[str]:
+    """Validate a request token and count it against the rate limits.
+
+    Returns an error message, or None when the request may proceed.
+    """
+    import hashlib
+    import hmac
+    import base64
+
+    secret = os.environ.get("MODAL_TOKEN_SECRET", "").strip()
+    if not secret:
+        # Not configured (e.g. a personal test deployment): allow everything
+        return None
+    if not token:
+        return "Missing access token. Please reload the page and try again."
+
+    parts = token.split(".")
+    if len(parts) != 4:
+        return "Invalid access token. Please reload the page and try again."
+    expires_at_str, nonce, ip_hash, signature = parts
+    payload = f"{expires_at_str}.{nonce}.{ip_hash}"
+    expected = base64.urlsafe_b64encode(
+        hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest()
+    ).rstrip(b"=").decode()
+    if not hmac.compare_digest(expected, signature):
+        return "Invalid access token. Please reload the page and try again."
+
+    now = int(time.time())
+    try:
+        expires_at = int(expires_at_str)
+    except ValueError:
+        return "Invalid access token. Please reload the page and try again."
+    if expires_at < now or expires_at > now + TOKEN_MAX_TTL_SECONDS:
+        return "Access token expired. Please reload the page and try again."
+
+    # Each token works once
+    nonce_key = f"nonce:{nonce}"
+    if rate_limits.contains(nonce_key):
+        return "Access token already used. Please try again."
+    rate_limits.put(nonce_key, expires_at)
+
+    # Per-IP hourly and global daily limits (counters are approximate under heavy concurrency)
+    hour_key = f"ip:{ip_hash}:{now // 3600}"
+    day_key = f"day:{now // 86400}"
+    ip_count = rate_limits.get(hour_key, 0)
+    day_count = rate_limits.get(day_key, 0)
+    if ip_count >= MAX_CONVERSIONS_PER_IP_PER_HOUR:
+        return "Too many conversions from your network. Please try again in an hour."
+    if day_count >= MAX_CONVERSIONS_PER_DAY:
+        return "The free converter has reached its daily limit. Please try again tomorrow, or use your own Marker API key."
+    rate_limits.put(hour_key, ip_count + 1)
+    rate_limits.put(day_key, day_count + 1)
+    return None
+
 # Define the conversion function
 @app.function(
     image=image,
     gpu="T4",  # Use NVIDIA T4 GPU (~$2/hour, scales to zero when idle)
     timeout=7200,  # 2 hour timeout per conversion (safe buffer for very large/complex academic PDFs)
     volumes={"/tmp/marker": volume},
-    scaledown_window=900,  # Keep containers alive for 15 minutes after last use (covers typical sessions, you pay for GPU time during this period)
+    # Stay warm for 2 minutes after the last job: covers back-to-back files in a batch
+    # without paying for 15 idle GPU minutes after every visit
+    scaledown_window=120,
+    max_containers=2,  # Hard cap on parallel GPUs (cost limit)
 )
 @modal.concurrent(max_inputs=10)  # Handle up to 10 concurrent requests
 def convert_pdf(
@@ -237,6 +310,7 @@ def convert_pdf(
 @app.function(
     image=image,
     volumes={"/tmp/marker-jobs": job_storage_volume},
+    secrets=[token_secret],
     scaledown_window=900,  # Keep containers alive for 15 minutes after last use (covers typical sessions, you pay for GPU time during this period)
 )
 @modal.asgi_app()
@@ -311,6 +385,7 @@ def create_app():
         disable_image_extraction: str = Form("false"),
         redo_inline_math: str = Form("false"),
         api_key: Optional[str] = Form(None),
+        token: Optional[str] = Form(None),
     ):
         """
         Web endpoint for PDF conversion - matches HuggingFace API format.
@@ -319,6 +394,12 @@ def create_app():
         import shutil
         from pathlib import Path
         
+        # Only accept requests that come through the iLoveMD site, within rate limits
+        token_error = check_request_token(token)
+        if token_error:
+            status = 429 if "limit" in token_error or "Too many" in token_error else 401
+            return JSONResponse(status_code=status, content={"error": token_error})
+
         # Validate file
         if not file.filename or not file.filename.lower().endswith('.pdf'):
             return JSONResponse(

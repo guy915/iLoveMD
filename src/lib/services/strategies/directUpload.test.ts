@@ -89,6 +89,7 @@ describe('large file uploads bypass the API route', () => {
   describe('FreeModeStrategy', () => {
     it('sends large files straight to Modal and polls Modal directly', async () => {
       fetchMock
+        .mockResolvedValueOnce(jsonResponse({ success: true, token: 'signed-token' }))
         .mockResolvedValueOnce(jsonResponse({ request_id: 'abc', request_check_url: '/status/abc' }))
         .mockResolvedValueOnce(jsonResponse({}, 404))
         .mockResolvedValueOnce(jsonResponse({ status: 'complete', markdown: '# Big' }))
@@ -97,8 +98,10 @@ describe('large file uploads bypass the API route', () => {
       const submit = await strategy.submitConversion(fileOfSize(largeSize), options)
 
       const statusUrl = `${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/status/abc`
-      expect(fetchMock.mock.calls[0][0]).toBe(`${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/marker`)
-      const sent = fetchMock.mock.calls[0][1].body as FormData
+      expect(fetchMock.mock.calls[0][0]).toBe(API_ENDPOINTS.MARKER_TOKEN)
+      expect(fetchMock.mock.calls[1][0]).toBe(`${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/marker`)
+      const sent = fetchMock.mock.calls[1][1].body as FormData
+      expect(sent.get('token')).toBe('signed-token')
       expect(sent.get('output_format')).toBe('markdown')
       expect(sent.get('api_key')).toBeNull()
       expect(submit.request_check_url).toBe(statusUrl)
@@ -106,11 +109,22 @@ describe('large file uploads bypass the API route', () => {
       // Job not visible yet -> still processing
       expect(await strategy.pollStatus(statusUrl)).toEqual({ success: true, status: 'processing' })
       expect(await strategy.pollStatus(statusUrl)).toMatchObject({ success: true, status: 'complete', markdown: '# Big' })
-      expect(fetchMock.mock.calls[2][0]).toBe(statusUrl)
+      expect(fetchMock.mock.calls[3][0]).toBe(statusUrl)
+    })
+
+    it('sends no token field when protection is not configured', async () => {
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse({ success: true, token: null }))
+        .mockResolvedValueOnce(jsonResponse({ request_id: 'abc', request_check_url: '/status/abc' }))
+
+      await new FreeModeStrategy(null).submitConversion(fileOfSize(largeSize), options)
+
+      expect((fetchMock.mock.calls[1][1].body as FormData).get('token')).toBeNull()
     })
 
     it('passes through the job error when polling directly', async () => {
       fetchMock
+        .mockResolvedValueOnce(jsonResponse({ success: true, token: 't' }))
         .mockResolvedValueOnce(jsonResponse({ request_id: 'abc', request_check_url: '/status/abc' }))
         .mockResolvedValueOnce(jsonResponse({ status: 'error', error: 'Out of memory' }))
 
