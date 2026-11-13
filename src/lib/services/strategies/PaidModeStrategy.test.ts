@@ -175,3 +175,28 @@ describe('PaidModeStrategy', () => {
     })
   })
 })
+
+describe('PaidModeStrategy large results', () => {
+  it('fetches markdown parts and images when the result is split', async () => {
+    const strategy = new PaidModeStrategy('test-api-key')
+    const responses: Record<string, unknown> = {
+      '': { success: true, status: 'complete', markdownParts: 2, imageNames: ['a.jpeg'] },
+      '&part=markdown&index=0': { success: true, status: 'complete', markdown: 'Hello ' },
+      '&part=markdown&index=1': { success: true, status: 'complete', markdown: '![](a.jpeg)' },
+      '&part=image&name=a.jpeg': { success: true, status: 'complete', images: { 'a.jpeg': 'AAAA' } },
+    }
+    global.fetch = vi.fn().mockImplementation(async (url: string) => {
+      const extra = url.slice(url.indexOf('check%2F1') + 'check%2F1'.length)
+      return { ok: true, json: async () => responses[extra] }
+    })
+
+    const result = await strategy.pollStatus('https://www.datalab.to/check/1')
+
+    expect(result).toEqual({
+      success: true,
+      status: 'complete',
+      markdown: 'Hello ![](a.jpeg)',
+      images: { 'a.jpeg': 'AAAA' }
+    })
+  })
+})

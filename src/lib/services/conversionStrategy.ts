@@ -74,6 +74,12 @@ export interface IConversionStrategy {
    * @returns True if initial delay is needed
    */
   needsInitialDelay(): boolean
+
+  /**
+   * Ask the service to stop a running job (optional, best effort)
+   * @param checkUrl - The job's status URL
+   */
+  cancelConversion?(checkUrl: string): Promise<void>
 }
 
 /**
@@ -94,6 +100,7 @@ export async function convertWithStrategy(
   onProgress?: ProgressCallback,
   signal?: AbortSignal
 ): Promise<ConversionResult> {
+  let checkUrl: string | undefined
   try {
     // Check if already cancelled
     if (signal?.aborted) {
@@ -109,21 +116,27 @@ export async function convertWithStrategy(
     }
 
     // Poll for results
-    const checkUrl = submitResponse.request_check_url
-    const pollInterval = MARKER_CONFIG.POLLING.INTERVAL_MS
+    checkUrl = submitResponse.request_check_url
     const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
     const startTime = Date.now()
+    const deadline = startTime + MARKER_CONFIG.POLLING.TIMEOUT_DURATION_MS
     let consecutivePollFailures = 0
+
+    // Poll quickly at first, then less often, so long jobs (and big batches) don't flood the API
+    const nextDelay = (): number =>
+      Date.now() - startTime < MARKER_CONFIG.POLLING.FAST_PHASE_MS
+        ? MARKER_CONFIG.POLLING.INTERVAL_MS
+        : MARKER_CONFIG.POLLING.SLOW_INTERVAL_MS
 
     // Add initial delay if needed (for eventual consistency)
     if (strategy.needsInitialDelay()) {
-      await new Promise(resolve => setTimeout(resolve, MARKER_CONFIG.POLLING.INITIAL_DELAY_MS))
+      await sleep(MARKER_CONFIG.POLLING.INITIAL_DELAY_MS)
     }
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    for (let attempt = 1; attempt <= maxAttempts && Date.now() < deadline; attempt++) {
       // Check if cancelled
       if (signal?.aborted) {
-        return { success: false, error: 'Conversion cancelled' }
+        return cancelled(strategy, checkUrl)
       }
 
       const elapsedSeconds = (Date.now() - startTime) / 1000
@@ -135,13 +148,20 @@ export async function convertWithStrategy(
         pollResponse = await strategy.pollStatus(checkUrl, signal)
         consecutivePollFailures = 0
       } catch (pollError) {
+        if (signal?.aborted) {
+          return cancelled(strategy, checkUrl)
+        }
+        // Rate limited: wait longer, but don't count it as a failure
+        const message = pollError instanceof Error ? pollError.message : String(pollError)
+        if (/failed: 429\b/.test(message)) {
+          await sleep(MARKER_CONFIG.POLLING.RATE_LIMIT_DELAY_MS)
+          continue
+        }
         consecutivePollFailures++
-        if (consecutivePollFailures > MAX_CONSECUTIVE_POLL_FAILURES || signal?.aborted) {
+        if (consecutivePollFailures > MAX_CONSECUTIVE_POLL_FAILURES) {
           throw pollError
         }
-        if (attempt < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, pollInterval))
-        }
+        await sleep(nextDelay())
         continue
       }
 
@@ -160,7 +180,9 @@ export async function convertWithStrategy(
           const prefix = strategy.getErrorPrefix()
           return { success: false, error: `No content received from ${prefix}` }
         }
-        return { success: true, markdown: pollResponse.markdown }
+        return pollResponse.images && Object.keys(pollResponse.images).length > 0
+          ? { success: true, markdown: pollResponse.markdown, images: pollResponse.images }
+          : { success: true, markdown: pollResponse.markdown }
       }
 
       // Check if error
@@ -174,14 +196,12 @@ export async function convertWithStrategy(
         }
       }
 
-      // Wait before next poll (unless this is the last attempt)
-      if (attempt < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval))
+      // Wait before next poll
+      await sleep(nextDelay())
 
-        // Check if cancelled during the wait
-        if (signal?.aborted) {
-          return { success: false, error: 'Conversion cancelled' }
-        }
+      // Check if cancelled during the wait
+      if (signal?.aborted) {
+        return cancelled(strategy, checkUrl)
       }
     }
 
@@ -190,7 +210,7 @@ export async function convertWithStrategy(
 
   } catch (error) {
     if (signal?.aborted) {
-      return { success: false, error: 'Conversion cancelled' }
+      return cancelled(strategy, checkUrl)
     }
     const err = error as Error
     const prefix = strategy.getErrorPrefix()
@@ -199,6 +219,23 @@ export async function convertWithStrategy(
       error: err.message || `An error occurred during ${prefix.toLowerCase()} conversion`
     }
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
+ * Report a cancelled conversion, and ask the service to stop the job (best effort),
+ * so it doesn't keep using GPU time for a result nobody will read.
+ */
+function cancelled(strategy: IConversionStrategy, checkUrl: string | undefined): ConversionResult {
+  if (checkUrl && strategy.cancelConversion) {
+    strategy.cancelConversion(checkUrl).catch(() => {
+      // Best effort: the job will finish on its own
+    })
+  }
+  return { success: false, error: 'Conversion cancelled' }
 }
 
 /**

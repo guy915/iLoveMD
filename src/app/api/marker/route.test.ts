@@ -1156,3 +1156,54 @@ describe('POST /api/marker with a directly uploaded file', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('GET /api/marker results with images', () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+  const checkUrl = 'https://www.datalab.to/api/v1/marker/check'
+  const headers = { 'x-api-key': 'test-key-12345678901234567890123456789012' }
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    global.fetch = fetchMock
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const datalabResult = (markdown: string, images: Record<string, string>) => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ status: 'complete', success: true, markdown, images }),
+  })
+
+  it('returns small results with their images inline', async () => {
+    fetchMock.mockResolvedValueOnce(datalabResult('![](a.jpeg)', { 'a.jpeg': 'AAAA' }))
+
+    const data = await (await GET(createGetRequest({ checkUrl }, headers))).json()
+
+    expect(data).toMatchObject({ success: true, status: 'complete', markdown: '![](a.jpeg)', images: { 'a.jpeg': 'AAAA' } })
+  })
+
+  it('splits results over the response limit into parts', async () => {
+    const markdown = 'x'.repeat(2_500_000)
+    const images = { 'a.jpeg': 'A'.repeat(1000) }
+    fetchMock.mockResolvedValue(datalabResult(markdown, images))
+
+    const summary = await (await GET(createGetRequest({ checkUrl }, headers))).json()
+    expect(summary).toMatchObject({ success: true, status: 'complete', markdownParts: 3, imageNames: ['a.jpeg'] })
+    expect(summary.markdown).toBeUndefined()
+
+    const part2 = await (await GET(createGetRequest({ checkUrl, part: 'markdown', index: '2' }, headers))).json()
+    expect(part2.markdown).toHaveLength(500_000)
+
+    const image = await (await GET(createGetRequest({ checkUrl, part: 'image', name: 'a.jpeg' }, headers))).json()
+    expect(image.images).toEqual(images)
+
+    const missing = await GET(createGetRequest({ checkUrl, part: 'image', name: 'nope.png' }, headers))
+    expect(missing.status).toBe(404)
+
+    const badIndex = await GET(createGetRequest({ checkUrl, part: 'markdown', index: '9' }, headers))
+    expect(badIndex.status).toBe(400)
+  })
+})

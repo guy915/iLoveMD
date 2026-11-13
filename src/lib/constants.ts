@@ -22,9 +22,10 @@ export const FILE_SIZE = {
   MAX_PROXY_UPLOAD_SIZE: 4 * MB,
 
   // Merge markdown limits
-  MAX_MERGE_FILE_SIZE: 10 * GB, // 10GB per markdown file
+  // Browsers can't hold a text string much larger than ~512MB, and the merged file is one string
+  MAX_MERGE_FILE_SIZE: 500 * MB, // 500MB per markdown file
   MAX_MERGE_FILES: 200, // Maximum 200 files
-  MAX_TOTAL_MERGE_SIZE: 100 * GB, // 100GB total for all merged files
+  MAX_TOTAL_MERGE_SIZE: 500 * MB, // 500MB total for all merged files
 
   // Batch processing limits
   MAX_BATCH_TOTAL_SIZE: 100 * GB, // 100GB total for entire batch
@@ -92,8 +93,11 @@ export const MARKER_CONFIG = {
 
   // Polling configuration
   POLLING: {
-    INTERVAL_MS: 2000, // Poll every 2 seconds
-    MAX_ATTEMPTS: 3600, // 2 hours max (3600 * 2 seconds = 7200 seconds)
+    INTERVAL_MS: 2000, // Poll every 2 seconds at first
+    SLOW_INTERVAL_MS: 5000, // Then every 5 seconds (after FAST_PHASE_MS)
+    FAST_PHASE_MS: 60000, // Poll quickly for the first minute
+    RATE_LIMIT_DELAY_MS: 15000, // Wait this long after a 429 response
+    MAX_ATTEMPTS: 3600, // Upper bound on status checks
     TIMEOUT_DURATION_MS: 7200000, // 2 hours in milliseconds
     INITIAL_DELAY_MS: 1000, // Wait 1 second before first poll
   },
@@ -108,7 +112,8 @@ export const MARKER_CONFIG = {
 
   // Batch processing configuration
   BATCH: {
-    MAX_CONCURRENT: 200, // Maximum concurrent conversions (Marker API limit)
+    // Each conversion polls for status, so many at once quickly hits the API's rate limits
+    MAX_CONCURRENT: 10, // Maximum concurrent conversions in paid mode
     MAX_RETRIES: 3, // Number of retry attempts for failed conversions
     RETRY_DELAY_BASE_MS: 1000, // Base delay for exponential backoff (1 second)
     RETRY_DELAY_MAX_MS: 32000, // Maximum retry delay (32 seconds)

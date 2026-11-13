@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Button from '@/components/common/Button'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
+import { hasImages, createMarkdownWithImagesZip } from '@/lib/utils/markdownImages'
 import { formatBytesToMB, formatBytesToKB } from '@/lib/utils/formatUtils'
 import { MARKER_CONFIG } from '@/lib/constants'
 import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from '@/lib/services/markerApiService'
@@ -274,8 +275,11 @@ export default function PdfToMarkdownClient() {
             options
         })
 
+        // Keep a local reference: after a cancel, a new run can start before this one ends
+        const controller = new AbortController()
+        abortControllerRef.current = controller
+
         try {
-            abortControllerRef.current = new AbortController()
 
             if (isBatch) {
                 // Batch conversion
@@ -313,12 +317,12 @@ export default function PdfToMarkdownClient() {
                                 }
                             }
                         },
-                        signal: abortControllerRef.current.signal
+                        signal: controller.signal
                     })
 
                     if (!result.success || !result.zipBlob) {
                         // Check if operation was cancelled by user
-                        if (abortControllerRef.current?.signal.aborted) {
+                        if (controller.signal.aborted) {
                             addLog('info', 'Batch conversion cancelled by user', {
                                 completed: result.completed?.length || 0,
                                 failed: result.failed?.length || 0,
@@ -396,12 +400,12 @@ export default function PdfToMarkdownClient() {
                                 }
                             }
                         },
-                        signal: abortControllerRef.current.signal
+                        signal: controller.signal
                     })
 
                     if (!result.success || !result.zipBlob) {
                         // Check if operation was cancelled by user
-                        if (abortControllerRef.current?.signal.aborted) {
+                        if (controller.signal.aborted) {
                             addLog('info', 'Batch conversion cancelled by user', {
                                 completed: result.completed?.length || 0,
                                 failed: result.failed?.length || 0,
@@ -465,19 +469,19 @@ export default function PdfToMarkdownClient() {
                         apiKey,
                         options,
                         onProgress,
-                        abortControllerRef.current.signal
+                        controller.signal
                     )
                     : await convertPdfToMarkdownLocal(
                         file,
                         options.use_llm ? geminiApiKey : null,
                         options,
                         onProgress,
-                        abortControllerRef.current.signal
+                        controller.signal
                     )
 
                 if (!result.success || !result.markdown) {
                     // Check if operation was cancelled by user
-                    if (abortControllerRef.current?.signal.aborted) {
+                    if (controller.signal.aborted) {
                         addLog('info', 'Conversion cancelled by user')
 
                         if (isMountedRef.current) {
@@ -506,6 +510,22 @@ export default function PdfToMarkdownClient() {
                     mode
                 })
 
+                // With extracted images, download a ZIP: the markdown plus an image folder
+                if (hasImages(result.images)) {
+                    const zipBlob = await createMarkdownWithImagesZip(filename, cleanedMarkdown, result.images)
+                    addLog('info', 'Packaged markdown with extracted images', {
+                        imageCount: Object.keys(result.images).length
+                    })
+                    if (isMountedRef.current) {
+                        setBatchZipBlob(zipBlob)
+                        setBatchZipFilename(replaceExtension(file.name, 'zip'))
+                        setStatus('Conversion complete!')
+                        setProcessing(false)
+                        clearInputFiles()
+                    }
+                    return
+                }
+
                 if (isMountedRef.current) {
                     setConvertedMarkdown(cleanedMarkdown)
                     setOutputFilename(filename)
@@ -526,7 +546,9 @@ export default function PdfToMarkdownClient() {
                 setStatus('')
             }
         } finally {
-            abortControllerRef.current = null
+            if (abortControllerRef.current === controller) {
+                abortControllerRef.current = null
+            }
         }
     }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, filenameMap, addLog, clearInputFiles])
 

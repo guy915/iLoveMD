@@ -109,8 +109,34 @@ export class PaidModeStrategy implements IConversionStrategy {
   }
 
   async pollStatus(checkUrl: string, signal?: AbortSignal): Promise<MarkerPollResponse> {
+    const data = await this.getStatus(checkUrl, '', signal)
+
+    // A large result comes back in parts (the platform caps one response at ~4.5 MB)
+    if (data.status === 'complete' && data.markdownParts) {
+      const parts: string[] = []
+      for (let index = 0; index < data.markdownParts; index++) {
+        const part = await this.getStatus(checkUrl, `&part=markdown&index=${index}`, signal)
+        parts.push(part.markdown ?? '')
+      }
+      const images: Record<string, string> = {}
+      for (const name of data.imageNames ?? []) {
+        const part = await this.getStatus(checkUrl, `&part=image&name=${encodeURIComponent(name)}`, signal)
+        if (part.images?.[name]) images[name] = part.images[name]
+      }
+      return {
+        success: true,
+        status: 'complete',
+        markdown: parts.join(''),
+        ...(Object.keys(images).length > 0 ? { images } : {})
+      }
+    }
+
+    return data
+  }
+
+  private async getStatus(checkUrl: string, extraQuery: string, signal?: AbortSignal): Promise<MarkerPollResponse> {
     const response = await fetch(
-      `${API_ENDPOINTS.MARKER}?checkUrl=${encodeURIComponent(checkUrl)}`,
+      `${API_ENDPOINTS.MARKER}?checkUrl=${encodeURIComponent(checkUrl)}${extraQuery}`,
       {
         headers: {
           'x-api-key': this.apiKey

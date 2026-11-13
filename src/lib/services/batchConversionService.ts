@@ -17,6 +17,7 @@
 import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from './markerApiService'
 import { replaceExtension } from '@/lib/utils/downloadUtils'
 import { cleanupPdfMarkdown } from '@/lib/utils/markdownUtils'
+import { addConversionToZip } from '@/lib/utils/markdownImages'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import { ENCRYPTED_PDF_ERROR, DAMAGED_PDF_ERROR, NO_TEXT_FOUND_ERROR } from './conversionStrategy'
 import type { MarkerOptions } from '@/types'
@@ -40,6 +41,8 @@ export interface FileConversionResult {
   filename: string
   status: FileConversionStatus
   markdown?: string
+  /** Extracted images (file name -> base64 data) */
+  images?: Record<string, string>
   error?: string
   attempts: number
   startTime?: number
@@ -155,7 +158,8 @@ async function generateZipFile(
     if (result.markdown) {
       // Use custom filename from map if available, otherwise use default
       const outputFilename = filenameMap?.get(result.file) || replaceExtension(result.filename, 'md')
-      zip.file(outputFilename, result.markdown)
+      // Each file's images go in their own folder next to it, with links rewritten to match
+      addConversionToZip(zip, outputFilename, result.markdown, result.images)
     }
   }
 
@@ -220,7 +224,7 @@ type ConversionFunction = (
   markerOptions: MarkerOptions,
   onProgress?: ProgressCallback,
   signal?: AbortSignal
-) => Promise<{ success: boolean; markdown?: string; error?: string }>
+) => Promise<{ success: boolean; markdown?: string; images?: Record<string, string>; error?: string }>
 
 /**
  * Whether a failed conversion is worth retrying.
@@ -287,6 +291,9 @@ async function convertFileWithRetry(
         const cleanedMarkdown = cleanupPdfMarkdown(conversionResult.markdown, pageFormat)
 
         result.markdown = cleanedMarkdown
+        if (conversionResult.images) {
+          result.images = conversionResult.images
+        }
         result.status = 'complete'
         result.endTime = Date.now()
         result.duration = result.endTime - (result.startTime || 0)

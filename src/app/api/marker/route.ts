@@ -14,6 +14,22 @@ import { ErrorCode } from '@/types'
 /** Reference returned by Datalab's file upload API, e.g. "datalab://file-abc123" */
 const DATALAB_FILE_REFERENCE_REGEX = /^datalab:\/\/file-[A-Za-z0-9_-]+$/
 
+/** Largest result returned in one poll response (the platform caps responses at ~4.5 MB) */
+const MAX_INLINE_RESULT_BYTES = 3.5 * 1024 * 1024
+/** Characters per markdown part when a result is fetched in parts (<= 3 MB as UTF-8) */
+const MARKDOWN_PART_CHARS = 1_000_000
+
+/** Extracted images from a Datalab result (file name -> base64 data) */
+function getImages(data: unknown): Record<string, string> {
+  const images = (data as { images?: unknown } | null)?.images
+  if (!images || typeof images !== 'object' || Array.isArray(images)) return {}
+  const result: Record<string, string> = {}
+  for (const [name, value] of Object.entries(images as Record<string, unknown>)) {
+    if (typeof value === 'string' && value) result[name] = value
+  }
+  return result
+}
+
 /**
  * Read an error message from a Datalab error body.
  * Datalab returns `error` or `message`, and FastAPI-style `detail` (string or list).
@@ -538,11 +554,53 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       data.status === 'error' ||
       (data.status === 'complete' && (data as { success?: unknown }).success === false)
 
+    const status = jobFailed ? 'error' : data.status as 'pending' | 'processing' | 'complete' | 'error' | undefined
+    const markdown = jobFailed ? undefined : data.markdown
+    const images = status === 'complete' ? getImages(data) : {}
+
+    // Large results are fetched in parts: the platform caps a response at about 4.5 MB
+    const part = searchParams.get('part')
+    if (part && status === 'complete' && typeof markdown === 'string') {
+      if (part === 'markdown') {
+        const index = Number(searchParams.get('index'))
+        if (!Number.isInteger(index) || index < 0 || index * MARKDOWN_PART_CHARS >= Math.max(markdown.length, 1)) {
+          return NextResponse.json({ success: false, error: 'Invalid markdown part' }, { status: 400 })
+        }
+        return NextResponse.json({
+          success: true,
+          status: 'complete',
+          markdown: markdown.slice(index * MARKDOWN_PART_CHARS, (index + 1) * MARKDOWN_PART_CHARS)
+        })
+      }
+      if (part === 'image') {
+        const name = searchParams.get('name') ?? ''
+        if (!Object.prototype.hasOwnProperty.call(images, name)) {
+          return NextResponse.json({ success: false, error: 'Image not found' }, { status: 404 })
+        }
+        return NextResponse.json({ success: true, status: 'complete', images: { [name]: images[name] } })
+      }
+      return NextResponse.json({ success: false, error: 'Invalid part' }, { status: 400 })
+    }
+
+    const imageBytes = Object.values(images).reduce((sum, value) => sum + value.length, 0)
+    // Up to 3 bytes per character once encoded as UTF-8
+    const estimatedBytes = (markdown?.length ?? 0) * 3 + imageBytes
+    if (status === 'complete' && typeof markdown === 'string' && estimatedBytes > MAX_INLINE_RESULT_BYTES) {
+      return NextResponse.json({
+        success: true,
+        status: 'complete',
+        markdownParts: Math.max(1, Math.ceil(markdown.length / MARKDOWN_PART_CHARS)),
+        imageNames: Object.keys(images),
+        progress: data.progress
+      })
+    }
+
     // Wrap response with success flag for consistency
     return NextResponse.json({
       success: true,
-      status: jobFailed ? 'error' : data.status as 'pending' | 'processing' | 'complete' | 'error' | undefined,
-      markdown: jobFailed ? undefined : data.markdown,
+      status,
+      markdown,
+      ...(Object.keys(images).length > 0 ? { images } : {}),
       progress: data.progress,
       ...(jobFailed && data.error ? { error: data.error } : {})
     })

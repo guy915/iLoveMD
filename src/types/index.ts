@@ -85,6 +85,15 @@ export interface MarkerPollResponse {
   status?: MarkerStatus
   /** Converted markdown content (when status is 'complete') */
   markdown?: string
+  /** Extracted images (file name -> base64 data), when status is 'complete' */
+  images?: Record<string, string>
+  /**
+   * Paid mode: the result was too large for one response. The markdown is split into
+   * this many parts, fetched separately along with `imageNames`.
+   */
+  markdownParts?: number
+  /** Paid mode: names of images to fetch separately (see markdownParts) */
+  imageNames?: string[]
   /** Error message if processing failed */
   error?: string
   /** Processing progress percentage (0-100) */
@@ -255,6 +264,8 @@ export interface ConversionResult {
   success: boolean
   /** Converted markdown content (when successful) */
   markdown?: string
+  /** Extracted images (file name -> base64 data) referenced by the markdown */
+  images?: Record<string, string>
   /** Error message (when failed) */
   error?: string
 }

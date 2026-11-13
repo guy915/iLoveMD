@@ -772,7 +772,7 @@ describe('markerApiService', () => {
         ok: true,
         json: async () => ({
           success: true,
-          request_check_url: 'local-check-url',
+          request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1',
         }),
       })
 
@@ -802,7 +802,7 @@ describe('markerApiService', () => {
         ok: true,
         json: async () => ({
           success: true,
-          request_check_url: 'check-url',
+          request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1',
         }),
       })
 
@@ -849,7 +849,7 @@ describe('markerApiService', () => {
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, request_check_url: 'url' }),
+        json: async () => ({ success: true, request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1' }),
       })
 
       fetchMock.mockResolvedValueOnce({
@@ -889,7 +889,7 @@ describe('markerApiService', () => {
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, request_check_url: 'url' }),
+        json: async () => ({ success: true, request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1' }),
       })
 
       fetchMock.mockResolvedValueOnce({
@@ -915,7 +915,7 @@ describe('markerApiService', () => {
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, request_check_url: 'url' }),
+        json: async () => ({ success: true, request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1' }),
       })
 
       // Always return processing status
@@ -937,7 +937,7 @@ describe('markerApiService', () => {
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, request_check_url: 'url' }),
+        json: async () => ({ success: true, request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1' }),
       })
 
       fetchMock.mockResolvedValueOnce({
@@ -972,7 +972,7 @@ describe('markerApiService', () => {
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, request_check_url: 'url' }),
+        json: async () => ({ success: true, request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1' }),
       })
 
       fetchMock.mockResolvedValueOnce({
@@ -1004,7 +1004,7 @@ describe('markerApiService', () => {
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, request_check_url: 'url' }),
+        json: async () => ({ success: true, request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1' }),
       })
 
       // Polling keeps failing (more than the tolerated number of failures in a row)
@@ -1015,7 +1015,7 @@ describe('markerApiService', () => {
       const result = await promise
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Poll error')
+      expect(result.error).toBe('Polling failed: Poll error')
     })
 
     it('should pass Gemini API key when use_llm is enabled', async () => {
@@ -1030,7 +1030,7 @@ describe('markerApiService', () => {
         ok: true,
         json: async () => ({
           success: true,
-          request_check_url: 'url',
+          request_check_url: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run/status/job-1',
         }),
       })
 
