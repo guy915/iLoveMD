@@ -35,36 +35,34 @@ This folder contains the Modal deployment for providing **FREE** GPU-powered PDF
 4. **Get your URL:**
    Modal will give you a URL like:
    ```
-   https://YOUR-USERNAME--marker-pdf-converter-marker-endpoint.modal.run
+   https://YOUR-USERNAME--marker-pdf-converter-create-app.modal.run
    ```
 
 5. **Update your website:**
    Add the URL to `src/lib/constants.ts`:
    ```typescript
-   LOCAL_MARKER_INSTANCE: 'https://YOUR-USERNAME--marker-pdf-converter-marker-endpoint.modal.run'
+   LOCAL_MARKER_INSTANCE: 'https://YOUR-USERNAME--marker-pdf-converter-create-app.modal.run'
    ```
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
 ## Files
 
 - `modal_app.py` - Main Modal application with serverless functions
 - `requirements.txt` - Python dependencies for local development
-- `DEPLOYMENT.md` - Detailed deployment guide
 - `README.md` - This file
 
 ## API Endpoints
 
 After deployment, you'll have:
 
-**POST /marker_endpoint** - Convert PDF to Markdown
+**POST /marker** - Start a PDF to Markdown conversion (returns `request_id` and `request_check_url`)
 ```bash
 curl -X POST \
   -F "file=@document.pdf" \
-  -F "filename=document.pdf" \
   -F "output_format=markdown" \
-  https://YOUR-URL/marker_endpoint
+  https://YOUR-URL/marker
 ```
+
+**GET /status/{request_id}** - Poll for the result
 
 **GET /health** - Health check
 ```bash
