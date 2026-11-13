@@ -12,6 +12,15 @@ export const metadata: Metadata = {
     title: 'Merge Markdown Files - Combine Multiple MD Files Online',
     description: 'Merge multiple Markdown files into a single document. Drag and drop interface, sort files, and download the combined result.',
     url: `${BASE_URL}/merge-markdown`,
+    // Setting openGraph here replaces the root one, so repeat the shared preview image
+    images: ['/opengraph-image'],
+    siteName: 'iLoveMD',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Merge Markdown Files Online',
+    description: 'Combine multiple Markdown files into one document, right in your browser.',
   },
 }
 

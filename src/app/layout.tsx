@@ -9,9 +9,12 @@ import { BASE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
-  title: 'iLoveMD',
+  title: {
+    default: 'iLoveMD - PDF to Markdown Converter & Markdown Merger',
+    template: '%s | iLoveMD',
+  },
   description: 'Free online tool to convert PDF to Markdown and merge multiple Markdown files.',
-  keywords: ['pdf to markdown', 'merge markdown', 'html to markdown', 'convert pdf to md', 'combine markdown', 'i love markdown', 'markdown tools', 'convert pdf', 'markdown tools', 'markdown utility', 'pdf2md', 'markdown', 'md', 'pdf2md', 'md merge', 'md tools'],
+  keywords: ['pdf to markdown', 'merge markdown', 'convert pdf to md', 'combine markdown', 'i love markdown', 'markdown tools', 'convert pdf', 'markdown utility', 'pdf2md', 'markdown', 'md merge'],
   authors: [{ name: 'iLoveMD' }],
   creator: 'iLoveMD',
   publisher: 'iLoveMD',
@@ -26,20 +29,11 @@ export const metadata: Metadata = {
     type: 'website',
     url: BASE_URL,
     siteName: 'iLoveMD',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'iLoveMD Tools',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'iLoveMD',
     description: 'Convert PDFs to Markdown and merge Markdown files instantly for free.',
-    images: ['/og-image.png'],
   },
   robots: {
     index: true,
