@@ -55,8 +55,8 @@ describe('convertWithStrategy', () => {
         success: true,
         markdown
       })
-      expect(mockStrategy.submitConversion).toHaveBeenCalledWith(mockFile, mockOptions)
-      expect(mockStrategy.pollStatus).toHaveBeenCalledWith(checkUrl)
+      expect(mockStrategy.submitConversion).toHaveBeenCalledWith(mockFile, mockOptions, undefined)
+      expect(mockStrategy.pollStatus).toHaveBeenCalledWith(checkUrl, undefined)
     })
 
     it('should invoke progress callback', async () => {
@@ -327,6 +327,41 @@ describe('convertWithStrategy', () => {
       expect(mockStrategy.getErrorPrefix).toHaveBeenCalled()
     })
 
+    it('should report a blank PDF (empty markdown) clearly', async () => {
+      mockStrategy.submitConversion.mockResolvedValue({
+        success: true,
+        request_check_url: 'https://test.com/check/123'
+      } as MarkerSubmitResponse)
+      mockStrategy.pollStatus.mockResolvedValue({
+        success: true,
+        status: 'complete',
+        markdown: ''
+      } as MarkerPollResponse)
+
+      const promise = convertWithStrategy(mockFile, mockStrategy, mockOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result).toEqual({
+        success: false,
+        error: 'No text was found in this PDF. It may be blank.'
+      })
+    })
+
+    it('should report cancellation when a request is aborted mid-flight', async () => {
+      const controller = new AbortController()
+      mockStrategy.submitConversion.mockImplementation(async () => {
+        controller.abort()
+        throw new DOMException('The operation was aborted.', 'AbortError')
+      })
+
+      const promise = convertWithStrategy(mockFile, mockStrategy, mockOptions, undefined, controller.signal)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result).toEqual({ success: false, error: 'Conversion cancelled' })
+    })
+
     it('should use error prefix in generic error message', async () => {
       mockStrategy.getErrorPrefix.mockReturnValue('CustomService')
       mockStrategy.submitConversion.mockRejectedValue(new Error())
@@ -404,5 +439,17 @@ describe('convertWithStrategy', () => {
       await vi.runAllTimersAsync()
       await promise
     })
+  })
+})
+
+describe('describeJobError', () => {
+  it.each([
+    ['Unexpected error: Failed to load document (PDFium: Incorrect password error).', 'This PDF is password-protected. Remove the password and try again.'],
+    ['Unexpected error: Failed to load document (PDFium: Data format error).', 'This PDF is damaged or is not a valid PDF file.'],
+    ['Unexpected error: CUDA out of memory', 'CUDA out of memory'],
+    ['Rate limited', 'Rate limited'],
+  ])('%s', async (raw, expected) => {
+    const { describeJobError } = await import('./conversionStrategy')
+    expect(describeJobError(raw)).toBe(expected)
   })
 })

@@ -18,6 +18,7 @@ import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from './markerApiServ
 import { replaceExtension } from '@/lib/utils/downloadUtils'
 import { cleanupPdfMarkdown } from '@/lib/utils/markdownUtils'
 import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
+import { ENCRYPTED_PDF_ERROR, DAMAGED_PDF_ERROR, NO_TEXT_FOUND_ERROR } from './conversionStrategy'
 import type { MarkerOptions } from '@/types'
 
 // Detect if running in test environment to skip delays
@@ -230,6 +231,15 @@ type ConversionFunction = (
 export function isRetryableError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error)
   if (message === 'Conversion cancelled') return false
+  // These fail the same way every time; in paid mode each retry is charged again
+  if (
+    message.includes(ENCRYPTED_PDF_ERROR) ||
+    message.includes(DAMAGED_PDF_ERROR) ||
+    message === NO_TEXT_FOUND_ERROR ||
+    message.startsWith('Conversion timeout')
+  ) {
+    return false
+  }
   const match = message.match(/request failed: (\d{3})/i)
   if (!match) return true
   const status = Number(match[1])

@@ -11,6 +11,31 @@ import { MARKER_CONFIG } from '@/lib/constants'
  */
 export const MAX_CONSECUTIVE_POLL_FAILURES = 3
 
+/** Shown when a conversion finishes but the PDF has no text (for example, a blank PDF) */
+export const NO_TEXT_FOUND_ERROR = 'No text was found in this PDF. It may be blank.'
+
+/** Shown when the PDF is password-protected */
+export const ENCRYPTED_PDF_ERROR = 'This PDF is password-protected. Remove the password and try again.'
+
+/** Shown when the PDF is damaged or not a real PDF */
+export const DAMAGED_PDF_ERROR = 'This PDF is damaged or is not a valid PDF file.'
+
+/**
+ * Turn a raw failure reason from the conversion service into a readable message.
+ * The PDF library reports password-protected and damaged files with technical text,
+ * for example "Unexpected error: Failed to load document (PDFium: Incorrect password error)."
+ */
+export function describeJobError(raw: string): string {
+  const lower = raw.toLowerCase()
+  if (lower.includes('password') || lower.includes('encrypted')) {
+    return ENCRYPTED_PDF_ERROR
+  }
+  if (lower.includes('failed to load document') || lower.includes('data format error')) {
+    return DAMAGED_PDF_ERROR
+  }
+  return raw.replace(/^Unexpected error:\s*/i, '')
+}
+
 /**
  * Progress callback type
  */
@@ -25,16 +50,18 @@ export interface IConversionStrategy {
    * Submit a PDF file for conversion
    * @param file - The PDF file to convert
    * @param options - Conversion options
+   * @param signal - Optional abort signal (stops an upload in progress)
    * @returns Submit response with request_check_url for polling
    */
-  submitConversion(file: File, options: MarkerOptions): Promise<MarkerSubmitResponse>
+  submitConversion(file: File, options: MarkerOptions, signal?: AbortSignal): Promise<MarkerSubmitResponse>
 
   /**
    * Poll the conversion status
    * @param checkUrl - The URL to check conversion status
+   * @param signal - Optional abort signal
    * @returns Poll response with status and content
    */
-  pollStatus(checkUrl: string): Promise<MarkerPollResponse>
+  pollStatus(checkUrl: string, signal?: AbortSignal): Promise<MarkerPollResponse>
 
   /**
    * Get the error message prefix for this mode
@@ -74,7 +101,7 @@ export async function convertWithStrategy(
     }
 
     // Submit file using strategy
-    const submitResponse = await strategy.submitConversion(file, options)
+    const submitResponse = await strategy.submitConversion(file, options, signal)
 
     if (!submitResponse.request_check_url) {
       const prefix = strategy.getErrorPrefix()
@@ -105,7 +132,7 @@ export async function convertWithStrategy(
       // should not throw away a long-running conversion, so retry a few times in a row.
       let pollResponse: MarkerPollResponse
       try {
-        pollResponse = await strategy.pollStatus(checkUrl)
+        pollResponse = await strategy.pollStatus(checkUrl, signal)
         consecutivePollFailures = 0
       } catch (pollError) {
         consecutivePollFailures++
@@ -126,6 +153,10 @@ export async function convertWithStrategy(
       // Check if complete
       if (pollResponse.status === 'complete') {
         if (!pollResponse.markdown) {
+          // The service finished but found no text (for example, a blank PDF)
+          if (pollResponse.markdown === '') {
+            return { success: false, error: NO_TEXT_FOUND_ERROR }
+          }
           const prefix = strategy.getErrorPrefix()
           return { success: false, error: `No content received from ${prefix}` }
         }
@@ -138,7 +169,7 @@ export async function convertWithStrategy(
         return {
           success: false,
           error: pollResponse.error
-            ? `Conversion failed on ${prefix}: ${pollResponse.error}`
+            ? `Conversion failed on ${prefix}: ${describeJobError(pollResponse.error)}`
             : `Conversion failed on ${prefix}`
         }
       }
@@ -158,6 +189,9 @@ export async function convertWithStrategy(
     return { success: false, error: 'Conversion timeout. Please try again.' }
 
   } catch (error) {
+    if (signal?.aborted) {
+      return { success: false, error: 'Conversion cancelled' }
+    }
     const err = error as Error
     const prefix = strategy.getErrorPrefix()
     return {

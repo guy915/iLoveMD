@@ -15,6 +15,24 @@ import { ErrorCode } from '@/types'
 const DATALAB_FILE_REFERENCE_REGEX = /^datalab:\/\/file-[A-Za-z0-9_-]+$/
 
 /**
+ * Read an error message from a Datalab error body.
+ * Datalab returns `error` or `message`, and FastAPI-style `detail` (string or list).
+ */
+function getUpstreamErrorMessage(data: unknown): string | undefined {
+  if (!data || typeof data !== 'object') return undefined
+  const obj = data as Record<string, unknown>
+  for (const key of ['error', 'message', 'detail'] as const) {
+    const value = obj[key]
+    if (typeof value === 'string' && value) return value
+    if (key === 'detail' && Array.isArray(value)) {
+      const first = value[0] as { msg?: unknown } | undefined
+      if (first && typeof first.msg === 'string') return first.msg
+    }
+  }
+  return undefined
+}
+
+/**
  * Confirm a file the browser uploaded directly to Datalab storage.
  * Returns an error response, or null when the upload is confirmed.
  */
@@ -293,19 +311,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
-    // Validate response structure
-    if (!isValidMarkerSubmitResponse(data)) {
-      console.error('Marker API returned unexpected response structure:', data)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Received malformed response from Marker API',
-          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
-        },
-        { status: 502 }
-      )
-    }
-
     if (!response.ok) {
       // Log the full error for debugging
       console.error('Marker API error:', {
@@ -323,10 +328,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       return NextResponse.json(
         {
           success: false,
-          error: data.error || data.message || `API error: ${response.status}`,
+          error: getUpstreamErrorMessage(data) || `API error: ${response.status}`,
           details: safeDetails
         },
         { status: response.status }
+      )
+    }
+
+    // Validate response structure
+    if (!isValidMarkerSubmitResponse(data)) {
+      console.error('Marker API returned unexpected response structure:', data)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Received malformed response from Marker API',
+          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
+        },
+        { status: 502 }
       )
     }
 
@@ -485,6 +503,21 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       )
     }
 
+    if (!response.ok) {
+      console.error('Marker API poll error:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: getUpstreamErrorMessage(data) || 'Failed to check status'
+        },
+        { status: response.status }
+      )
+    }
+
     // Validate response structure
     if (!isValidMarkerPollResponse(data)) {
       console.error('Marker API poll returned unexpected response structure:', data)
@@ -495,21 +528,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
           details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
         },
         { status: 502 }
-      )
-    }
-
-    if (!response.ok) {
-      console.error('Marker API poll error:', {
-        status: response.status,
-        statusText: response.statusText,
-        data: data
-      })
-      return NextResponse.json(
-        {
-          success: false,
-          error: data.error || 'Failed to check status'
-        },
-        { status: response.status }
       )
     }
 

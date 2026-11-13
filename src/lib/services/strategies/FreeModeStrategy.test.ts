@@ -130,10 +130,12 @@ describe('FreeModeStrategy', () => {
       const result = await strategy.pollStatus(checkUrl)
 
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining(API_ENDPOINTS.MARKER_LOCAL)
+        expect.stringContaining(API_ENDPOINTS.MARKER_LOCAL),
+        undefined
       )
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining(encodeURIComponent(checkUrl))
+        expect.stringContaining(encodeURIComponent(checkUrl)),
+        undefined
       )
       expect(result).toEqual(mockResponse)
     })

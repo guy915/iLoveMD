@@ -276,6 +276,24 @@ describe('GET /api/marker', () => {
       expect(data.error).toBe('Invalid API key')
     })
 
+    it('should pass through a FastAPI-style detail error message', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ detail: 'Not authenticated' }),
+      })
+
+      const request = createGetRequest(
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
+        { 'x-api-key': 'invalid-key' }
+      )
+      const response = await GET(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(403)
+      expect(data.error).toBe('Not authenticated')
+    })
+
     it('should handle 429 Rate Limit responses', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: false,
@@ -958,6 +976,24 @@ describe('POST /api/marker', () => {
 
       expect(response.status).toBe(401)
       expect(data.success).toBe(false)
+      expect(data.error).toBe('Invalid API key')
+    })
+
+    it('should pass through a FastAPI-style detail error message', async () => {
+      const formData = new FormData()
+      formData.append('file', createMockPdfFile('test.pdf', 1000))
+      formData.append('apiKey', 'invalid-key-12345678901234567890123')
+
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ detail: [{ msg: 'Invalid API key' }] }),
+      })
+
+      const response = await POST(createPostRequest(formData))
+      const data = await response.json()
+
+      expect(response.status).toBe(401)
       expect(data.error).toBe('Invalid API key')
     })
 

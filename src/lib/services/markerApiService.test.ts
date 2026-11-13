@@ -546,7 +546,7 @@ describe('markerApiService', () => {
       const result = await promise
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Conversion failed on API: PDF is encrypted')
+      expect(result.error).toBe('Conversion failed on API: This PDF is password-protected. Remove the password and try again.')
     })
   })
 

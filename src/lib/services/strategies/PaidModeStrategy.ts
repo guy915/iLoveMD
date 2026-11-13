@@ -16,24 +16,25 @@ import { API_ENDPOINTS, FILE_SIZE } from '@/lib/constants'
 export class PaidModeStrategy implements IConversionStrategy {
   constructor(private apiKey: string) {}
 
-  async submitConversion(file: File, options: MarkerOptions): Promise<MarkerSubmitResponse> {
+  async submitConversion(file: File, options: MarkerOptions, signal?: AbortSignal): Promise<MarkerSubmitResponse> {
     // Small files keep the simple path through our API route; larger ones would be
     // rejected by the platform's request limit, so they go straight to storage
     if (file.size <= FILE_SIZE.MAX_PROXY_UPLOAD_SIZE) {
-      return this.submitViaServer(file, options)
+      return this.submitViaServer(file, options, signal)
     }
-    return this.submitViaDirectUpload(file, options)
+    return this.submitViaDirectUpload(file, options, signal)
   }
 
   /**
    * Upload the PDF directly to Datalab storage, then start the conversion by reference
    */
-  private async submitViaDirectUpload(file: File, options: MarkerOptions): Promise<MarkerSubmitResponse> {
+  private async submitViaDirectUpload(file: File, options: MarkerOptions, signal?: AbortSignal): Promise<MarkerSubmitResponse> {
     // 1. Get a presigned upload URL (small JSON request through our API route)
     const uploadUrlResponse = await fetch(API_ENDPOINTS.MARKER_UPLOAD_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey: this.apiKey, filename: file.name, size: file.size })
+      body: JSON.stringify({ apiKey: this.apiKey, filename: file.name, size: file.size }),
+      signal
     })
 
     if (!uploadUrlResponse.ok) {
@@ -53,7 +54,8 @@ export class PaidModeStrategy implements IConversionStrategy {
       putResponse = await fetch(upload.upload_url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/pdf' },
-        body: file
+        body: file,
+        signal
       })
     } catch (networkError) {
       // Network or CORS failure
@@ -71,25 +73,26 @@ export class PaidModeStrategy implements IConversionStrategy {
     formData.append('apiKey', this.apiKey)
     formData.append('options', JSON.stringify(options))
 
-    return this.postToMarkerRoute(formData)
+    return this.postToMarkerRoute(formData, signal)
   }
 
   /**
    * Send the PDF through our API route (only works for files under the platform body limit)
    */
-  private async submitViaServer(file: File, options: MarkerOptions): Promise<MarkerSubmitResponse> {
+  private async submitViaServer(file: File, options: MarkerOptions, signal?: AbortSignal): Promise<MarkerSubmitResponse> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('apiKey', this.apiKey)
     formData.append('options', JSON.stringify(options))
 
-    return this.postToMarkerRoute(formData)
+    return this.postToMarkerRoute(formData, signal)
   }
 
-  private async postToMarkerRoute(formData: FormData): Promise<MarkerSubmitResponse> {
+  private async postToMarkerRoute(formData: FormData, signal?: AbortSignal): Promise<MarkerSubmitResponse> {
     const response = await fetch(API_ENDPOINTS.MARKER, {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal
     })
 
     if (!response.ok) {
@@ -105,13 +108,14 @@ export class PaidModeStrategy implements IConversionStrategy {
     return data
   }
 
-  async pollStatus(checkUrl: string): Promise<MarkerPollResponse> {
+  async pollStatus(checkUrl: string, signal?: AbortSignal): Promise<MarkerPollResponse> {
     const response = await fetch(
       `${API_ENDPOINTS.MARKER}?checkUrl=${encodeURIComponent(checkUrl)}`,
       {
         headers: {
           'x-api-key': this.apiKey
-        }
+        },
+        signal
       }
     )
 

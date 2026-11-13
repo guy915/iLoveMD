@@ -333,6 +333,14 @@ def create_app():
     
     # Job storage path on volume (persists across container restarts)
     JOB_STORAGE_PATH = "/tmp/marker-jobs"
+
+    # A finished job is kept this long, so a client whose status response got lost
+    # can ask again (it used to be deleted on the first read, and then reported
+    # "processing" forever).
+    FINISHED_JOB_TTL_SECONDS = 6 * 60 * 60
+    # A job still "processing" after this long was interrupted (for example, the
+    # container stopped). The conversion function itself times out at 7200 s.
+    MAX_PROCESSING_SECONDS = 7200 + 600
     
     def get_job_path(request_id: str) -> str:
         """Get file path for storing job data"""
@@ -358,17 +366,41 @@ def create_app():
         import os
         job_path = get_job_path(request_id)
         os.makedirs(os.path.dirname(job_path), exist_ok=True)
-        with open(job_path, 'w') as f:
+        # Write to a temp file and rename, so a reader never sees half-written JSON
+        tmp_path = f"{job_path}.tmp"
+        with open(tmp_path, 'w') as f:
             json.dump(job_data, f)
             f.flush()  # Flush to ensure data is written
             os.fsync(f.fileno())  # Force sync to disk for Modal Volume
+        os.replace(tmp_path, job_path)
+        # Make the change visible to other web containers (they only see committed data)
+        try:
+            job_storage_volume.commit()
+        except Exception as e:
+            print(f"[save_job] Volume commit failed (will be committed in the background): {e}")
     
-    def delete_job(request_id: str):
-        """Delete job from persistent storage"""
+    async def reload_jobs():
+        """Pick up jobs saved by other web containers"""
+        try:
+            await job_storage_volume.reload.aio()
+        except Exception as e:
+            print(f"[reload_jobs] Volume reload failed: {e}")
+
+    def cleanup_old_jobs():
+        """Delete finished jobs older than the TTL"""
         import os
-        job_path = get_job_path(request_id)
-        if os.path.exists(job_path):
-            os.remove(job_path)
+        now = time.time()
+        try:
+            names = os.listdir(JOB_STORAGE_PATH)
+        except FileNotFoundError:
+            return
+        for name in names:
+            path = os.path.join(JOB_STORAGE_PATH, name)
+            try:
+                if now - os.path.getmtime(path) > MAX_PROCESSING_SECONDS + FINISHED_JOB_TTL_SECONDS:
+                    os.remove(path)
+            except OSError:
+                pass
     
     # Store background tasks to prevent garbage collection
     if not hasattr(web_app.state, 'conversion_tasks'):
@@ -433,8 +465,10 @@ def create_app():
         job_data = {
             "status": "processing",
             "filename": file.filename,
+            "created_at": time.time(),
         }
         save_job(request_id, job_data)
+        cleanup_old_jobs()
         
         # Define async task to run conversion (non-blocking)
         async def run_conversion_task():
@@ -478,11 +512,13 @@ def create_app():
                 
                 if result and result.get("success"):
                     job_data["status"] = "complete"
+                    job_data["finished_at"] = time.time()
                     markdown = result.get("markdown", "")
                     job_data["markdown"] = markdown
                     print(f"[marker_endpoint] Saving job with markdown length: {len(markdown)}")
                 else:
                     job_data["status"] = "error"
+                    job_data["finished_at"] = time.time()
                     job_data["error"] = result.get("error", "Conversion failed") if result else "No result returned"
                     print(f"[marker_endpoint] Saving job with error: {job_data['error']}")
                 
@@ -518,20 +554,21 @@ def create_app():
     @web_app.get("/status/{request_id}")
     async def check_status(request_id: str):
         """Check conversion status with retry for eventual consistency"""
-        from fastapi import HTTPException
-        import time
-        
-        # Retry loading job (Modal Volumes may have eventual consistency)
-        # Increased retries and delay to handle volume eventual consistency
+        # Retry loading job (Modal Volumes may have eventual consistency).
+        # asyncio.sleep, not time.sleep: a blocking sleep here would stall every
+        # other request and background conversion task in this container.
         max_retries = 10
         retry_delay = 0.5  # 500ms - longer delay for volume consistency
         
+        job = None
         for attempt in range(max_retries):
             job = load_job(request_id)
             if job:
                 break
+            # The job may have been saved by another web container
+            await reload_jobs()
             if attempt < max_retries - 1:
-                time.sleep(retry_delay)
+                await asyncio.sleep(retry_delay)
         
         if not job:
             print(f"[check_status] Job not found for request_id: {request_id} after {max_retries} attempts")
@@ -540,6 +577,11 @@ def create_app():
         
         status = job.get("status", "processing")
         print(f"[check_status] Job status for {request_id}: {status}")
+
+        created_at = job.get("created_at")
+        if status == "processing" and created_at and time.time() - created_at > MAX_PROCESSING_SECONDS:
+            status = "error"
+            job["error"] = "Conversion was interrupted. Please try again."
         
         response = {"status": status}
         
@@ -547,14 +589,11 @@ def create_app():
             markdown = job.get("markdown", "")
             print(f"[check_status] Returning markdown, length: {len(markdown)}")
             response["markdown"] = markdown
-            # Clean up after retrieval
-            delete_job(request_id)
+            # Kept until cleanup_old_jobs() removes it, so the result can be fetched again
         elif status == "error":
             error = job.get("error", "Unknown error")
             print(f"[check_status] Returning error: {error}")
             response["error"] = error
-            # Clean up after error retrieval
-            delete_job(request_id)
         else:
             print(f"[check_status] Job still processing")
         

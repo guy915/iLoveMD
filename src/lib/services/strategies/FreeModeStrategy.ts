@@ -19,9 +19,9 @@ export class FreeModeStrategy implements IConversionStrategy {
 
   constructor(private geminiApiKey: string | null) {}
 
-  async submitConversion(file: File, options: MarkerOptions): Promise<MarkerSubmitResponse> {
+  async submitConversion(file: File, options: MarkerOptions, signal?: AbortSignal): Promise<MarkerSubmitResponse> {
     if (file.size > FILE_SIZE.MAX_PROXY_UPLOAD_SIZE) {
-      return this.submitDirect(file, options)
+      return this.submitDirect(file, options, signal)
     }
 
     const formData = new FormData()
@@ -33,7 +33,8 @@ export class FreeModeStrategy implements IConversionStrategy {
 
     const response = await fetch(API_ENDPOINTS.MARKER_LOCAL, {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal
     })
 
     if (!response.ok) {
@@ -52,7 +53,7 @@ export class FreeModeStrategy implements IConversionStrategy {
   /**
    * Send the PDF straight to the Modal endpoint, bypassing our API route
    */
-  private async submitDirect(file: File, options: MarkerOptions): Promise<MarkerSubmitResponse> {
+  private async submitDirect(file: File, options: MarkerOptions, signal?: AbortSignal): Promise<MarkerSubmitResponse> {
     if (options.use_llm && !this.geminiApiKey?.trim()) {
       throw new Error('Gemini API key is required when using LLM enhancement in free mode')
     }
@@ -81,7 +82,8 @@ export class FreeModeStrategy implements IConversionStrategy {
     try {
       response = await fetch(`${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/marker`, {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal
       })
     } catch (networkError) {
       const reason = networkError instanceof Error ? networkError.message : String(networkError)
@@ -128,13 +130,14 @@ export class FreeModeStrategy implements IConversionStrategy {
     return data.token ?? null
   }
 
-  async pollStatus(checkUrl: string): Promise<MarkerPollResponse> {
+  async pollStatus(checkUrl: string, signal?: AbortSignal): Promise<MarkerPollResponse> {
     if (this.directCheckUrls.has(checkUrl)) {
-      return this.pollDirect(checkUrl)
+      return this.pollDirect(checkUrl, signal)
     }
 
     const response = await fetch(
-      `${API_ENDPOINTS.MARKER_LOCAL}?checkUrl=${encodeURIComponent(checkUrl)}`
+      `${API_ENDPOINTS.MARKER_LOCAL}?checkUrl=${encodeURIComponent(checkUrl)}`,
+      signal ? { signal } : undefined
     )
 
     if (!response.ok) {
@@ -153,8 +156,8 @@ export class FreeModeStrategy implements IConversionStrategy {
   /**
    * Poll the Modal status endpoint directly (same handling as the /api/marker/local route)
    */
-  private async pollDirect(checkUrl: string): Promise<MarkerPollResponse> {
-    const response = await fetch(checkUrl)
+  private async pollDirect(checkUrl: string, signal?: AbortSignal): Promise<MarkerPollResponse> {
+    const response = await fetch(checkUrl, signal ? { signal } : undefined)
 
     // The job may not be visible yet (Modal volume propagation) - keep polling
     if (response.status === 404) {

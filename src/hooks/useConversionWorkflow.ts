@@ -147,11 +147,11 @@ export function useConversionWorkflow(
   /**
    * Convert single PDF file
    */
-  const convertSingleFile = useCallback(async (file: File): Promise<void> => {
+  const convertSingleFile = useCallback(async (file: File, signal: AbortSignal): Promise<void> => {
     setStatus(mode === 'paid' ? 'Submitting to Marker API...' : 'Submitting to Modal...')
 
     const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
-      if (!isMountedRef.current) return
+      if (!isMountedRef.current || signal.aborted) return
       const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
       setStatus(`Processing PDF... (${attemptNumber}/${maxAttempts} checks, ${elapsedSeconds.toFixed(0)}s elapsed)`)
     }
@@ -163,14 +163,14 @@ export function useConversionWorkflow(
         apiKey,
         markerOptions,
         onProgress,
-        abortControllerRef.current!.signal
+        signal
       )
       : await convertPdfToMarkdownLocal(
         file,
         markerOptions.use_llm ? geminiApiKey : null,
         markerOptions,
         onProgress,
-        abortControllerRef.current!.signal
+        signal
       )
 
     if (!result.success || !result.markdown) {
@@ -214,11 +214,11 @@ export function useConversionWorkflow(
   /**
    * Convert batch of PDF files
    */
-  const convertBatchFiles = useCallback(async (files: File[]): Promise<void> => {
+  const convertBatchFiles = useCallback(async (files: File[], signal: AbortSignal): Promise<void> => {
     setStatus('Processing batch...')
 
     const onProgress = (progress: BatchProgress) => {
-      if (isMountedRef.current) {
+      if (isMountedRef.current && !signal.aborted) {
         setBatchProgress(progress)
         const statusMsg = mode === 'free'
           ? `Processing... ${progress.completed}/${progress.total} complete (${progress.inProgress} in progress)`
@@ -237,14 +237,14 @@ export function useConversionWorkflow(
         markerOptions,
         filenameMap,
         onProgress,
-        signal: abortControllerRef.current!.signal
+        signal: signal
       })
       : await convertBatchPdfToMarkdown(files, {
         apiKey,
         markerOptions,
         filenameMap,
         onProgress,
-        signal: abortControllerRef.current!.signal
+        signal: signal
       })
 
     if (!result.success || !result.zipBlob) {
@@ -293,6 +293,9 @@ export function useConversionWorkflow(
 
     setProcessing(true)
     setError('')
+    // Clear the previous result so a failed run can't leave an old file ready to download
+    setConvertedMarkdown(null)
+    setOutputFilename(null)
     setBatchProgress(null)
     setBatchZipBlob(null)
     setBatchZipFilename(null)
@@ -304,16 +307,22 @@ export function useConversionWorkflow(
       options: markerOptions
     })
 
+    // Keep a local reference: after a cancel, a new run can start before this one finishes
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     try {
-      abortControllerRef.current = new AbortController()
 
       if (isBatch) {
-        await convertBatchFiles(files)
+        await convertBatchFiles(files, controller.signal)
       } else {
-        await convertSingleFile(files[0])
+        await convertSingleFile(files[0], controller.signal)
       }
 
     } catch (err) {
+      // The user cancelled this run: cancelConversion already reset the state
+      if (controller.signal.aborted) return
+
       const error = err as Error
       addLog('error', `Conversion failed: ${error.message}`)
 
@@ -323,7 +332,9 @@ export function useConversionWorkflow(
         setStatus('')
       }
     } finally {
-      abortControllerRef.current = null
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null
+      }
     }
   }, [validateConversion, convertSingleFile, convertBatchFiles, markerOptions, addLog])
 

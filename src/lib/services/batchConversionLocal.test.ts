@@ -109,6 +109,10 @@ describe('isRetryableError', () => {
     ['API request failed: 503 - Service unavailable', true],
     ['Polling failed: 500', true],
     ['Conversion failed on Modal: Out of memory', true],
+    ['Conversion failed on API: This PDF is password-protected. Remove the password and try again.', false],
+    ['Conversion failed on Modal: This PDF is damaged or is not a valid PDF file.', false],
+    ['No text was found in this PDF. It may be blank.', false],
+    ['Conversion timeout. Please try again.', false],
   ])('%s -> %s', async (message, expected) => {
     const { isRetryableError } = await import('./batchConversionService')
     expect(isRetryableError(new Error(message))).toBe(expected)
