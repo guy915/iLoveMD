@@ -37,7 +37,6 @@ export const NAV_LINKS: readonly NavLink[] = [
   { href: '/pdf-to-markdown', label: 'PDF to Markdown', shortLabel: 'PDF to Markdown' },
   { href: '/merge-markdown', label: 'Merge Markdown', shortLabel: 'Merge Markdown' },
   { href: 'https://www.ilovepdf.com', label: 'iLovePDF', shortLabel: 'iLovePDF', external: true },
-  { href: 'https://www.ilovemarkdown.com', label: 'iLoveMD', shortLabel: 'iLoveMD', external: true },
   { href: 'https://platform.openai.com/tokenizer', label: 'Token Counter', shortLabel: 'Token Counter', external: true },
 ] as const
 

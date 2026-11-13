@@ -101,7 +101,7 @@ describe('convertBatchPdfToMarkdownLocal', () => {
 describe('isRetryableError', () => {
   it.each([
     ['API request failed: 401 - Invalid API key', false],
-    ['Modal request failed: 413 - File too large', false],
+    ['Conversion request failed: 413 - File too large', false],
     ['API request failed: 400 - Only PDF files are accepted', false],
     ['Conversion cancelled', false],
     ['API request failed: 429 - Too many requests', true],
@@ -121,7 +121,7 @@ describe('isRetryableError', () => {
   it('does not retry a file whose API key is rejected', async () => {
     const mockConvert = vi.mocked(convertPdfToMarkdownLocal)
     mockConvert.mockReset()
-    mockConvert.mockResolvedValue({ success: false, error: 'Modal request failed: 400 - Gemini API key is required' })
+    mockConvert.mockResolvedValue({ success: false, error: 'Conversion request failed: 400 - Gemini API key is required' })
 
     const result = await convertBatchPdfToMarkdownLocal([makeFile('a.pdf'), makeFile('b.pdf')], {
       geminiApiKey: null,

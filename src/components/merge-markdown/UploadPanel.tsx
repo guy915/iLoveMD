@@ -112,10 +112,7 @@ export function UploadPanel({
           </label>
 
           {/* Separator selector */}
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-xs text-gray-500 truncate min-w-0 inline-block" title="Separation">
-              Separation:
-            </span>
+          <div className="flex items-center gap-1.5 min-w-0" role="radiogroup" aria-label="Separator">
             <label className="flex items-center gap-1 cursor-pointer shrink-0">
               <input
                 type="radio"

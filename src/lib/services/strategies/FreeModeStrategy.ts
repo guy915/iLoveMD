@@ -42,12 +42,12 @@ export class FreeModeStrategy implements IConversionStrategy {
 
     if (!response.ok) {
       const detail = await getResponseErrorDetail(response)
-      throw new Error(`Modal request failed: ${response.status}${detail ? ` - ${detail}` : ''}`)
+      throw new Error(`Conversion request failed: ${response.status}${detail ? ` - ${detail}` : ''}`)
     }
 
     const data = await response.json()
     if (!data.success) {
-      throw new Error(data.error || 'Modal request failed')
+      throw new Error(data.error || 'Conversion request failed')
     }
 
     if (data.request_check_url) {
@@ -98,7 +98,7 @@ export class FreeModeStrategy implements IConversionStrategy {
 
     if (!response.ok) {
       const detail = await getResponseErrorDetail(response)
-      throw new Error(`Modal request failed: ${response.status}${detail ? ` - ${detail}` : ''}`)
+      throw new Error(`Conversion request failed: ${response.status}${detail ? ` - ${detail}` : ''}`)
     }
 
     const data = await response.json() as { request_id?: string; request_check_url?: string; error?: string }

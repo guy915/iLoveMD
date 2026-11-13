@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'About',
@@ -17,11 +16,6 @@ export const metadata: Metadata = {
     siteName: 'iLoveMD',
     type: 'website',
   },
-}
-
-export const metadata: Metadata = {
-  title: 'About',
-  description: 'About iLoveMD, free markdown utilities for converting PDFs and merging markdown files.',
 }
 
 /**
