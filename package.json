@@ -5,6 +5,7 @@
   "description": "A web application for markdown utilities. Converts PDFs to markdown and merges markdown files.",
   "author": "guy915",
   "license": "MIT",
+  "homepage": "https://ilovemd.app",
   "repository": {
     "type": "git",
     "url": "https://github.com/guy915/iLoveMD.git"

@@ -5,6 +5,18 @@ const nextConfig = {
   // This may cause some duplicate logs in dev, but logs are clean in production
   reactStrictMode: true,
 
+  // Send the old Vercel address to the custom domain (keeps old links and search results working)
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'ilovemd.vercel.app' }],
+        destination: 'https://ilovemd.app/:path*',
+        permanent: true,
+      },
+    ]
+  },
+
   // Security headers
   async headers() {
     if (process.env.NODE_ENV === 'development') {

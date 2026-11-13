@@ -123,4 +123,4 @@ export const MARKER_CONFIG = {
   SIGN_UP_URL: 'https://www.datalab.to/app/keys',
 } as const
 
-export const BASE_URL = 'https://ilovemd.vercel.app'
+export const BASE_URL = 'https://ilovemd.app'
