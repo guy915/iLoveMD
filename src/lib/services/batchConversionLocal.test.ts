@@ -97,3 +97,35 @@ describe('convertBatchPdfToMarkdownLocal', () => {
     expect(result.failed.every(r => r.status === 'cancelled')).toBe(true)
   })
 })
+
+describe('isRetryableError', () => {
+  it.each([
+    ['API request failed: 401 - Invalid API key', false],
+    ['Modal request failed: 413 - File too large', false],
+    ['API request failed: 400 - Only PDF files are accepted', false],
+    ['Conversion cancelled', false],
+    ['API request failed: 429 - Too many requests', true],
+    ['API request failed: 408', true],
+    ['API request failed: 503 - Service unavailable', true],
+    ['Polling failed: 500', true],
+    ['Conversion failed on Modal: Out of memory', true],
+  ])('%s -> %s', async (message, expected) => {
+    const { isRetryableError } = await import('./batchConversionService')
+    expect(isRetryableError(new Error(message))).toBe(expected)
+  })
+
+  it('does not retry a file whose API key is rejected', async () => {
+    const mockConvert = vi.mocked(convertPdfToMarkdownLocal)
+    mockConvert.mockReset()
+    mockConvert.mockResolvedValue({ success: false, error: 'Modal request failed: 400 - Gemini API key is required' })
+
+    const result = await convertBatchPdfToMarkdownLocal([makeFile('a.pdf'), makeFile('b.pdf')], {
+      geminiApiKey: null,
+      markerOptions: {} as never,
+      maxRetries: 3,
+    })
+
+    expect(mockConvert).toHaveBeenCalledTimes(2)
+    expect(result.failed.every(r => r.attempts === 1)).toBe(true)
+  })
+})

@@ -222,6 +222,21 @@ type ConversionFunction = (
 ) => Promise<{ success: boolean; markdown?: string; error?: string }>
 
 /**
+ * Whether a failed conversion is worth retrying.
+ * Client errors (bad API key, invalid or too-large file) fail the same way every time,
+ * so retrying them only multiplies requests and delays for every file in the batch.
+ * Timeouts (408) and rate limits (429) are retried.
+ */
+export function isRetryableError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  if (message === 'Conversion cancelled') return false
+  const match = message.match(/request failed: (\d{3})/i)
+  if (!match) return true
+  const status = Number(match[1])
+  return !(status >= 400 && status < 500) || status === 408 || status === 429
+}
+
+/**
  * Generic function to convert a single file with retry logic
  * Works for both paid mode (Marker API) and free mode (Modal)
  */
@@ -270,13 +285,14 @@ async function convertFileWithRetry(
         throw new Error(conversionResult.error || 'Conversion failed')
       }
     } catch (error) {
-      const isLastAttempt = attempt === maxRetries
+      const isLastAttempt = attempt === maxRetries || !isRetryableError(error) || !!signal?.aborted
 
       if (isLastAttempt) {
         result.status = 'failed'
         result.error = error instanceof Error ? error.message : 'Unknown error'
         result.endTime = Date.now()
         result.duration = result.endTime - (result.startTime || 0)
+        break
       } else {
         // Wait before retrying with exponential backoff
         const delay = getRetryDelay(attempt)
