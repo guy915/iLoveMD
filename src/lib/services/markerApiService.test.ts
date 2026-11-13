@@ -498,7 +498,8 @@ describe('markerApiService', () => {
         json: async () => ({ success: true, request_check_url: 'url' }),
       })
 
-      fetchMock.mockRejectedValueOnce(new Error('Poll error'))
+      // Polling keeps failing (more than the tolerated number of failures in a row)
+      fetchMock.mockRejectedValue(new Error('Poll error'))
 
       const promise = convertPdfToMarkdown(file, 'key', defaultOptions)
       await vi.runAllTimersAsync()
@@ -506,6 +507,46 @@ describe('markerApiService', () => {
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Poll error')
+    })
+    it('should recover from a single failed poll', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+      fetchMock.mockRejectedValueOnce(new Error('Temporary network error'))
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, status: 'complete', markdown: '# Done' }),
+      })
+
+      const promise = convertPdfToMarkdown(file, 'key', defaultOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(true)
+      expect(result.markdown).toBe('# Done')
+    })
+
+    it('should include the failure reason when the job fails', async () => {
+      const file = createMockFile('test.pdf', 1024)
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, request_check_url: 'url' }),
+      })
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, status: 'error', error: 'PDF is encrypted' }),
+      })
+
+      const promise = convertPdfToMarkdown(file, 'key', defaultOptions)
+      await vi.runAllTimersAsync()
+      const result = await promise
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Conversion failed on API: PDF is encrypted')
     })
   })
 
@@ -966,7 +1007,8 @@ describe('markerApiService', () => {
         json: async () => ({ success: true, request_check_url: 'url' }),
       })
 
-      fetchMock.mockRejectedValueOnce(new Error('Poll error'))
+      // Polling keeps failing (more than the tolerated number of failures in a row)
+      fetchMock.mockRejectedValue(new Error('Poll error'))
 
       const promise = convertPdfToMarkdownLocal(file, null, defaultOptions)
       await vi.runAllTimersAsync()

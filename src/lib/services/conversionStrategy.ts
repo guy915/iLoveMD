@@ -7,6 +7,11 @@ import type { MarkerOptions, MarkerSubmitResponse, MarkerPollResponse, Conversio
 import { MARKER_CONFIG } from '@/lib/constants'
 
 /**
+ * Number of failed polls in a row that are tolerated before the conversion is reported as failed
+ */
+export const MAX_CONSECUTIVE_POLL_FAILURES = 3
+
+/**
  * Progress callback type
  */
 export type ProgressCallback = (status: string, attemptNumber: number, elapsedSeconds: number) => void
@@ -81,6 +86,7 @@ export async function convertWithStrategy(
     const pollInterval = MARKER_CONFIG.POLLING.INTERVAL_MS
     const maxAttempts = MARKER_CONFIG.POLLING.MAX_ATTEMPTS
     const startTime = Date.now()
+    let consecutivePollFailures = 0
 
     // Add initial delay if needed (for eventual consistency)
     if (strategy.needsInitialDelay()) {
@@ -95,8 +101,22 @@ export async function convertWithStrategy(
 
       const elapsedSeconds = (Date.now() - startTime) / 1000
 
-      // Poll status using strategy
-      const pollResponse = await strategy.pollStatus(checkUrl)
+      // Poll status using strategy. A single failed poll (network blip, gateway timeout)
+      // should not throw away a long-running conversion, so retry a few times in a row.
+      let pollResponse: MarkerPollResponse
+      try {
+        pollResponse = await strategy.pollStatus(checkUrl)
+        consecutivePollFailures = 0
+      } catch (pollError) {
+        consecutivePollFailures++
+        if (consecutivePollFailures > MAX_CONSECUTIVE_POLL_FAILURES || signal?.aborted) {
+          throw pollError
+        }
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, pollInterval))
+        }
+        continue
+      }
 
       // Notify progress
       if (onProgress && pollResponse.status) {
@@ -115,7 +135,12 @@ export async function convertWithStrategy(
       // Check if error
       if (pollResponse.status === 'error') {
         const prefix = strategy.getErrorPrefix()
-        return { success: false, error: `Conversion failed on ${prefix}` }
+        return {
+          success: false,
+          error: pollResponse.error
+            ? `Conversion failed on ${prefix}: ${pollResponse.error}`
+            : `Conversion failed on ${prefix}`
+        }
       }
 
       // Wait before next poll (unless this is the last attempt)
@@ -140,4 +165,37 @@ export async function convertWithStrategy(
       error: err.message || `An error occurred during ${prefix.toLowerCase()} conversion`
     }
   }
+}
+
+/**
+ * Read a readable error detail from a failed response from our API routes.
+ *
+ * Our routes return JSON like `{ success: false, error: "..." }`. Without this,
+ * the raw JSON body would be shown to the user. Requests that are too large are
+ * rejected by the hosting platform before they reach our route, with a non-JSON body.
+ */
+export async function getResponseErrorDetail(response: Response): Promise<string> {
+  if (response.status === 413) {
+    return 'File is too large to upload through the server. Try a smaller PDF.'
+  }
+
+  let text = ''
+  try {
+    text = typeof response.text === 'function' ? await response.text() : ''
+  } catch {
+    return ''
+  }
+
+  try {
+    const data = JSON.parse(text) as { error?: unknown }
+    if (data && typeof data.error === 'string' && data.error) {
+      return data.error
+    }
+  } catch {
+    // Not JSON - fall through to the raw text
+  }
+
+  const MAX_DETAIL_LENGTH = 200
+  const trimmed = text.trim()
+  return trimmed.length > MAX_DETAIL_LENGTH ? `${trimmed.slice(0, MAX_DETAIL_LENGTH)}...` : trimmed
 }

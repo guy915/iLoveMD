@@ -9,6 +9,11 @@ import { FileCard, UploadPanel } from '@/components/merge-markdown'
 import Button from '@/components/common/Button'
 import type { MarkdownFile, SeparatorStyle } from '@/types/markdown'
 
+/** Whether a filename has a markdown extension (case-insensitive) */
+function isMarkdownFilename(name: string): boolean {
+    return /\.(md|markdown)$/i.test(name)
+}
+
 export default function MergeMarkdownClient() {
     const { addLog } = useLogs()
     const [separatorStyle, setSeparatorStyle] = useState<SeparatorStyle>('newline')
@@ -65,7 +70,7 @@ export default function MergeMarkdownClient() {
         const immediateFiles = filesArray.filter(file => {
             const pathParts = file.webkitRelativePath.split('/')
             // Only include files that are in the immediate folder (2 parts: folder/file.md)
-            return pathParts.length === 2 && (file.name.endsWith('.md') || file.name.endsWith('.markdown'))
+            return pathParts.length === 2 && isMarkdownFilename(file.name)
         })
 
         if (immediateFiles.length === 0) {
@@ -128,38 +133,51 @@ export default function MergeMarkdownClient() {
             const hasFolder = Array.from(items).some(item => item.webkitGetAsEntry?.()?.isDirectory)
 
             if (hasFolder) {
-                // Handle folder drop
+                // Handle folder drop (plus any loose files dropped alongside the folders)
                 const allFiles: File[] = []
                 const folderPromises: Promise<void>[] = []
+
+                const readFile = (fileEntry: FileSystemFileEntry) =>
+                    new Promise<void>((resolveFile) => {
+                        fileEntry.file((file) => {
+                            allFiles.push(file)
+                            resolveFile()
+                        }, (error) => {
+                            console.error('Error reading file:', error)
+                            resolveFile() // Resolve anyway to prevent hanging
+                        })
+                    })
 
                 for (let i = 0; i < items.length; i++) {
                     const item = items[i]
                     const entry = item.webkitGetAsEntry()
 
                     if (entry?.isDirectory) {
-                        folderPromises.push(
-                            new Promise<void>((resolve) => {
-                                const dirReader = (entry as FileSystemDirectoryEntry).createReader()
-                                dirReader.readEntries((entries) => {
-                                    // Only process immediate files, not subdirectories
-                                    const filePromises = entries
-                                        .filter(entry => entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')))
-                                        .map(entry =>
-                                            new Promise<void>((resolveFile) => {
-                                                (entry as FileSystemFileEntry).file((file) => {
-                                                    allFiles.push(file)
-                                                    resolveFile()
-                                                }, (error) => {
-                                                    console.error('Error reading file:', error)
-                                                    resolveFile() // Resolve anyway to prevent hanging
-                                                })
-                                            })
-                                        )
-
-                                    Promise.all(filePromises).then(() => resolve())
+                        folderPromises.push((async () => {
+                            const dirReader = (entry as FileSystemDirectoryEntry).createReader()
+                            // readEntries returns entries in chunks (100 at a time in Chrome),
+                            // so keep reading until it returns an empty batch
+                            const entries: FileSystemEntry[] = []
+                            while (true) {
+                                const batch = await new Promise<FileSystemEntry[]>((resolveBatch) => {
+                                    dirReader.readEntries(resolveBatch, (error) => {
+                                        console.error('Error reading folder:', error)
+                                        resolveBatch([])
+                                    })
                                 })
-                            })
-                        )
+                                if (batch.length === 0) break
+                                entries.push(...batch)
+                            }
+
+                            // Only process immediate files, not subdirectories
+                            await Promise.all(
+                                entries
+                                    .filter(child => child.isFile && isMarkdownFilename(child.name))
+                                    .map(child => readFile(child as FileSystemFileEntry))
+                            )
+                        })())
+                    } else if (entry?.isFile && isMarkdownFilename(entry.name)) {
+                        folderPromises.push(readFile(entry as FileSystemFileEntry))
                     }
                 }
 

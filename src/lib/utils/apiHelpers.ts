@@ -54,19 +54,20 @@ export function getNetworkErrorType(error: unknown): NetworkErrorType {
  * @returns User-friendly error message
  */
 export function getNetworkErrorMessage(errorType: NetworkErrorType, isLocal: boolean = false): string {
-  const service = isLocal ? 'local Marker instance' : 'Marker API'
+  // Free mode runs on a hosted Modal deployment, not on the user's machine
+  const service = isLocal ? 'free conversion service' : 'Marker API'
 
   switch (errorType) {
     case 'timeout':
       return `Request timed out. The ${service} is taking too long to respond. Please try again.`
     case 'connection':
       return isLocal
-        ? 'Unable to connect to local Marker instance. Please ensure Docker is running and Marker is started on http://localhost:8000'
+        ? 'Unable to connect to the free conversion service. It may be starting up or temporarily unavailable. Please try again in a minute.'
         : 'Unable to connect to Marker API. The service may be temporarily unavailable.'
     case 'dns':
       return `Unable to resolve ${service} hostname. Please check your ${isLocal ? 'configuration' : 'internet connection'}.`
     default:
-      return `Network error occurred. Please check ${isLocal ? 'that Docker and Marker are running' : 'your internet connection'} and try again.`
+      return 'Network error occurred. Please check your internet connection and try again.'
   }
 }
 

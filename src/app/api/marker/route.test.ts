@@ -345,6 +345,31 @@ describe('GET /api/marker', () => {
       expect(data.progress).toBe(50)
     })
 
+    it('should report a failed Marker job as an error with its reason', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: 'complete',
+          success: false,
+          error: 'Could not parse PDF',
+        }),
+      })
+
+      const request = createGetRequest(
+        { checkUrl: 'https://www.datalab.to/api/v1/marker/check' },
+        { 'x-api-key': 'test-key' }
+      )
+      const response = await GET(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.status).toBe('error')
+      expect(data.error).toBe('Could not parse PDF')
+      expect(data.markdown).toBeUndefined()
+    })
+
     it('should successfully poll with complete status and markdown', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,

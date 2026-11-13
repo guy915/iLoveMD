@@ -3,7 +3,7 @@
  */
 
 import type { MarkerOptions, MarkerSubmitResponse, MarkerPollResponse } from '@/types'
-import type { IConversionStrategy } from '../conversionStrategy'
+import { getResponseErrorDetail, type IConversionStrategy } from '../conversionStrategy'
 import { API_ENDPOINTS } from '@/lib/constants'
 
 /**
@@ -26,8 +26,8 @@ export class FreeModeStrategy implements IConversionStrategy {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Modal request failed: ${response.status} - ${errorText}`)
+      const detail = await getResponseErrorDetail(response)
+      throw new Error(`Modal request failed: ${response.status}${detail ? ` - ${detail}` : ''}`)
     }
 
     const data = await response.json()
@@ -44,7 +44,8 @@ export class FreeModeStrategy implements IConversionStrategy {
     )
 
     if (!response.ok) {
-      throw new Error(`Polling failed: ${response.status}`)
+      const detail = await getResponseErrorDetail(response)
+      throw new Error(`Polling failed: ${response.status}${detail ? ` - ${detail}` : ''}`)
     }
 
     const data = await response.json()

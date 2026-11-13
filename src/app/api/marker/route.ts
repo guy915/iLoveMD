@@ -435,12 +435,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       )
     }
 
+    // Marker API reports a failed job as status "complete" (or "failed") with success: false.
+    // Map that to status "error" and pass the reason through so the user sees why it failed.
+    const jobFailed =
+      data.status === 'failed' ||
+      data.status === 'error' ||
+      (data.status === 'complete' && (data as { success?: unknown }).success === false)
+
     // Wrap response with success flag for consistency
     return NextResponse.json({
       success: true,
-      status: data.status as 'pending' | 'processing' | 'complete' | 'error' | undefined,
-      markdown: data.markdown,
-      progress: data.progress
+      status: jobFailed ? 'error' : data.status as 'pending' | 'processing' | 'complete' | 'error' | undefined,
+      markdown: jobFailed ? undefined : data.markdown,
+      progress: data.progress,
+      ...(jobFailed && data.error ? { error: data.error } : {})
     })
 
   } catch (error) {

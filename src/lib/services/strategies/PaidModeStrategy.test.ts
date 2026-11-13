@@ -57,6 +57,36 @@ describe('PaidModeStrategy', () => {
       )
     })
 
+    it('should show the error message from a JSON error body, not the raw JSON', async () => {
+      const mockFile = new File(['test'], 'test.pdf', { type: 'application/pdf' })
+      const mockOptions = { use_llm: true } as MarkerOptions
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: async () => JSON.stringify({ success: false, error: 'Invalid API key format' })
+      })
+
+      await expect(strategy.submitConversion(mockFile, mockOptions)).rejects.toThrow(
+        /^API request failed: 400 - Invalid API key format$/
+      )
+    })
+
+    it('should explain when the upload is too large for the server', async () => {
+      const mockFile = new File(['test'], 'test.pdf', { type: 'application/pdf' })
+      const mockOptions = { use_llm: true } as MarkerOptions
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 413,
+        text: async () => 'Request Entity Too Large'
+      })
+
+      await expect(strategy.submitConversion(mockFile, mockOptions)).rejects.toThrow(
+        'File is too large to upload through the server'
+      )
+    })
+
     it('should include apiKey in FormData', async () => {
       const mockFile = new File(['test'], 'test.pdf', { type: 'application/pdf' })
       const mockOptions: MarkerOptions = { use_llm: true }

@@ -439,7 +439,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       success: true,
       status: data.status as 'pending' | 'processing' | 'complete' | 'error' | undefined,
       markdown: data.markdown,
-      progress: data.progress
+      progress: data.progress,
+      // Pass the failure reason through so the user sees why the job failed
+      ...(data.status === 'error' && data.error ? { error: data.error } : {})
     })
 
   } catch (error) {
