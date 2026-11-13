@@ -1,6 +1,13 @@
 import Image from 'next/image'
 import ToolTile from '@/components/home/ToolTile'
 import { TOOL_CARDS } from '@/lib/constants'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+}
 
 export default function Home() {
   return (

@@ -1,4 +1,22 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Help',
+  description: 'Answers to common questions about converting PDF to Markdown and merging Markdown files with iLoveMD.',
+  alternates: {
+    canonical: '/help',
+  },
+  openGraph: {
+    title: 'iLoveMD Help & FAQ',
+    description: 'Answers to common questions about converting PDF to Markdown and merging Markdown files.',
+    url: '/help',
+    // Setting openGraph here replaces the root one, so repeat the shared preview image
+    images: ['/opengraph-image'],
+    siteName: 'iLoveMD',
+    type: 'website',
+  },
+}
 
 /**
  * Help page with FAQs and troubleshooting

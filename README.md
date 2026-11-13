@@ -16,7 +16,7 @@ Combine multiple markdown files into a single document.
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Node.js 20.9+ (22 recommended, matches Vercel)
 
 ### Installation
 

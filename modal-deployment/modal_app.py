@@ -84,9 +84,10 @@ def convert_pdf(
     temp_dir = Path(f"/tmp/marker/{request_id}")
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-    input_file = temp_dir / filename
-    # Ensure parent directories exist (in case filename includes folder path like "folder/file.pdf")
-    input_file.parent.mkdir(parents=True, exist_ok=True)
+    # Use only the base name: the filename comes from the client, and a value like
+    # "../../x.pdf" or "/abs/x.pdf" would otherwise write outside temp_dir
+    safe_name = Path(filename).name or "input.pdf"
+    input_file = temp_dir / safe_name
     
     output_dir = temp_dir / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -101,10 +102,10 @@ def convert_pdf(
         from marker.output import text_from_rendered
         from marker.config.parser import ConfigParser
         
-        # Set GEMINI_API_KEY environment variable if LLM is enabled
-        if use_llm and api_key:
-            os.environ["GEMINI_API_KEY"] = api_key
-        elif use_llm and not api_key:
+        # Pass the Gemini key only through this request's config. Never set it in
+        # os.environ: the container serves up to 10 requests at once and stays warm,
+        # so an env var would leak one user's key to other users' requests.
+        if use_llm and not api_key:
             print(f"[convert_pdf] WARNING: use_llm=True but no api_key provided")
         
         # Create configuration
@@ -218,7 +219,7 @@ def convert_pdf(
         if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
             return {
                 "success": False,
-                "error": "Conversion timed out (>9 minutes)",
+                "error": "Conversion timed out",
                 "request_id": request_id,
             }
         return {

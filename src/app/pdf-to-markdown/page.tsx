@@ -12,6 +12,15 @@ export const metadata: Metadata = {
     title: 'PDF to Markdown Converter - Free & AI-Powered',
     description: 'Convert PDF files to clean Markdown format. Supports batch conversion, OCR, and AI enhancement for high-quality results.',
     url: `${BASE_URL}/pdf-to-markdown`,
+    // Setting openGraph here replaces the root one, so repeat the shared preview image
+    images: ['/opengraph-image'],
+    siteName: 'iLoveMD',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PDF to Markdown Converter - Free & AI-Powered',
+    description: 'Convert PDF files to clean Markdown. Batch conversion, OCR and AI enhancement.',
   },
 }
 

@@ -45,7 +45,7 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-eval needed by Next.js, unsafe-inline needed for ReactMarkdown
+              "script-src 'self' 'unsafe-inline'", // unsafe-inline needed for Next.js inline bootstrap scripts and JSON-LD
               "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for KaTeX and Tailwind
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
@@ -72,8 +72,14 @@ const nextConfig = {
             value: 'strict-origin-when-cross-origin'
           },
           {
+            // The legacy XSS auditor is removed from modern browsers and could itself
+            // be abused; '0' is the current recommendation (CSP covers this instead)
             key: 'X-XSS-Protection',
-            value: '1; mode=block'
+            value: '0'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains'
           },
           {
             key: 'Permissions-Policy',
