@@ -43,7 +43,7 @@
     "@vitest/coverage-v8": "^4.0.9",
     "@vitest/ui": "^4.0.9",
     "autoprefixer": "^10.4.17",
-    "eslint": "^9.39.5",
+    "eslint": "^10.14.0",
     "eslint-config-next": "^16.4.6",
     "jsdom": "^25.0.1",
     "msw": "^2.6.8",
