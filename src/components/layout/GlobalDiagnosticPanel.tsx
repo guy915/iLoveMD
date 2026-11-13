@@ -47,11 +47,11 @@ export default function GlobalDiagnosticPanel() {
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
         aria-label="Toggle diagnostic logs"
       >
-        <span className="text-xs font-medium">Logs</span>
-        <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs" suppressHydrationWarning>
+        <span className="text-sm font-medium">Logs</span>
+        <span className="bg-blue-500 px-2 py-0.5 rounded-full text-xs" suppressHydrationWarning>
           {logs.length > 0 ? logs[logs.length - 1].id : 0}
         </span>
         <span className="text-xs" aria-hidden="true">

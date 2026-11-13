@@ -1,5 +1,3 @@
-import Link from 'next/link'
-
 /**
  * Footer component with copyright and attribution
  * Automatically updates copyright year
@@ -20,10 +18,6 @@ export default function Footer() {
             iLoveMD
           </a>
           . Markdown utility tools.
-          {' · '}
-          <Link href="/help" className="text-gray-600 hover:text-blue-600 underline">Help</Link>
-          {' · '}
-          <Link href="/about" className="text-gray-600 hover:text-blue-600 underline">About</Link>
         </p>
       </div>
     </footer>
