@@ -2,7 +2,7 @@
  * Tests for FreeModeStrategy
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { FreeModeStrategy } from './FreeModeStrategy'
 import type { MarkerOptions, MarkerSubmitResponse, MarkerPollResponse } from '@/types'
 import { API_ENDPOINTS } from '@/lib/constants'
@@ -113,61 +113,65 @@ describe('FreeModeStrategy', () => {
   })
 
   describe('pollStatus', () => {
-    it('should poll conversion status with checkUrl', async () => {
+    const checkUrl = `${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/status/abc-123`
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('polls the Modal status URL directly and passes images through', async () => {
       strategy = new FreeModeStrategy(null)
-
-      const checkUrl = 'https://modal.com/check/123'
-      const mockResponse: MarkerPollResponse = {
-        success: true,
-        status: 'processing'
-      }
-
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => mockResponse
+        status: 200,
+        json: async () => ({ status: 'complete', markdown: '![](a.jpeg)', images: { 'a.jpeg': 'AAAA' } })
       })
 
       const result = await strategy.pollStatus(checkUrl)
 
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining(API_ENDPOINTS.MARKER_LOCAL)
-      )
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining(encodeURIComponent(checkUrl))
-      )
-      expect(result).toEqual(mockResponse)
+      expect(fetch).toHaveBeenCalledWith(checkUrl, undefined)
+      expect(result).toEqual({
+        success: true,
+        status: 'complete',
+        markdown: '![](a.jpeg)',
+        progress: undefined,
+        images: { 'a.jpeg': 'AAAA' }
+      })
     })
 
-    it('should throw error if polling fails', async () => {
+    it('refuses status URLs from other hosts', async () => {
       strategy = new FreeModeStrategy(null)
-
-      const checkUrl = 'https://modal.com/check/123'
-
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 503
-      })
-
-      await expect(strategy.pollStatus(checkUrl)).rejects.toThrow(
-        'Polling failed: 503'
-      )
+      global.fetch = vi.fn()
+      await expect(strategy.pollStatus('https://evil.example/status/1')).rejects.toThrow('Invalid status URL')
+      expect(fetch).not.toHaveBeenCalled()
     })
 
-    it('should encode checkUrl properly', async () => {
+    it('throws when polling fails', async () => {
       strategy = new FreeModeStrategy(null)
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503, text: async () => '' })
+      await expect(strategy.pollStatus(checkUrl)).rejects.toThrow('Polling failed: 503')
+    })
 
-      const checkUrl = 'https://modal.com/check/123?foo=bar&baz=qux'
-      const encodedCheckUrl = encodeURIComponent(checkUrl)
+    it('treats 404 as processing for a new job, and as lost after the grace period', async () => {
+      vi.useFakeTimers()
+      strategy = new FreeModeStrategy(null)
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 })
 
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true, status: 'complete' })
-      })
+      expect(await strategy.pollStatus(checkUrl)).toEqual({ success: true, status: 'processing' })
 
-      await strategy.pollStatus(checkUrl)
+      vi.advanceTimersByTime(FreeModeStrategy.JOB_VISIBLE_GRACE_MS + 1)
+      const lost = await strategy.pollStatus(checkUrl)
+      expect(lost.status).toBe('error')
+      expect(lost.error).toContain('lost')
+    })
+  })
 
-      const fetchCall = (fetch as any).mock.calls[0][0]
-      expect(fetchCall).toContain(encodedCheckUrl)
+  describe('cancelConversion', () => {
+    it('asks Modal to cancel the job', async () => {
+      strategy = new FreeModeStrategy(null)
+      global.fetch = vi.fn().mockResolvedValue({ ok: true })
+      await strategy.cancelConversion(`${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/status/abc-123`)
+      expect(fetch).toHaveBeenCalledWith(`${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/cancel/abc-123`, { method: 'POST' })
     })
   })
 

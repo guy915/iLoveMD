@@ -10,18 +10,21 @@ import { API_ENDPOINTS, FILE_SIZE } from '@/lib/constants'
  * Strategy for free mode conversion using Modal
  *
  * Files larger than the hosting platform's request limit are sent straight from the
- * browser to the Modal endpoint (which allows cross-origin requests), and their status
- * is polled there directly too, since a large result could also exceed the limit.
+ * browser to the Modal endpoint (which allows cross-origin requests). Status is always
+ * polled there directly, since a result with images can exceed the response limit.
  */
 export class FreeModeStrategy implements IConversionStrategy {
-  /** Status URLs of jobs submitted directly to Modal (polled directly as well) */
-  private directCheckUrls = new Set<string>()
+  /** How long a new job may be missing on Modal before it is reported as lost */
+  static readonly JOB_VISIBLE_GRACE_MS = 60000
+
+  /** When each job (by status URL) was submitted */
+  private submittedAt = new Map<string, number>()
 
   constructor(private geminiApiKey: string | null) {}
 
-  async submitConversion(file: File, options: MarkerOptions): Promise<MarkerSubmitResponse> {
+  async submitConversion(file: File, options: MarkerOptions, signal?: AbortSignal): Promise<MarkerSubmitResponse> {
     if (file.size > FILE_SIZE.MAX_PROXY_UPLOAD_SIZE) {
-      return this.submitDirect(file, options)
+      return this.submitDirect(file, options, signal)
     }
 
     const formData = new FormData()
@@ -33,7 +36,8 @@ export class FreeModeStrategy implements IConversionStrategy {
 
     const response = await fetch(API_ENDPOINTS.MARKER_LOCAL, {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal
     })
 
     if (!response.ok) {
@@ -46,13 +50,16 @@ export class FreeModeStrategy implements IConversionStrategy {
       throw new Error(data.error || 'Modal request failed')
     }
 
+    if (data.request_check_url) {
+      this.submittedAt.set(data.request_check_url, Date.now())
+    }
     return data
   }
 
   /**
    * Send the PDF straight to the Modal endpoint, bypassing our API route
    */
-  private async submitDirect(file: File, options: MarkerOptions): Promise<MarkerSubmitResponse> {
+  private async submitDirect(file: File, options: MarkerOptions, signal?: AbortSignal): Promise<MarkerSubmitResponse> {
     if (options.use_llm && !this.geminiApiKey?.trim()) {
       throw new Error('Gemini API key is required when using LLM enhancement in free mode')
     }
@@ -81,7 +88,8 @@ export class FreeModeStrategy implements IConversionStrategy {
     try {
       response = await fetch(`${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/marker`, {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal
       })
     } catch (networkError) {
       const reason = networkError instanceof Error ? networkError.message : String(networkError)
@@ -103,7 +111,7 @@ export class FreeModeStrategy implements IConversionStrategy {
       ? data.request_check_url
       : `${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}${data.request_check_url}`
 
-    this.directCheckUrls.add(checkUrl)
+    this.submittedAt.set(checkUrl, Date.now())
 
     return { success: true, request_id: data.request_id, request_check_url: checkUrl }
   }
@@ -128,37 +136,36 @@ export class FreeModeStrategy implements IConversionStrategy {
     return data.token ?? null
   }
 
-  async pollStatus(checkUrl: string): Promise<MarkerPollResponse> {
-    if (this.directCheckUrls.has(checkUrl)) {
-      return this.pollDirect(checkUrl)
-    }
-
-    const response = await fetch(
-      `${API_ENDPOINTS.MARKER_LOCAL}?checkUrl=${encodeURIComponent(checkUrl)}`
-    )
-
-    if (!response.ok) {
-      const detail = await getResponseErrorDetail(response)
-      throw new Error(`Polling failed: ${response.status}${detail ? ` - ${detail}` : ''}`)
-    }
-
-    const data = await response.json()
-    if (!data.success) {
-      throw new Error(data.error || 'Polling failed')
-    }
-
-    return data
-  }
-
   /**
-   * Poll the Modal status endpoint directly (same handling as the /api/marker/local route)
+   * Poll the Modal status endpoint directly from the browser (it allows cross-origin
+   * requests). Results with images can be larger than the hosting platform's 4.5 MB
+   * response limit, so they can't go through our API route.
    */
-  private async pollDirect(checkUrl: string): Promise<MarkerPollResponse> {
-    const response = await fetch(checkUrl)
+  async pollStatus(checkUrl: string, signal?: AbortSignal): Promise<MarkerPollResponse> {
+    if (!this.isModalStatusUrl(checkUrl)) {
+      throw new Error('Invalid status URL from the free conversion service')
+    }
+    if (!this.submittedAt.has(checkUrl)) {
+      this.submittedAt.set(checkUrl, Date.now())
+    }
 
-    // The job may not be visible yet (Modal volume propagation) - keep polling
+    let response: Response
+    try {
+      response = await fetch(checkUrl, signal ? { signal } : undefined)
+    } catch (networkError) {
+      if (signal?.aborted) throw networkError
+      const reason = networkError instanceof Error ? networkError.message : String(networkError)
+      throw new Error(`Polling failed: ${reason}`)
+    }
+
     if (response.status === 404) {
-      return { success: true, status: 'processing' }
+      // A brand-new job may not be visible yet (Modal volume propagation) - keep polling.
+      // After that, the job is gone (for example, the service restarted).
+      const submittedAt = this.submittedAt.get(checkUrl) ?? 0
+      if (Date.now() - submittedAt < FreeModeStrategy.JOB_VISIBLE_GRACE_MS) {
+        return { success: true, status: 'processing' }
+      }
+      return { success: true, status: 'error', error: 'The conversion job was lost. Please try again.' }
     }
 
     if (!response.ok) {
@@ -166,14 +173,36 @@ export class FreeModeStrategy implements IConversionStrategy {
       throw new Error(`Polling failed: ${response.status}${detail ? ` - ${detail}` : ''}`)
     }
 
-    const data = await response.json() as { status?: string; markdown?: string; progress?: number; error?: string }
+    const data = await response.json() as {
+      status?: string
+      markdown?: string
+      images?: Record<string, string>
+      progress?: number
+      error?: string
+    }
     return {
       success: true,
       status: data.status as MarkerPollResponse['status'],
       markdown: data.markdown,
       progress: data.progress,
+      ...(data.images && typeof data.images === 'object' ? { images: data.images } : {}),
       ...(data.status === 'error' && data.error ? { error: data.error } : {})
     }
+  }
+
+  /**
+   * Stop the job on Modal so it doesn't keep using GPU time
+   */
+  async cancelConversion(checkUrl: string): Promise<void> {
+    if (!this.isModalStatusUrl(checkUrl)) return
+    const cancelUrl = checkUrl.replace(/\/status\/([^/?#]+)$/, '/cancel/$1')
+    if (cancelUrl === checkUrl) return
+    await fetch(cancelUrl, { method: 'POST' })
+  }
+
+  /** Only poll our own Modal app */
+  private isModalStatusUrl(checkUrl: string): boolean {
+    return checkUrl.startsWith(`${API_ENDPOINTS.LOCAL_MARKER_INSTANCE}/status/`)
   }
 
   getErrorPrefix(): string {

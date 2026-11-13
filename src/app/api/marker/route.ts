@@ -14,6 +14,40 @@ import { ErrorCode } from '@/types'
 /** Reference returned by Datalab's file upload API, e.g. "datalab://file-abc123" */
 const DATALAB_FILE_REFERENCE_REGEX = /^datalab:\/\/file-[A-Za-z0-9_-]+$/
 
+/** Largest result returned in one poll response (the platform caps responses at ~4.5 MB) */
+const MAX_INLINE_RESULT_BYTES = 3.5 * 1024 * 1024
+/** Characters per markdown part when a result is fetched in parts (<= 3 MB as UTF-8) */
+const MARKDOWN_PART_CHARS = 1_000_000
+
+/** Extracted images from a Datalab result (file name -> base64 data) */
+function getImages(data: unknown): Record<string, string> {
+  const images = (data as { images?: unknown } | null)?.images
+  if (!images || typeof images !== 'object' || Array.isArray(images)) return {}
+  const result: Record<string, string> = {}
+  for (const [name, value] of Object.entries(images as Record<string, unknown>)) {
+    if (typeof value === 'string' && value) result[name] = value
+  }
+  return result
+}
+
+/**
+ * Read an error message from a Datalab error body.
+ * Datalab returns `error` or `message`, and FastAPI-style `detail` (string or list).
+ */
+function getUpstreamErrorMessage(data: unknown): string | undefined {
+  if (!data || typeof data !== 'object') return undefined
+  const obj = data as Record<string, unknown>
+  for (const key of ['error', 'message', 'detail'] as const) {
+    const value = obj[key]
+    if (typeof value === 'string' && value) return value
+    if (key === 'detail' && Array.isArray(value)) {
+      const first = value[0] as { msg?: unknown } | undefined
+      if (first && typeof first.msg === 'string') return first.msg
+    }
+  }
+  return undefined
+}
+
 /**
  * Confirm a file the browser uploaded directly to Datalab storage.
  * Returns an error response, or null when the upload is confirmed.
@@ -293,19 +327,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
-    // Validate response structure
-    if (!isValidMarkerSubmitResponse(data)) {
-      console.error('Marker API returned unexpected response structure:', data)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Received malformed response from Marker API',
-          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
-        },
-        { status: 502 }
-      )
-    }
-
     if (!response.ok) {
       // Log the full error for debugging
       console.error('Marker API error:', {
@@ -323,10 +344,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       return NextResponse.json(
         {
           success: false,
-          error: data.error || data.message || `API error: ${response.status}`,
+          error: getUpstreamErrorMessage(data) || `API error: ${response.status}`,
           details: safeDetails
         },
         { status: response.status }
+      )
+    }
+
+    // Validate response structure
+    if (!isValidMarkerSubmitResponse(data)) {
+      console.error('Marker API returned unexpected response structure:', data)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Received malformed response from Marker API',
+          details: { receivedKeys: data && typeof data === 'object' ? Object.keys(data as object) : [] } // Only expose keys, not full data
+        },
+        { status: 502 }
       )
     }
 
@@ -485,6 +519,21 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       )
     }
 
+    if (!response.ok) {
+      console.error('Marker API poll error:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: getUpstreamErrorMessage(data) || 'Failed to check status'
+        },
+        { status: response.status }
+      )
+    }
+
     // Validate response structure
     if (!isValidMarkerPollResponse(data)) {
       console.error('Marker API poll returned unexpected response structure:', data)
@@ -498,21 +547,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       )
     }
 
-    if (!response.ok) {
-      console.error('Marker API poll error:', {
-        status: response.status,
-        statusText: response.statusText,
-        data: data
-      })
-      return NextResponse.json(
-        {
-          success: false,
-          error: data.error || 'Failed to check status'
-        },
-        { status: response.status }
-      )
-    }
-
     // Marker API reports a failed job as status "complete" (or "failed") with success: false.
     // Map that to status "error" and pass the reason through so the user sees why it failed.
     const jobFailed =
@@ -520,11 +554,53 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarkerPoll
       data.status === 'error' ||
       (data.status === 'complete' && (data as { success?: unknown }).success === false)
 
+    const status = jobFailed ? 'error' : data.status as 'pending' | 'processing' | 'complete' | 'error' | undefined
+    const markdown = jobFailed ? undefined : data.markdown
+    const images = status === 'complete' ? getImages(data) : {}
+
+    // Large results are fetched in parts: the platform caps a response at about 4.5 MB
+    const part = searchParams.get('part')
+    if (part && status === 'complete' && typeof markdown === 'string') {
+      if (part === 'markdown') {
+        const index = Number(searchParams.get('index'))
+        if (!Number.isInteger(index) || index < 0 || index * MARKDOWN_PART_CHARS >= Math.max(markdown.length, 1)) {
+          return NextResponse.json({ success: false, error: 'Invalid markdown part' }, { status: 400 })
+        }
+        return NextResponse.json({
+          success: true,
+          status: 'complete',
+          markdown: markdown.slice(index * MARKDOWN_PART_CHARS, (index + 1) * MARKDOWN_PART_CHARS)
+        })
+      }
+      if (part === 'image') {
+        const name = searchParams.get('name') ?? ''
+        if (!Object.prototype.hasOwnProperty.call(images, name)) {
+          return NextResponse.json({ success: false, error: 'Image not found' }, { status: 404 })
+        }
+        return NextResponse.json({ success: true, status: 'complete', images: { [name]: images[name] } })
+      }
+      return NextResponse.json({ success: false, error: 'Invalid part' }, { status: 400 })
+    }
+
+    const imageBytes = Object.values(images).reduce((sum, value) => sum + value.length, 0)
+    // Up to 3 bytes per character once encoded as UTF-8
+    const estimatedBytes = (markdown?.length ?? 0) * 3 + imageBytes
+    if (status === 'complete' && typeof markdown === 'string' && estimatedBytes > MAX_INLINE_RESULT_BYTES) {
+      return NextResponse.json({
+        success: true,
+        status: 'complete',
+        markdownParts: Math.max(1, Math.ceil(markdown.length / MARKDOWN_PART_CHARS)),
+        imageNames: Object.keys(images),
+        progress: data.progress
+      })
+    }
+
     // Wrap response with success flag for consistency
     return NextResponse.json({
       success: true,
-      status: jobFailed ? 'error' : data.status as 'pending' | 'processing' | 'complete' | 'error' | undefined,
-      markdown: jobFailed ? undefined : data.markdown,
+      status,
+      markdown,
+      ...(Object.keys(images).length > 0 ? { images } : {}),
       progress: data.progress,
       ...(jobFailed && data.error ? { error: data.error } : {})
     })

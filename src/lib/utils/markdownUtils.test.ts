@@ -458,3 +458,11 @@ Page: 4`)
                 })
         })
 })
+
+describe('cleanupPdfMarkdown code blocks', () => {
+  it('keeps blank lines inside fenced code blocks', async () => {
+    const { cleanupPdfMarkdown } = await import('./markdownUtils')
+    const input = 'Intro\n\n\n\n```python\na = 1\n\n\n\nb = 2\n```\n\n\n\nEnd'
+    expect(cleanupPdfMarkdown(input, 'none')).toBe('Intro\n\n```python\na = 1\n\n\n\nb = 2\n```\n\nEnd')
+  })
+})

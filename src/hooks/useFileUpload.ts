@@ -32,11 +32,11 @@ export function useFileUpload(): UseFileUploadReturn {
       return [...filesToSort]
     } else if (mode === 'alphabetical') {
       return [...filesToSort].sort((a, b) =>
-        a.file.name.localeCompare(b.file.name, undefined, { sensitivity: 'base' })
+        a.file.name.localeCompare(b.file.name, undefined, { sensitivity: 'base', numeric: true })
       )
     } else if (mode === 'reverseAlphabetical') {
       return [...filesToSort].sort((a, b) =>
-        b.file.name.localeCompare(a.file.name, undefined, { sensitivity: 'base' })
+        b.file.name.localeCompare(a.file.name, undefined, { sensitivity: 'base', numeric: true })
       )
     }
     return filesToSort

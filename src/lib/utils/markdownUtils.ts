@@ -40,7 +40,7 @@ export function cleanupPdfMarkdown(
 
   if (pageFormat === 'none') {
     let withoutMarkers = markdown.replace(pageMarkerPattern, '')
-    withoutMarkers = withoutMarkers.replace(/\n{3,}/g, '\n\n')
+    withoutMarkers = collapseBlankLines(withoutMarkers)
     return trimMarkdown(withoutMarkers)
   }
 
@@ -86,7 +86,7 @@ export function cleanupPdfMarkdown(
   }
 
   // Normalize excessive whitespace
-  result = result.replace(/\n{3,}/g, '\n\n')
+  result = collapseBlankLines(result)
 
   // Add final page number
   if (pageFormat === 'with_numbers' && markers.length > 0) {
@@ -97,6 +97,39 @@ export function cleanupPdfMarkdown(
   }
 
   return trimMarkdown(result)
+}
+
+/**
+ * Collapse runs of blank lines to one blank line, except inside fenced code blocks
+ * (``` or ~~~), where blank lines can be meaningful.
+ */
+function collapseBlankLines(markdown: string): string {
+  const lines = markdown.split('\n')
+  const output: string[] = []
+  let fence: string | null = null
+  let blankRun = 0
+
+  for (const line of lines) {
+    const fenceMatch = line.match(/^\s{0,3}(`{3,}|~{3,})/)
+    if (fenceMatch) {
+      const marker = fenceMatch[1]
+      if (fence === null) {
+        fence = marker
+      } else if (marker[0] === fence[0] && marker.length >= fence.length) {
+        fence = null
+      }
+    }
+
+    if (fence === null && line === '') {
+      blankRun++
+      if (blankRun > 1) continue
+    } else {
+      blankRun = 0
+    }
+    output.push(line)
+  }
+
+  return output.join('\n')
 }
 
 /**

@@ -377,9 +377,8 @@ describe('MergeMarkdownPage', () => {
     it('should enforce total size limit across all files', async () => {
       const { container } = render(<MergeMarkdownPage />)
 
-      // Upload first file that's 99GB (under 100GB total limit and 10GB individual limit... wait that's wrong)
-      // Actually, we need files under 10GB each. Let's use 9GB files
-      const file1Size = 9 * FILE_SIZE.BYTES_PER_GB // 9GB - valid individually
+      // Files just under half the total limit are valid on their own
+      const file1Size = Math.floor(FILE_SIZE.MAX_TOTAL_MERGE_SIZE / 2) - 1
 
       // Upload first batch of files
       const file1 = createMockMarkdownFile('file1.md', '# File 1', file1Size)
@@ -401,9 +400,8 @@ describe('MergeMarkdownPage', () => {
 
       mockAddLog.mockClear()
 
-      // Now upload 11 more files of 9GB each (11 * 9 = 99GB)
-      // Plus the first 9GB = 108GB total, which exceeds 100GB
-      const moreFiles = Array.from({ length: 12 }, (_, i) =>
+      // Two more files of the same size push the total over the limit
+      const moreFiles = Array.from({ length: 2 }, (_, i) =>
         createMockMarkdownFile(`file${i + 2}.md`, `# File ${i + 2}`, file1Size)
       )
 
