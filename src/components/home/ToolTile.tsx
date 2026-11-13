@@ -49,7 +49,7 @@ const ToolTile = memo(function ToolTile({ title, description, href, icon }: Tool
       </div>
 
       {/* Title */}
-      <h3 className="text-lg sm:text-xl font-semibold mb-3">{title}</h3>
+      <h2 className="text-lg sm:text-xl font-semibold mb-3">{title}</h2>
 
       {/* Description */}
       <p className="text-gray-600 text-sm leading-relaxed">{description}</p>

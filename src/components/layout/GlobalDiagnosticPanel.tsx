@@ -64,8 +64,8 @@ export default function GlobalDiagnosticPanel() {
         <div
           className={`fixed md:absolute top-[70px] md:top-full left-4 right-4 md:left-0 md:right-auto md:mt-2 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden z-50 md:w-[500px] transition-all duration-200 ease-out origin-top-left ${
             isOpen
-              ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
-              : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+              ? 'visible opacity-100 scale-100 translate-y-0 pointer-events-auto'
+              : 'invisible opacity-0 scale-95 -translate-y-2 pointer-events-none'
           }`}
           aria-hidden={!isOpen}
         >

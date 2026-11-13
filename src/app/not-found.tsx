@@ -1,7 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useEffect } from 'react'
-import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { useLogs } from '@/contexts/LogContext'
 
 /**
@@ -10,9 +9,16 @@ import { useLogs } from '@/contexts/LogContext'
  */
 export default function NotFound() {
   const { addLog } = useLogs()
-  const pathname = usePathname()
+  // Read the path on the client only. This page is prerendered at build time,
+  // where the path is "/_not-found", so rendering it during SSR causes a hydration mismatch.
+  const [pathname, setPathname] = useState<string | null>(null)
 
   useEffect(() => {
+    setPathname(window.location.pathname)
+  }, [])
+
+  useEffect(() => {
+    if (!pathname) return
     addLog('error', '404 - Page not found', {
       pathname: pathname || 'unknown',
       timestamp: new Date().toISOString()
@@ -24,7 +30,7 @@ export default function NotFound() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="flex-1 flex items-center justify-center bg-gray-50 px-4 py-12">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
         <h1 className="text-6xl font-bold text-primary-600 mb-4">404</h1>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -35,7 +41,7 @@ export default function NotFound() {
         </p>
 
         {pathname && (
-          <p className="text-sm text-gray-500 mb-6 font-mono bg-gray-100 p-2 rounded">
+          <p className="text-sm text-gray-700 mb-6 font-mono bg-gray-100 break-all p-2 rounded">
             Path: {pathname}
           </p>
         )}

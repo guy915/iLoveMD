@@ -76,6 +76,16 @@ export default function Header() {
     addLog('info', 'Mobile menu closed')
   }, [addLog])
 
+  // Close the mobile menu with Escape
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [mobileMenuOpen])
+
   // Log navigation clicks
   const handleNavClick = useCallback((linkLabel: string, linkHref: string) => {
     addLog('info', `Navigation clicked: ${linkLabel}`, { href: linkHref })

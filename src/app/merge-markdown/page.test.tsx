@@ -278,6 +278,37 @@ describe('MergeMarkdownPage', () => {
       })
     })
 
+    it('should show a visible error for rejected files and let the user dismiss it', async () => {
+      const { container } = render(<MergeMarkdownPage />)
+
+      const good = createMockMarkdownFile('good.md', '# Good', 100)
+      const bad = createMockMarkdownFile('notes.txt', 'Not markdown', 100)
+      Object.defineProperty(bad, 'name', { value: 'notes.txt' })
+
+      const fileInput = container.querySelectorAll('input[type="file"]')[1] as HTMLInputElement
+      fireEvent.change(fileInput, { target: { files: [good, bad] } })
+
+      const alert = await screen.findByRole('alert')
+      expect(alert).toHaveTextContent('notes.txt: Not a markdown file')
+      expect(screen.getByText('good.md')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+
+    it('should not render links in previews as clickable anchors', async () => {
+      const { container } = render(<MergeMarkdownPage />)
+
+      const file = createMockMarkdownFile('links.md', 'See [site](https://example.com)', 100)
+      const fileInput = container.querySelectorAll('input[type="file"]')[1] as HTMLInputElement
+      fireEvent.change(fileInput, { target: { files: [file] } })
+
+      await waitFor(() => {
+        expect(screen.getByText('links.md')).toBeInTheDocument()
+      })
+      expect(container.querySelector('a[href="https://example.com"]')).toBeNull()
+    })
+
     it('should log when folder selection is cancelled', async () => {
       const { container } = render(<MergeMarkdownPage />)
 
