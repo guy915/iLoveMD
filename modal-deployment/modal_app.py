@@ -12,12 +12,14 @@ import os
 import uuid
 import threading
 import time
-import random
 from pathlib import Path
 from typing import Optional, Dict, Any
 
 # Lock to prevent concurrent model initialization within a container (fixes meta tensor error)
 _model_init_lock = threading.Lock()
+# Models loaded once per container and shared by its requests. Loading them for every
+# PDF was slow and kept one copy per concurrent request in GPU memory.
+_artifact_dict = None
 
 # Create Modal app
 app = modal.App("marker-pdf-converter")
@@ -106,6 +108,55 @@ def check_request_token(token: Optional[str]) -> Optional[str]:
     rate_limits.put(day_key, day_count + 1)
     return None
 
+def get_models():
+    """Load Marker's models once per container (thread-safe), with retries for the
+    intermittent "meta tensor" error in the surya library."""
+    global _artifact_dict
+    if _artifact_dict is not None:
+        return _artifact_dict
+
+    from marker.models import create_model_dict
+
+    with _model_init_lock:
+        if _artifact_dict is not None:
+            return _artifact_dict
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                print(f"[get_models] Attempt {attempt + 1}: initializing models...")
+                _artifact_dict = create_model_dict()
+                print("[get_models] Models initialized")
+                return _artifact_dict
+            except Exception as e:
+                error_msg = str(e)
+                if "meta tensor" in error_msg.lower() and attempt < max_retries - 1:
+                    wait_time = 2 ** (attempt + 1)
+                    print(f"[get_models] Meta tensor error, retrying in {wait_time}s: {error_msg}")
+                    time.sleep(wait_time)
+                else:
+                    raise
+    raise RuntimeError("Failed to initialize models after all retries")
+
+
+def encode_images(images: Dict[str, Any]) -> Dict[str, str]:
+    """Encode Marker's extracted images (name -> PIL image) as base64 strings."""
+    import base64
+    import io
+
+    encoded: Dict[str, str] = {}
+    for name, image in (images or {}).items():
+        try:
+            fmt = "PNG" if name.lower().endswith(".png") else "JPEG"
+            if fmt == "JPEG" and image.mode not in ("RGB", "L"):
+                image = image.convert("RGB")
+            buffer = io.BytesIO()
+            image.save(buffer, format=fmt)
+            encoded[name] = base64.b64encode(buffer.getvalue()).decode("ascii")
+        except Exception as e:
+            print(f"[encode_images] Skipping image {name}: {e}")
+    return encoded
+
+
 # Define the conversion function
 @app.function(
     image=image,
@@ -117,7 +168,7 @@ def check_request_token(token: Optional[str]) -> Optional[str]:
     scaledown_window=120,
     max_containers=2,  # Hard cap on parallel GPUs (cost limit)
 )
-@modal.concurrent(max_inputs=10)  # Handle up to 10 concurrent requests
+@modal.concurrent(max_inputs=4)  # Up to 4 PDFs at once per GPU (T4 has 16 GB)
 def convert_pdf(
     pdf_bytes: bytes,
     filename: str,
@@ -171,7 +222,6 @@ def convert_pdf(
 
         # Use Marker Python API directly (as per official README)
         from marker.converters.pdf import PdfConverter
-        from marker.models import create_model_dict
         from marker.output import text_from_rendered
         from marker.config.parser import ConfigParser
         
@@ -215,38 +265,7 @@ def convert_pdf(
         print(f"[DIAGNOSTIC] Process ID: {os.getpid()}")
         print(f"[DIAGNOSTIC] Thread ID: {threading.get_ident()}")
         
-        # Create converter with models - use lock + random delay to prevent concurrent initialization
-        # 1. Threading lock prevents concurrent init within same container
-        # 2. Random delay (0-5s) staggers cold starts across multiple containers
-        # This fixes the "Cannot copy out of meta tensor" error when multiple requests initialize models simultaneously
-        # Longer delay range ensures better staggering when multiple containers start simultaneously
-        time.sleep(random.uniform(0, 5.0))
-        
-        print(f"[DIAGNOSTIC] About to initialize models (after delay)")
-        
-        # Retry logic for meta tensor error (bug in surya library)
-        # The surya library sometimes loads models in meta mode incorrectly when multiple containers initialize simultaneously
-        max_retries = 3
-        artifact_dict = None
-        for attempt in range(max_retries):
-            try:
-                with _model_init_lock:
-                    print(f"[DIAGNOSTIC] Attempt {attempt + 1}: Acquired lock, initializing models...")
-                    artifact_dict = create_model_dict()
-                    print(f"[DIAGNOSTIC] Models initialized successfully")
-                    break  # Success, exit retry loop
-            except Exception as e:
-                error_msg = str(e)
-                if "meta tensor" in error_msg.lower() and attempt < max_retries - 1:
-                    # Exponential backoff: 2s, 4s, 8s
-                    wait_time = 2 ** (attempt + 1)
-                    print(f"[DIAGNOSTIC] Meta tensor error on attempt {attempt + 1}, retrying in {wait_time}s...")
-                    print(f"[DIAGNOSTIC] Error: {error_msg}")
-                    time.sleep(wait_time)
-                else:
-                    # Not a meta tensor error, or last attempt - re-raise
-                    print(f"[DIAGNOSTIC] Failed after {attempt + 1} attempts")
-                    raise
+        artifact_dict = get_models()
         
         if artifact_dict is None:
             raise RuntimeError("Failed to initialize models after all retries")
@@ -279,6 +298,7 @@ def convert_pdf(
             "success": True,
             "request_id": request_id,
             "markdown": markdown_content,
+            "images": encode_images(images) if extract_images else {},
             "filename": f"{input_file.stem}.md",
             "metadata": metadata,
         }
@@ -402,6 +422,46 @@ def create_app():
             except OSError:
                 pass
     
+    def record_result(request_id: str, result: Optional[Dict[str, Any]]):
+        """Save a finished conversion's result to the job (unless it already finished)"""
+        job_data = load_job(request_id) or {"status": "processing"}
+        if job_data.get("status") in ("complete", "error"):
+            return job_data
+        job_data["finished_at"] = time.time()
+        if result and result.get("success"):
+            job_data["status"] = "complete"
+            job_data["markdown"] = result.get("markdown", "")
+            job_data["images"] = result.get("images") or {}
+            print(f"[record_result] {request_id}: markdown length {len(job_data['markdown'])}, {len(job_data['images'])} images")
+        else:
+            job_data["status"] = "error"
+            job_data["error"] = (result or {}).get("error", "Conversion failed") if result else "No result returned"
+            print(f"[record_result] {request_id}: error {job_data['error']}")
+        save_job(request_id, job_data)
+        return job_data
+
+    async def collect_finished_call(request_id: str, job: Dict[str, Any]) -> Dict[str, Any]:
+        """If the job's conversion call already finished (for example, the web container
+        that started it restarted), save and return its result."""
+        call_id = job.get("call_id")
+        if not call_id:
+            return job
+        try:
+            result = await modal.FunctionCall.from_id(call_id).get.aio(timeout=0)
+        except Exception as e:
+            name = type(e).__name__
+            if name == "FunctionTimeoutError":
+                result = {"success": False, "error": "Conversion timed out"}
+            elif "cancel" in name.lower():
+                result = {"success": False, "error": "Conversion cancelled"}
+            elif name == "OutputExpiredError":
+                result = {"success": False, "error": "Conversion result expired. Please try again."}
+            elif "timeout" in name.lower():
+                return job  # get(timeout=0): still running
+            else:
+                result = {"success": False, "error": f"Conversion error: {e}"}
+        return record_result(request_id, result)
+
     # Store background tasks to prevent garbage collection
     if not hasattr(web_app.state, 'conversion_tasks'):
         web_app.state.conversion_tasks = {}
@@ -470,76 +530,46 @@ def create_app():
         save_job(request_id, job_data)
         cleanup_old_jobs()
         
-        # Define async task to run conversion (non-blocking)
+        # Start the conversion on a GPU container. spawn() returns at once; the call id is
+        # saved with the job, so the status endpoint can still collect the result (and
+        # /cancel can stop it) even if this web container restarts.
+        try:
+            call = await convert_pdf.spawn.aio(
+                pdf_bytes=content,
+                filename=file.filename,
+                output_format=output_format,
+                langs=langs,
+                paginate=paginate_bool,
+                extract_images=not disable_image_extraction_bool,
+                use_llm=str_to_bool(use_llm),
+                api_key=api_key,
+            )
+        except Exception as e:
+            print(f"[marker_endpoint] Failed to start conversion: {e}")
+            job_data.update({"status": "error", "error": "Could not start the conversion. Please try again.", "finished_at": time.time()})
+            save_job(request_id, job_data)
+            return JSONResponse(status_code=503, content={"error": "Could not start the conversion. Please try again."})
+
+        job_data["call_id"] = call.object_id
+        save_job(request_id, job_data)
+        print(f"[marker_endpoint] Started conversion for {file.filename}, request_id={request_id}, call_id={call.object_id}, size={len(content)} bytes")
+
         async def run_conversion_task():
             try:
-                print(f"[marker_endpoint] Starting conversion for {file.filename}, request_id={request_id}, file_size={len(content)} bytes")
-                # Use remote() instead of spawn() - this ensures the function actually runs
-                # We run it in a thread pool to avoid blocking the FastAPI event loop
-                loop = asyncio.get_event_loop()
-                import concurrent.futures
-                
-                def run_conversion():
-                    """Run the conversion in a blocking way"""
-                    print(f"[run_conversion] Calling convert_pdf.remote() for {file.filename}")
-                    # Parse use_llm boolean
-                    use_llm_bool = str_to_bool(use_llm)
-                    return convert_pdf.remote(
-                        pdf_bytes=content,
-                        filename=file.filename,
-                        output_format=output_format,
-                        langs=langs,
-                        paginate=paginate_bool,
-                        extract_images=not disable_image_extraction_bool,
-                        use_llm=use_llm_bool,
-                        api_key=api_key,
-                    )
-                
-                print(f"[marker_endpoint] About to call convert_pdf.remote() in thread pool...")
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    result = await loop.run_in_executor(executor, run_conversion)
-                
-                print(f"[marker_endpoint] convert_pdf result received: success={result.get('success') if result else 'None'}")
-                if result:
-                    print(f"[marker_endpoint] Result keys: {list(result.keys())}")
-                    if result.get("markdown"):
-                        print(f"[marker_endpoint] Markdown length: {len(result.get('markdown', ''))}")
-                    else:
-                        print(f"[marker_endpoint] WARNING: No markdown in result!")
-                
-                # Update job data
-                job_data = load_job(request_id) or {"status": "processing"}
-                
-                if result and result.get("success"):
-                    job_data["status"] = "complete"
-                    job_data["finished_at"] = time.time()
-                    markdown = result.get("markdown", "")
-                    job_data["markdown"] = markdown
-                    print(f"[marker_endpoint] Saving job with markdown length: {len(markdown)}")
-                else:
-                    job_data["status"] = "error"
-                    job_data["finished_at"] = time.time()
-                    job_data["error"] = result.get("error", "Conversion failed") if result else "No result returned"
-                    print(f"[marker_endpoint] Saving job with error: {job_data['error']}")
-                
-                # Save updated job data
-                save_job(request_id, job_data)
-                print(f"[marker_endpoint] Job saved. Status: {job_data.get('status')}")
+                result = await call.get.aio()
             except Exception as e:
-                # Update job with error
-                import traceback
-                error_msg = f"Conversion error: {str(e)}"
-                print(f"[marker_endpoint] Exception in run_conversion_task: {error_msg}")
-                print(f"[marker_endpoint] Traceback: {traceback.format_exc()}")
-                job_data = load_job(request_id) or {"status": "processing"}
-                job_data["status"] = "error"
-                job_data["error"] = error_msg
-                save_job(request_id, job_data)
+                name = type(e).__name__
+                if "cancel" in name.lower() or "cancel" in str(e).lower():
+                    return  # /cancel already recorded the outcome
+                if name == "FunctionTimeoutError":
+                    result = {"success": False, "error": "Conversion timed out"}
+                else:
+                    print(f"[marker_endpoint] Conversion call failed: {e}")
+                    result = {"success": False, "error": f"Conversion error: {e}"}
             finally:
-                # Remove task from storage when done
-                if request_id in web_app.state.conversion_tasks:
-                    del web_app.state.conversion_tasks[request_id]
-        
+                web_app.state.conversion_tasks.pop(request_id, None)
+            record_result(request_id, result)
+
         # Create and store task to prevent garbage collection
         task = asyncio.create_task(run_conversion_task())
         web_app.state.conversion_tasks[request_id] = task
@@ -551,6 +581,30 @@ def create_app():
             "request_check_url": f"/status/{request_id}",
         })
     
+    @web_app.post("/cancel/{request_id}")
+    async def cancel_job(request_id: str):
+        """Stop a running conversion (the user cancelled it), so it stops using the GPU"""
+        job = load_job(request_id)
+        if not job:
+            await reload_jobs()
+            job = load_job(request_id)
+        if not job:
+            return JSONResponse(status_code=404, content={"error": "Conversion job not found"})
+        if job.get("status") != "processing":
+            return {"status": job.get("status")}
+
+        call_id = job.get("call_id")
+        if call_id:
+            try:
+                await modal.FunctionCall.from_id(call_id).cancel.aio()
+            except Exception as e:
+                print(f"[cancel_job] Cancel failed for {request_id}: {e}")
+        task = web_app.state.conversion_tasks.pop(request_id, None)
+        if task:
+            task.cancel()
+        record_result(request_id, {"success": False, "error": "Conversion cancelled"})
+        return {"status": "cancelled"}
+
     @web_app.get("/status/{request_id}")
     async def check_status(request_id: str):
         """Check conversion status with retry for eventual consistency"""
@@ -572,8 +626,11 @@ def create_app():
         
         if not job:
             print(f"[check_status] Job not found for request_id: {request_id} after {max_retries} attempts")
-            # Return processing status instead of 404 to allow polling to continue
-            return {"status": "processing"}
+            # The client keeps polling through 404s for a short while after submitting
+            return JSONResponse(status_code=404, content={"status": "error", "error": "Conversion job not found"})
+
+        if job.get("status", "processing") == "processing":
+            job = await collect_finished_call(request_id, job)
         
         status = job.get("status", "processing")
         print(f"[check_status] Job status for {request_id}: {status}")
@@ -589,6 +646,7 @@ def create_app():
             markdown = job.get("markdown", "")
             print(f"[check_status] Returning markdown, length: {len(markdown)}")
             response["markdown"] = markdown
+            response["images"] = job.get("images") or {}
             # Kept until cleanup_old_jobs() removes it, so the result can be fetched again
         elif status == "error":
             error = job.get("error", "Unknown error")
