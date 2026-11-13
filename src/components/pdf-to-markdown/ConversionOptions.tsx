@@ -32,13 +32,20 @@ export function ConversionOptions({
   const [pageNumbersIntent, setPageNumbersIntent] = useState(false)
   const [imageDescriptionsIntent, setImageDescriptionsIntent] = useState(false)
 
-  // Sync intent with loaded options ONCE on mount (to load persisted preferences)
-  // but do NOT re-sync on subsequent changes (to preserve user intent)
+  // Sync intent from the options while the parent option is on. Saved options are loaded
+  // from localStorage after this component mounts, so a mount-only sync would miss them.
+  // While the parent option is off, the intent is kept so it can be restored later.
   useEffect(() => {
-    setPageNumbersIntent(options.pageFormat === 'with_numbers')
-    setImageDescriptionsIntent(options.disable_image_extraction)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Empty deps = only run on mount
+    if (options.paginate) {
+      setPageNumbersIntent(options.pageFormat === 'with_numbers')
+    }
+  }, [options.paginate, options.pageFormat])
+
+  useEffect(() => {
+    if (options.use_llm) {
+      setImageDescriptionsIntent(options.disable_image_extraction)
+    }
+  }, [options.use_llm, options.disable_image_extraction])
 
   // "Create image descriptions" is a derivative of "LLM enhancement":
   // it is only meaningful when LLM is both toggled on AND actually usable
@@ -136,7 +143,7 @@ export function ConversionOptions({
         <label className="flex items-start">
           <input
             type="checkbox"
-            checked={options.use_llm}
+            checked={llmEffective}
             onChange={(e) => {
               const newValue = e.target.checked
               onOptionChange('use_llm', newValue)

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -16,6 +17,11 @@ export const metadata: Metadata = {
     siteName: 'iLoveMD',
     type: 'website',
   },
+}
+
+export const metadata: Metadata = {
+  title: 'Help & Support',
+  description: 'Answers to common questions and troubleshooting tips for iLoveMD.',
 }
 
 /**
@@ -41,21 +47,22 @@ export default function Help() {
               What is iLoveMD?
             </h3>
             <p className="text-gray-600">
-              iLoveMD is a web application that provides markdown utilities. It converts PDFs and
-              other formats to clean markdown, and lets you merge multiple markdown files together. All tools
+              iLoveMD is a web application that provides markdown utilities. It converts PDFs to clean
+              markdown, and lets you merge multiple markdown files together. All tools
               are designed to be simple, fast, and privacy-focused.
             </p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              How do I get a Marker API key?
+              Do I need an API key?
             </h3>
             <p className="text-gray-600 mb-3">
-              To use the PDF to Markdown tool, you need a Marker API key:
+              No. Free mode works without any key. A free Gemini API key is only needed if you turn on
+              LLM enhancement in Free mode. Paid (fast) mode needs a Marker API key:
             </p>
             <ol className="list-decimal list-inside space-y-2 text-gray-600">
-              <li>Visit <a href="https://www.datalab.to/" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">datalab.to</a></li>
+              <li>Visit <a href="https://www.datalab.to/" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline hover:text-primary-700">datalab.to</a></li>
               <li>Sign up for a free account</li>
               <li>Navigate to the API section</li>
               <li>Copy your API key</li>
@@ -68,9 +75,9 @@ export default function Help() {
               Is my data safe?
             </h3>
             <p className="text-gray-600">
-              Yes! Your API keys are stored locally in your browser using localStorage. We never send your API keys
-              to our servers. Files are processed either client-side (HTML, Merge tools) or sent directly to the
-              Marker API (PDF tool) without being stored on our servers.
+              Your API keys are saved only in your browser (localStorage). When you convert a PDF, the file and
+              any key you entered pass through our server to the conversion service (our free converter, or the
+              Marker API in Paid mode) and are not stored. The Merge tool runs entirely in your browser.
             </p>
           </div>
         </div>
@@ -86,7 +93,7 @@ export default function Help() {
               &quot;Invalid API key&quot; error
             </h3>
             <ul className="list-disc list-inside space-y-1 text-gray-600">
-              <li>Verify your Marker API key at <a href="https://www.datalab.to/" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">datalab.to</a></li>
+              <li>Verify your Marker API key at <a href="https://www.datalab.to/" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline hover:text-primary-700">datalab.to</a></li>
               <li>Make sure you copied the entire key</li>
               <li>Check that your key has remaining credits</li>
             </ul>
@@ -138,7 +145,7 @@ export default function Help() {
             iLoveMD includes a comprehensive diagnostic logging system to help troubleshoot issues:
           </p>
           <ul className="list-disc list-inside space-y-2 text-gray-600">
-            <li>Click &quot;Diagnostic Logs&quot; in the header to view all application events</li>
+            <li>Click &quot;Logs&quot; in the header to view all application events</li>
             <li>Logs include file uploads, API calls, errors, and performance metrics</li>
             <li>Copy logs to share when reporting issues</li>
             <li>Logs persist across page navigation</li>
@@ -158,7 +165,7 @@ export default function Help() {
           <ul className="space-y-2 text-gray-700">
             <li className="flex items-start">
               <span className="text-primary-600 mr-2">•</span>
-              <span>Check the <Link href="/about" className="text-primary-600 hover:underline">About page</Link> for more information</span>
+              <span>Check the <Link href="/about" className="text-primary-600 underline hover:text-primary-700">About page</Link> for more information</span>
             </li>
             <li className="flex items-start">
               <span className="text-primary-600 mr-2">•</span>
@@ -166,7 +173,7 @@ export default function Help() {
             </li>
             <li className="flex items-start">
               <span className="text-primary-600 mr-2">•</span>
-              <span>Visit the project repository for updates and known issues</span>
+              <span>Visit the <a href="https://github.com/guy915/iLoveMD" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline hover:text-primary-700">project repository</a> for updates and known issues</span>
             </li>
           </ul>
         </div>

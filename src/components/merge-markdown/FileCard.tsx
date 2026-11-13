@@ -87,27 +87,9 @@ export function FileCard({
                 code: ({...props}) => <code className="bg-gray-100 px-0.5 rounded text-[0.32rem]" {...props} />,
                 pre: ({...props}) => <pre className="bg-gray-100 p-1 rounded text-[0.32rem] mb-1 overflow-x-auto" {...props} />,
                 blockquote: ({...props}) => <blockquote className="border-l-2 border-gray-300 pl-1 mb-1 text-gray-600" {...props} />,
-                a: ({href, ...props}) => {
-                  // Filter out dangerous URL schemes for security
-                  if (!href) {
-                    return <span className="text-blue-600" {...props} />
-                  }
-
-                  try {
-                    // Parse the URL to validate it
-                    const url = new URL(href, 'http://example.com')
-                    // Only allow safe protocols
-                    const safeProtocols = ['http:', 'https:', 'mailto:']
-                    const isSafe = safeProtocols.includes(url.protocol.toLowerCase())
-
-                    return isSafe
-                      ? <a className="text-blue-600" href={href} rel="noopener noreferrer" {...props} />
-                      : <span className="text-blue-600" {...props} />
-                  } catch {
-                    // If URL parsing fails, treat as unsafe
-                    return <span className="text-blue-600" {...props} />
-                  }
-                },
+                // Previews are thumbnails, so links render as plain text. A real link here
+                // would navigate away from the page and lose all uploaded files.
+                a: ({href, node, ...props}) => <span className="text-blue-600" {...props} />,
                 hr: ({...props}) => <hr className="my-1 border-gray-300" {...props} />,
                 // Don't render images - just show alt text to prevent 404 errors flooding logs
                 img: ({alt}) => <span className="text-gray-500 text-[0.32rem] italic">[Image: {alt || 'no description'}]</span>,

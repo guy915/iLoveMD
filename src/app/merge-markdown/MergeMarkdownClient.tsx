@@ -25,6 +25,8 @@ export default function MergeMarkdownClient() {
     const {
         files,
         sortMode,
+        uploadErrors,
+        setUploadErrors,
         setFiles,
         processFiles,
         removeFile,
@@ -75,6 +77,8 @@ export default function MergeMarkdownClient() {
 
         if (immediateFiles.length === 0) {
             addLog('error', 'No markdown files found in the immediate folder')
+            setUploadErrors(['No Markdown (.md or .markdown) files found in the selected folder'])
+            e.target.value = ''
             return
         }
 
@@ -83,7 +87,7 @@ export default function MergeMarkdownClient() {
 
         // Reset input to allow re-selecting same folder
         e.target.value = ''
-    }, [processFiles, addLog])
+    }, [processFiles, addLog, setUploadErrors])
 
     // Handle click on empty canvas area
     const handleEmptyCanvasClick = useCallback(() => {
@@ -188,6 +192,7 @@ export default function MergeMarkdownClient() {
                     await processFiles(allFiles)
                 } else {
                     addLog('error', 'No markdown files found in dropped folder(s)')
+                    setUploadErrors(['No Markdown (.md or .markdown) files found in the dropped folder'])
                 }
                 return
             }
@@ -199,7 +204,7 @@ export default function MergeMarkdownClient() {
             addLog('info', `${droppedFiles.length} file(s) dropped on canvas`)
             await processFiles(droppedFiles)
         }
-    }, [processFiles, addLog])
+    }, [processFiles, addLog, setUploadErrors])
 
     // Merge files into single markdown
     const mergeMarkdownFiles = useCallback((): string => {
@@ -336,7 +341,7 @@ export default function MergeMarkdownClient() {
             <div className="flex flex-col md:flex-row md:overflow-hidden" style={{ minHeight: 'calc(100vh - 64px)' }}>
 
                 {/* UploadPanel wrapper to handle order: top on mobile, right on desktop */}
-                <div className="order-first md:order-last w-full md:w-auto flex-shrink-0">
+                <div className="order-first md:order-last w-full md:w-auto flex-shrink-0 md:flex">
                     <UploadPanel
                         files={files}
                         sortMode={sortMode}
@@ -394,6 +399,32 @@ export default function MergeMarkdownClient() {
                             Combine multiple Markdown files into one document
                         </p>
 
+                        {uploadErrors.length > 0 && (
+                            <div
+                                className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start justify-between gap-4"
+                                role="alert"
+                            >
+                                <div className="text-sm text-red-800 min-w-0">
+                                    <p className="font-medium mb-1">
+                                        {uploadErrors.length === 1 ? 'A file was not added:' : `${uploadErrors.length} problems with the selected files:`}
+                                    </p>
+                                    <ul className="list-disc list-inside space-y-0.5 break-words">
+                                        {uploadErrors.slice(0, 10).map((message, i) => (
+                                            <li key={i}>{message}</li>
+                                        ))}
+                                        {uploadErrors.length > 10 && <li>and {uploadErrors.length - 10} more</li>}
+                                    </ul>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setUploadErrors([])}
+                                    className="text-sm font-medium text-red-700 hover:text-red-900 shrink-0"
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
+                        )}
+
                         {/* File Grid */}
                         {files.length === 0 ? (
                             <div
@@ -410,7 +441,7 @@ export default function MergeMarkdownClient() {
                             >
                                 <div className="text-center">
                                     <p className="text-gray-500 text-lg mb-2">No files uploaded</p>
-                                    <p className="text-gray-400 text-sm">
+                                    <p className="text-gray-600 text-sm">
                                         Click here, drag files, or &quot;Upload Files&quot; to get started
                                     </p>
                                 </div>

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -16,6 +17,11 @@ export const metadata: Metadata = {
     siteName: 'iLoveMD',
     type: 'website',
   },
+}
+
+export const metadata: Metadata = {
+  title: 'About',
+  description: 'About iLoveMD, free markdown utilities for converting PDFs and merging markdown files.',
 }
 
 /**
@@ -37,7 +43,7 @@ export default function About() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Mission</h2>
           <p className="text-gray-600 mb-4">
             iLoveMD was built to make working with markdown files easier. Whether you need to convert
-            PDFs to markdown, merge multiple markdown files, or process other document formats, we provide
+            PDFs to markdown or merge multiple markdown files, we provide
             simple tools that just work.
           </p>
           <p className="text-gray-600">
@@ -55,15 +61,15 @@ export default function About() {
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Privacy First</h3>
             <p className="text-gray-600">
               Your documents are your business. We process markdown files entirely in your browser.
-              For PDFs, we proxy to the Marker API but never store your files on our servers.
+              PDFs are passed through our server to the conversion service and are never stored.
             </p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">No Accounts Required</h3>
             <p className="text-gray-600">
-              No sign-ups, no subscriptions, no tracking. Just bring your API key for PDF conversion
-              (which you can get for free from Marker), and you&apos;re ready to go.
+              No sign-ups and no subscriptions. Free mode needs no API key at all. We only collect anonymous
+              page-view statistics (Vercel Web Analytics), with no cookies.
             </p>
           </div>
 
@@ -78,8 +84,8 @@ export default function About() {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Free to Use</h3>
             <p className="text-gray-600">
-              The website is hosted on Vercel&apos;s free tier. You provide your own API keys for external services.
-              No hidden costs, no premium tiers.
+              The website is hosted on Vercel&apos;s free tier. Free mode costs nothing. Paid mode is
+              optional and uses your own Marker API key, billed by Marker, not by us.
             </p>
           </div>
         </div>
@@ -95,7 +101,7 @@ export default function About() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-start">
                   <span className="text-primary-600 mr-2">•</span>
-                  <span>Next.js 14 with App Router</span>
+                  <span>Next.js 16 with App Router</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-primary-600 mr-2">•</span>
@@ -117,7 +123,7 @@ export default function About() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-start">
                   <span className="text-primary-600 mr-2">•</span>
-                  <span>Marker API for PDF conversion</span>
+                  <span>Marker for PDF conversion (free hosted converter or Marker API)</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-primary-600 mr-2">•</span>
@@ -159,7 +165,7 @@ export default function About() {
             and learning purposes.
           </p>
           <p className="text-gray-700">
-            We welcome feedback, bug reports, and feature requests. Check out the project repository
+            We welcome feedback, bug reports, and feature requests. Check out the <a href="https://github.com/guy915/iLoveMD" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline hover:text-primary-700">project repository</a>
             to learn more about the implementation or contribute to the project.
           </p>
         </div>

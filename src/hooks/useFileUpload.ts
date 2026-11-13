@@ -7,6 +7,9 @@ import type { MarkdownFile, SortMode } from '@/types/markdown'
 interface UseFileUploadReturn {
   files: MarkdownFile[]
   sortMode: SortMode
+  /** Messages for files rejected by the last upload, shown to the user */
+  uploadErrors: string[]
+  setUploadErrors: (errors: string[]) => void
   setFiles: (files: MarkdownFile[]) => void
   setSortMode: (mode: SortMode) => void
   processFiles: (fileList: FileList | File[]) => Promise<void>
@@ -23,6 +26,7 @@ interface UseFileUploadReturn {
 export function useFileUpload(): UseFileUploadReturn {
   const [files, setFiles] = useState<MarkdownFile[]>([])
   const [sortMode, setSortMode] = useState<SortMode>('none')
+  const [uploadErrors, setUploadErrors] = useState<string[]>([])
   const { addLog } = useLogs()
 
   // Sort files based on current sort mode
@@ -195,6 +199,7 @@ export function useFileUpload(): UseFileUploadReturn {
     if (errors.length > 0) {
       addLog('error', `${errors.length} file(s) failed validation`, { errors })
     }
+    setUploadErrors(errors)
   }, [files, addLog, sortFiles, sortMode])
 
   // Remove individual file
@@ -215,6 +220,7 @@ export function useFileUpload(): UseFileUploadReturn {
     addLog('info', `Cleared all ${files.length} file(s)`)
     setFiles([])
     setSortMode('none')
+    setUploadErrors([])
   }, [files.length, addLog])
 
   // Toggle alphabetical sorting
@@ -236,6 +242,8 @@ export function useFileUpload(): UseFileUploadReturn {
   return {
     files,
     sortMode,
+    uploadErrors,
+    setUploadErrors,
     setFiles,
     setSortMode,
     processFiles,

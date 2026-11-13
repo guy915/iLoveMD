@@ -27,7 +27,7 @@ export function ConversionModeToggle({ mode, setMode, disabled = false }: Conver
         >
           <div className="flex flex-col items-center">
             <span className="font-semibold">Free</span>
-            <span className="text-xs opacity-90">(Slow)</span>
+            <span className="text-xs">(Slow)</span>
           </div>
         </button>
         <button
@@ -42,7 +42,7 @@ export function ConversionModeToggle({ mode, setMode, disabled = false }: Conver
         >
           <div className="flex flex-col items-center">
             <span className="font-semibold">Paid</span>
-            <span className="text-xs opacity-90">(Fast)</span>
+            <span className="text-xs">(Fast)</span>
           </div>
         </button>
       </div>

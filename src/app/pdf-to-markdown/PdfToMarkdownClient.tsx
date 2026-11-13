@@ -139,6 +139,11 @@ export default function PdfToMarkdownClient() {
     }, [])
 
     const handleFilesSelect = useCallback((selectedFiles: FileList, fromFolder: boolean = false) => {
+        if (processing) {
+            addLog('info', 'Ignored new files: a conversion is in progress')
+            return
+        }
+
         const filesArray = Array.from(selectedFiles)
         let pdfFiles = filterPdfFiles(filesArray)
 
@@ -198,7 +203,7 @@ export default function PdfToMarkdownClient() {
         setBatchProgress(null)
         setBatchZipBlob(null)
         setBatchZipFilename(null)
-    }, [addLog, files, filenameMap, generateUniqueFilename])
+    }, [addLog, files, filenameMap, generateUniqueFilename, processing])
 
     const clearInputFiles = useCallback(() => {
         // Only clear input files, keep conversion results intact
@@ -234,23 +239,27 @@ export default function PdfToMarkdownClient() {
     // Use full-page drop zone hook
     const { showDropOverlay } = useFullPageDropZone({
         onFilesDropped: (fileList) => handleFilesSelect(fileList, false),
-        enabled: true
+        enabled: !processing
     })
 
+    // In free mode, LLM enhancement only applies when a plausible Gemini key is present.
+    // If the key was removed after LLM was turned on, convert without LLM instead of blocking.
+    const isLlmAvailable = mode !== 'free' || isLikelyApiKey(geminiApiKey)
+    const llmEnabled = options.use_llm && isLlmAvailable
+
     const handleConvert = useCallback(async () => {
+        const effectiveOptions = {
+            ...options,
+            use_llm: llmEnabled,
+            disable_image_extraction: options.disable_image_extraction && llmEnabled
+        }
+
         // Mode-based validation
         if (mode === 'paid') {
             // Validate Marker API key for paid mode
             if (!apiKey.trim()) {
                 setError('Please enter your Marker API key')
                 addLog('error', 'Conversion blocked: No Marker API key provided')
-                return
-            }
-        } else if (mode === 'free') {
-            // Validate Gemini API key for free mode with LLM
-            if (options.use_llm && !isLikelyApiKey(geminiApiKey)) {
-                setError('Please enter a valid Gemini API key to use LLM enhancement in free mode')
-                addLog('error', 'Conversion blocked: Missing or invalid Gemini API key for free LLM mode')
                 return
             }
         }
@@ -272,7 +281,7 @@ export default function PdfToMarkdownClient() {
             fileCount: files.length,
             isBatch,
             totalSize: formatBytesToMB(files.reduce((sum, f) => sum + f.size, 0)),
-            options
+            options: effectiveOptions
         })
 
         // Keep a local reference: after a cancel, a new run can start before this one ends
@@ -302,15 +311,15 @@ export default function PdfToMarkdownClient() {
                     }
 
                     const result = await convertBatchPdfToMarkdownLocal(files, {
-                        geminiApiKey: options.use_llm ? geminiApiKey : null,
-                        markerOptions: options,
+                        geminiApiKey: llmEnabled ? geminiApiKey : null,
+                        markerOptions: effectiveOptions,
                         filenameMap: filenameMap,
                         onProgress: (progress: BatchProgress) => {
-                            if (isMountedRef.current) {
+                            if (isMountedRef.current && !abortControllerRef.current?.signal.aborted) {
                                 setBatchProgress(progress)
                                 const elapsedTime = Date.now() - uploadingStartTime
                                 // Show "Uploading..." until first file completes AND minimum duration has passed
-                                if (progress.completed === 0 || elapsedTime < MIN_UPLOADING_DURATION) {
+                                if (elapsedTime < MIN_UPLOADING_DURATION) {
                                     setStatus('Uploading...')
                                 } else {
                                     setStatus(`Processing... ${progress.completed}/${progress.total}`)
@@ -386,14 +395,14 @@ export default function PdfToMarkdownClient() {
 
                     const result = await convertBatchPdfToMarkdown(files, {
                         apiKey,
-                        markerOptions: options,
+                        markerOptions: effectiveOptions,
                         filenameMap: filenameMap,
                         onProgress: (progress: BatchProgress) => {
-                            if (isMountedRef.current) {
+                            if (isMountedRef.current && !abortControllerRef.current?.signal.aborted) {
                                 setBatchProgress(progress)
                                 const elapsedTime = Date.now() - uploadingStartTime
                                 // Show "Uploading..." until first file completes AND minimum duration has passed
-                                if (progress.completed === 0 || elapsedTime < MIN_UPLOADING_DURATION) {
+                                if (elapsedTime < MIN_UPLOADING_DURATION) {
                                     setStatus('Uploading...')
                                 } else {
                                     setStatus(`Processing... ${progress.completed}/${progress.total}`)
@@ -457,7 +466,7 @@ export default function PdfToMarkdownClient() {
                 setStatus('Uploading...')
 
                 const onProgress = (status: string, attemptNumber: number, elapsedSeconds: number) => {
-                    if (!isMountedRef.current) return
+                    if (!isMountedRef.current || abortControllerRef.current?.signal.aborted) return
 
                     setStatus(`Processing...`)
                 }
@@ -467,14 +476,14 @@ export default function PdfToMarkdownClient() {
                     ? await convertPdfToMarkdown(
                         file,
                         apiKey,
-                        options,
+                        effectiveOptions,
                         onProgress,
                         controller.signal
                     )
                     : await convertPdfToMarkdownLocal(
                         file,
-                        options.use_llm ? geminiApiKey : null,
-                        options,
+                        llmEnabled ? geminiApiKey : null,
+                        effectiveOptions,
                         onProgress,
                         controller.signal
                     )
@@ -550,7 +559,7 @@ export default function PdfToMarkdownClient() {
                 abortControllerRef.current = null
             }
         }
-    }, [apiKey, geminiApiKey, files, options, isBatch, folderName, mode, filenameMap, addLog, clearInputFiles])
+    }, [apiKey, geminiApiKey, files, options, llmEnabled, isBatch, folderName, mode, filenameMap, addLog, clearInputFiles])
 
     const handleDownload = useCallback(async () => {
         if (!convertedMarkdown || !outputFilename) return
@@ -785,7 +794,7 @@ export default function PdfToMarkdownClient() {
                         options={options}
                         onOptionChange={handleOptionChange}
                         disabled={processing}
-                        isLlmAvailable={mode !== 'free' || isLikelyApiKey(geminiApiKey)}
+                        isLlmAvailable={isLlmAvailable}
                     />
 
                     {error && (
@@ -812,8 +821,7 @@ export default function PdfToMarkdownClient() {
                                 disabled={
                                     processing ||
                                     files.length === 0 ||
-                                    (mode === 'paid' && !apiKey.trim()) ||
-                                    (mode === 'free' && options.use_llm && !isLikelyApiKey(geminiApiKey))
+                                    (mode === 'paid' && !apiKey.trim())
                                 }
                                 loading={processing}
                                 loadingText="Converting..."
