@@ -62,10 +62,9 @@ export const API_ENDPOINTS = {
   MARKER_LOCAL: '/api/marker/local', // Proxies to free Modal serverless function
   MARKER_EXTERNAL: 'https://www.datalab.to/api/v1/marker',
   MARKER_UPLOAD_URL: '/api/marker/upload-url', // Gets a presigned URL for direct browser upload
+  MARKER_TOKEN: '/api/marker/token', // Short-lived token for direct uploads to the free Modal converter
   DATALAB_FILES: 'https://www.datalab.to/api/v1/files',
   // Free Marker instance (Modal.com with free GPU - $30/month credits)
-  // TODO: Replace with your Modal endpoint URL after deployment
-  // Get this from: modal deploy modal_app.py
   LOCAL_MARKER_INSTANCE: 'https://guybarel2006--marker-pdf-converter-create-app.modal.run',
 } as const
 

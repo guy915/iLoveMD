@@ -10,6 +10,7 @@ import {
 } from '@/lib/utils/apiHelpers'
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
 import { ErrorCode } from '@/types'
+import { createModalToken, getClientIp, getModalTokenSecret } from '@/lib/server/modalToken'
 
 export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
   try {
@@ -158,6 +159,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     // Add Gemini API key if use_llm is enabled
     if (options.use_llm && geminiApiKey) {
       markerFormData.append('api_key', geminiApiKey.trim())
+    }
+
+    // Signed token that lets Modal check the request came through this site and rate-limit by client IP
+    const tokenSecret = getModalTokenSecret()
+    if (tokenSecret) {
+      markerFormData.append('token', createModalToken(tokenSecret, getClientIp(request.headers)))
     }
 
     // Submit to Local Marker instance with timeout
