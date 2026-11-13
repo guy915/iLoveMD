@@ -206,6 +206,22 @@ export default function MergeMarkdownClient() {
         }
     }, [processFiles, addLog, setUploadErrors])
 
+    // Move a file one position left/right (keyboard and touch alternative to drag-and-drop)
+    const moveFile = useCallback((id: string, direction: -1 | 1) => {
+        const index = files.findIndex(f => f.id === id)
+        const target = index + direction
+        if (index === -1 || target < 0 || target >= files.length) return
+        const newFiles = [...files]
+        const [moved] = newFiles.splice(index, 1)
+        newFiles.splice(target, 0, moved)
+        setFiles(newFiles)
+        addLog('info', 'Reordered files', {
+            from: moved.file.name,
+            fromPosition: index + 1,
+            toPosition: target + 1
+        })
+    }, [files, setFiles, addLog])
+
     // Merge files into single markdown
     const mergeMarkdownFiles = useCallback((): string => {
         if (files.length === 0) return ''
@@ -294,17 +310,16 @@ export default function MergeMarkdownClient() {
                 document.body.removeChild(link)
 
                 addLog('success', 'Merged file downloaded', { filename: 'merged.md' })
-
-                // Auto-clear uploaded files after successful download
-                clearAll()
+                // Files stay on the page so options can be changed and the merge downloaded again.
             } finally {
-                // Always clean up URL to prevent memory leaks
-                try {
-                    URL.revokeObjectURL(url)
-                } catch (revokeError) {
-                    // Ignore revoke errors but log them
-                    console.warn('Failed to revoke object URL:', revokeError)
-                }
+                // Revoke later: revoking right after click() can cancel the download in some browsers
+                setTimeout(() => {
+                    try {
+                        URL.revokeObjectURL(url)
+                    } catch (revokeError) {
+                        console.warn('Failed to revoke object URL:', revokeError)
+                    }
+                }, 1000)
             }
 
         } catch (error) {
@@ -312,7 +327,7 @@ export default function MergeMarkdownClient() {
             addLog('error', `Failed to merge and download: ${errorMessage}`)
             // Note: We don't set an error state in this component, just log it
         }
-    }, [files.length, mergeMarkdownFiles, addLog, clearAll])
+    }, [files.length, mergeMarkdownFiles, addLog])
 
     return (
         <>
@@ -338,7 +353,7 @@ export default function MergeMarkdownClient() {
               Mobile layout: flex-col (toolbar → grid → sticky actions)
               Desktop (md+): flex-row (canvas + sidebar) with fixed height
             */}
-            <div className="flex flex-col md:flex-row md:overflow-hidden" style={{ minHeight: 'calc(100vh - 64px)' }}>
+            <div className="flex flex-col md:flex-row md:overflow-hidden md:min-h-[calc(100vh-64px)]">
 
                 {/* UploadPanel wrapper to handle order: top on mobile, right on desktop */}
                 <div className="order-first md:order-last w-full md:w-auto flex-shrink-0 md:flex">
@@ -448,7 +463,7 @@ export default function MergeMarkdownClient() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-24 md:pb-8">
-                                {files.map((markdownFile) => {
+                                {files.map((markdownFile, index) => {
                                     const isDraggedCard = draggedFileId === markdownFile.id
                                     const isDropTarget = dragOverFileId === markdownFile.id
 
@@ -463,6 +478,9 @@ export default function MergeMarkdownClient() {
                                             isDropTarget={isDropTarget}
                                             hasMovedPosition={hasMovedPosition}
                                             onRemove={removeFile}
+                                            position={index + 1}
+                                            total={files.length}
+                                            onMove={moveFile}
                                             onDragStart={(e) => handleFileDragStart(e, markdownFile.id, files)}
                                             onDragOver={(e) => handleFileDragOver(e, markdownFile.id, files, setFiles)}
                                             onDragEnter={(e) => handleFileDragEnter(e, markdownFile.id)}

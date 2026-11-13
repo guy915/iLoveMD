@@ -107,7 +107,7 @@ describe('FreeModeStrategy', () => {
       })
 
       await expect(strategy.submitConversion(mockFile, mockOptions)).rejects.toThrow(
-        'Modal request failed: 500 - Internal Server Error'
+        'Conversion request failed: 500 - Internal Server Error'
       )
     })
   })

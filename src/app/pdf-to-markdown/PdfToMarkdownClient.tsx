@@ -5,7 +5,7 @@ import Button from '@/components/common/Button'
 import { downloadFile, replaceExtension } from '@/lib/utils/downloadUtils'
 import { hasImages, createMarkdownWithImagesZip } from '@/lib/utils/markdownImages'
 import { formatBytesToMB, formatBytesToKB } from '@/lib/utils/formatUtils'
-import { MARKER_CONFIG } from '@/lib/constants'
+import { MARKER_CONFIG, FILE_SIZE } from '@/lib/constants'
 import { convertPdfToMarkdown, convertPdfToMarkdownLocal } from '@/lib/services/markerApiService'
 import { filterPdfFiles, filterImmediateFolderFiles, getFolderName, type BatchProgress } from '@/lib/services/batchConversionService'
 import { cleanupPdfMarkdown } from '@/lib/utils/markdownUtils'
@@ -158,6 +158,21 @@ export default function PdfToMarkdownClient() {
             return
         }
 
+        // Reject files over the converter's size limit before uploading them
+        const maxMB = Math.round(FILE_SIZE.MAX_PDF_FILE_SIZE / FILE_SIZE.BYTES_PER_MB)
+        const tooLarge = pdfFiles.filter(f => f.size > FILE_SIZE.MAX_PDF_FILE_SIZE)
+        if (tooLarge.length > 0) {
+            pdfFiles = pdfFiles.filter(f => f.size <= FILE_SIZE.MAX_PDF_FILE_SIZE)
+            addLog('error', 'Skipped PDF files over the size limit', { files: tooLarge.map(f => f.name), maxMB })
+        }
+        const tooLargeMessage = tooLarge.length > 0
+            ? `Skipped ${tooLarge.length === 1 ? 'a file' : 'files'} over ${maxMB} MB: ${tooLarge.map(f => `"${f.name}" (${formatBytesToMB(f.size)})`).join(', ')}`
+            : ''
+        if (pdfFiles.length === 0) {
+            setError(tooLargeMessage)
+            return
+        }
+
         // Check if this is from a folder by looking at webkitRelativePath
         const folderNameDetected = fromFolder ? getFolderName(pdfFiles[0]) : null
 
@@ -197,7 +212,7 @@ export default function PdfToMarkdownClient() {
             setFolderName(null) // Multiple sources, no single folder name
         }
 
-        setError('')
+        setError(tooLargeMessage)
         setConvertedMarkdown(null)
         setOutputFilename(null)
         setBatchProgress(null)

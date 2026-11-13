@@ -13,6 +13,10 @@ interface FileCardProps {
   isDropTarget: boolean
   hasMovedPosition: boolean
   onRemove: (id: string) => void
+  /** 1-based position in the merge order */
+  position: number
+  total: number
+  onMove: (id: string, direction: -1 | 1) => void
   onDragStart: (e: DragEvent<HTMLDivElement>) => void
   onDragOver: (e: DragEvent<HTMLDivElement>) => void
   onDragEnter: (e: DragEvent<HTMLDivElement>) => void
@@ -31,6 +35,9 @@ export function FileCard({
   isDropTarget,
   hasMovedPosition,
   onRemove,
+  position,
+  total,
+  onMove,
   onDragStart,
   onDragOver,
   onDragEnter,
@@ -106,9 +113,31 @@ export function FileCard({
         <p className="text-sm font-medium text-gray-900 truncate" title={markdownFile.file.name}>
           {markdownFile.file.name}
         </p>
-        <p className="text-xs text-gray-500">
-          {formatFileSize(markdownFile.file.size)}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-gray-500">
+            {formatFileSize(markdownFile.file.size)}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onMove(markdownFile.id, -1)}
+              disabled={position === 1}
+              className="w-7 h-7 flex items-center justify-center rounded text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label={`Move ${markdownFile.file.name} earlier (position ${position} of ${total})`}
+            >
+              <span aria-hidden="true">&larr;</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onMove(markdownFile.id, 1)}
+              disabled={position === total}
+              className="w-7 h-7 flex items-center justify-center rounded text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label={`Move ${markdownFile.file.name} later (position ${position} of ${total})`}
+            >
+              <span aria-hidden="true">&rarr;</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
