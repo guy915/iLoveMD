@@ -1051,3 +1051,72 @@ describe('POST /api/marker', () => {
     })
   })
 })
+
+describe('POST /api/marker with a directly uploaded file', () => {
+  const validKey = 'a'.repeat(40)
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    global.fetch = fetchMock
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  function referenceForm(reference: string, fileId: string): FormData {
+    const formData = new FormData()
+    formData.append('fileReference', reference)
+    formData.append('fileId', fileId)
+    formData.append('apiKey', validKey)
+    return formData
+  }
+
+  it('confirms the upload and submits the file reference to Marker', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ request_id: 'req-1', request_check_url: 'https://www.datalab.to/check/req-1' }),
+      })
+
+    const response = await POST(createPostRequest(referenceForm('datalab://file-abc123', '42')))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data).toEqual({ success: true, request_id: 'req-1', request_check_url: 'https://www.datalab.to/check/req-1' })
+    expect(fetchMock.mock.calls[0][0]).toBe('https://www.datalab.to/api/v1/files/42/confirm')
+    const sentForm = fetchMock.mock.calls[1][1].body as FormData
+    expect(sentForm.get('file_url')).toBe('datalab://file-abc123')
+    expect(sentForm.get('file')).toBeNull()
+  })
+
+  it('rejects references that are not Datalab file references', async () => {
+    const response = await POST(createPostRequest(referenceForm('https://evil.example.com/file.pdf', '42')))
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Invalid uploaded file reference')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-numeric file ID', async () => {
+    const response = await POST(createPostRequest(referenceForm('datalab://file-abc123', '../42')))
+
+    expect(response.status).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('returns the confirm error when the upload did not finish', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ detail: 'File not uploaded' }) })
+
+    const response = await POST(createPostRequest(referenceForm('datalab://file-abc123', '42')))
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('File not uploaded')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})

@@ -17,6 +17,9 @@ export const FILE_SIZE = {
   // Default limits
   MAX_FILE_SIZE: GB, // 1GB
   MAX_PDF_FILE_SIZE: 200 * MB, // 200MB - Marker API limit per file (applies to both single and batch)
+  // Largest PDF sent through our own API routes. Vercel rejects request bodies over 4.5MB,
+  // so larger files are uploaded from the browser straight to the conversion service.
+  MAX_PROXY_UPLOAD_SIZE: 4 * MB,
 
   // Merge markdown limits
   MAX_MERGE_FILE_SIZE: 10 * GB, // 10GB per markdown file
@@ -58,6 +61,8 @@ export const API_ENDPOINTS = {
   MARKER: '/api/marker',
   MARKER_LOCAL: '/api/marker/local', // Proxies to free Modal serverless function
   MARKER_EXTERNAL: 'https://www.datalab.to/api/v1/marker',
+  MARKER_UPLOAD_URL: '/api/marker/upload-url', // Gets a presigned URL for direct browser upload
+  DATALAB_FILES: 'https://www.datalab.to/api/v1/files',
   // Free Marker instance (Modal.com with free GPU - $30/month credits)
   // TODO: Replace with your Modal endpoint URL after deployment
   // Get this from: modal deploy modal_app.py

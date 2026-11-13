@@ -11,6 +11,124 @@ import {
 import type { MarkerSubmitResponse, MarkerPollResponse, MarkerOptions } from '@/types'
 import { ErrorCode } from '@/types'
 
+/** Reference returned by Datalab's file upload API, e.g. "datalab://file-abc123" */
+const DATALAB_FILE_REFERENCE_REGEX = /^datalab:\/\/file-[A-Za-z0-9_-]+$/
+
+/**
+ * Confirm a file the browser uploaded directly to Datalab storage.
+ * Returns an error response, or null when the upload is confirmed.
+ */
+async function confirmDatalabUpload(fileId: string, apiKey: string): Promise<NextResponse<MarkerSubmitResponse> | null> {
+  let response: Response
+  try {
+    response = await fetchWithTimeout(
+      `${API_ENDPOINTS.DATALAB_FILES}/${encodeURIComponent(fileId)}/confirm`,
+      { method: 'GET', headers: { 'X-Api-Key': apiKey } },
+      MARKER_CONFIG.TIMEOUTS.SUBMIT_REQUEST_MS
+    )
+  } catch (fetchError) {
+    const errorType = getNetworkErrorType(fetchError)
+    console.error('Network error confirming Datalab upload:', { errorType, message: String(fetchError) })
+    return NextResponse.json(
+      { success: false, error: getNetworkErrorMessage(errorType), details: { errorType } },
+      { status: 503 }
+    )
+  }
+
+  if (!response.ok) {
+    let message = `Failed to confirm file upload (${response.status})`
+    try {
+      const data = await response.json() as { error?: unknown; detail?: unknown }
+      if (typeof data?.error === 'string' && data.error) message = data.error
+      else if (typeof data?.detail === 'string' && data.detail) message = data.detail
+    } catch {
+      // Keep the generic message
+    }
+    console.error('Datalab upload confirm failed:', { status: response.status, message })
+    return NextResponse.json(
+      { success: false, error: message, details: { httpStatus: response.status } },
+      { status: response.status >= 500 ? 502 : response.status }
+    )
+  }
+
+  return null
+}
+
+/**
+ * Validate an uploaded PDF (type, extension, size and magic bytes).
+ * Returns an error response, or null when the file is valid.
+ */
+async function validatePdfFile(file: File): Promise<NextResponse<MarkerSubmitResponse> | null> {
+  // Validate file type (must be PDF)
+  // Check MIME type
+  if (!file.type || !file.type.includes('pdf')) {
+    return NextResponse.json<MarkerSubmitResponse>(
+      { success: false, error: 'Only PDF files are accepted' },
+      { status: 400 }
+    )
+  }
+
+  // Check file extension
+  const validExtensions = ['.pdf']
+  const hasValidExtension = validExtensions.some(ext =>
+    file.name.toLowerCase().endsWith(ext)
+  )
+  if (!hasValidExtension) {
+    return NextResponse.json<MarkerSubmitResponse>(
+      { success: false, error: 'Only PDF files are accepted (invalid file extension)' },
+      { status: 400 }
+    )
+  }
+
+  // Validate file is not empty
+  if (file.size === 0) {
+    return NextResponse.json<MarkerSubmitResponse>(
+      { success: false, error: 'File is empty. Please upload a valid PDF file.' },
+      { status: 400 }
+    )
+  }
+
+  // Check minimum file size (realistic minimum for a PDF)
+  const MIN_PDF_SIZE = 100 // PDF header + minimal content
+  if (file.size < MIN_PDF_SIZE) {
+    return NextResponse.json<MarkerSubmitResponse>(
+      { success: false, error: 'File too small to be a valid PDF' },
+      { status: 400 }
+    )
+  }
+
+  // Validate PDF magic bytes (PDF files start with %PDF-)
+  try {
+    const buffer = await file.arrayBuffer()
+    const header = new TextDecoder().decode(buffer.slice(0, 5))
+    if (header !== '%PDF-') {
+      return NextResponse.json<MarkerSubmitResponse>(
+        { success: false, error: 'Invalid PDF file format (file does not appear to be a PDF)' },
+        { status: 400 }
+      )
+    }
+  } catch (magicByteError) {
+    console.error('Failed to validate PDF magic bytes:', magicByteError)
+    return NextResponse.json<MarkerSubmitResponse>(
+      { success: false, error: 'Failed to validate file format' },
+      { status: 400 }
+    )
+  }
+
+  // Validate file size (200MB limit per Marker API)
+  if (file.size > FILE_SIZE.MAX_PDF_FILE_SIZE) {
+    return NextResponse.json<MarkerSubmitResponse>(
+      {
+        success: false,
+        error: `File too large (max 200MB). Your file is ${formatBytesToMB(file.size)}`
+      },
+      { status: 413 }
+    )
+  }
+
+  return null
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse<MarkerSubmitResponse>> {
   try {
     // Parse FormData with explicit error handling
@@ -33,11 +151,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
     const apiKey = formData.get('apiKey') as string | null
     const optionsJson = formData.get('options') as string | null
 
-    if (!file) {
+    // A large PDF can't be sent through this route (the hosting platform caps request
+    // bodies at about 4.5 MB). Instead the browser uploads it straight to Datalab storage
+    // and sends us only the file reference (see /api/marker/upload-url).
+    const fileReference = formData.get('fileReference') as string | null
+    const fileId = formData.get('fileId') as string | null
+
+    if (!file && !fileReference) {
       return NextResponse.json(
         { success: false, error: 'No file provided' },
         { status: 400 }
       )
+    }
+
+    if (!file && fileReference) {
+      if (!DATALAB_FILE_REFERENCE_REGEX.test(fileReference) || !fileId || !/^\d+$/.test(fileId)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid uploaded file reference' },
+          { status: 400 }
+        )
+      }
     }
 
     if (!apiKey) {
@@ -47,71 +180,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
       )
     }
 
-    // Validate file type (must be PDF)
-    // Check MIME type
-    if (!file.type || !file.type.includes('pdf')) {
-      return NextResponse.json(
-        { success: false, error: 'Only PDF files are accepted' },
-        { status: 400 }
-      )
-    }
-
-    // Check file extension
-    const validExtensions = ['.pdf']
-    const hasValidExtension = validExtensions.some(ext =>
-      file.name.toLowerCase().endsWith(ext)
-    )
-    if (!hasValidExtension) {
-      return NextResponse.json(
-        { success: false, error: 'Only PDF files are accepted (invalid file extension)' },
-        { status: 400 }
-      )
-    }
-
-    // Validate file is not empty
-    if (file.size === 0) {
-      return NextResponse.json(
-        { success: false, error: 'File is empty. Please upload a valid PDF file.' },
-        { status: 400 }
-      )
-    }
-
-    // Check minimum file size (realistic minimum for a PDF)
-    const MIN_PDF_SIZE = 100 // PDF header + minimal content
-    if (file.size < MIN_PDF_SIZE) {
-      return NextResponse.json(
-        { success: false, error: 'File too small to be a valid PDF' },
-        { status: 400 }
-      )
-    }
-
-    // Validate PDF magic bytes (PDF files start with %PDF-)
-    try {
-      const buffer = await file.arrayBuffer()
-      const header = new TextDecoder().decode(buffer.slice(0, 5))
-      if (header !== '%PDF-') {
-        return NextResponse.json(
-          { success: false, error: 'Invalid PDF file format (file does not appear to be a PDF)' },
-          { status: 400 }
-        )
-      }
-    } catch (magicByteError) {
-      console.error('Failed to validate PDF magic bytes:', magicByteError)
-      return NextResponse.json(
-        { success: false, error: 'Failed to validate file format' },
-        { status: 400 }
-      )
-    }
-
-    // Validate file size (200MB limit per Marker API)
-    if (file.size > FILE_SIZE.MAX_PDF_FILE_SIZE) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `File too large (max 200MB). Your file is ${formatBytesToMB(file.size)}`
-        },
-        { status: 413 }
-      )
+    if (file) {
+      const fileError = await validatePdfFile(file)
+      if (fileError) return fileError
     }
 
     // Validate API key format
@@ -157,7 +228,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<MarkerSub
 
     // Prepare form data for Marker API
     const markerFormData = new FormData()
-    markerFormData.append('file', file)
+    if (file) {
+      markerFormData.append('file', file)
+    } else {
+      // Confirm the direct upload finished before asking Marker to convert it
+      const confirmError = await confirmDatalabUpload(fileId as string, trimmedKey)
+      if (confirmError) return confirmError
+      markerFormData.append('file_url', fileReference as string)
+    }
 
     // Add all options to the request (consistent string conversion for all booleans)
     markerFormData.append('output_format', options.output_format)

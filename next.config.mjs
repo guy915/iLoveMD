@@ -1,3 +1,18 @@
+// Hosts the browser may call directly. Large PDFs are uploaded straight to Modal
+// (free mode) or to Datalab's presigned storage URLs (paid mode), because the hosting
+// platform rejects request bodies over about 4.5 MB. Datalab doesn't document its
+// storage host, so the common object-storage hosts are allowed.
+const EXTERNAL_CONNECT_SOURCES = [
+  'https://www.datalab.to',
+  'https://*.datalab.to',
+  'https://*.modal.run',
+  'https://generativelanguage.googleapis.com',
+  'https://*.r2.cloudflarestorage.com',
+  'https://*.amazonaws.com',
+  'https://storage.googleapis.com',
+  'https://*.blob.core.windows.net',
+].join(' ')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Keep React Strict Mode enabled - it helps catch bugs in development
@@ -23,8 +38,8 @@ const nextConfig = {
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
               process.env.NODE_ENV === 'development'
-                ? "connect-src 'self' ws://localhost:* http://localhost:* https://www.datalab.to https://*.modal.run https://generativelanguage.googleapis.com"
-                : "connect-src 'self' https://www.datalab.to https://*.modal.run https://generativelanguage.googleapis.com",
+                ? `connect-src 'self' ws://localhost:* http://localhost:* ${EXTERNAL_CONNECT_SOURCES}`
+                : `connect-src 'self' ${EXTERNAL_CONNECT_SOURCES}`,
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
