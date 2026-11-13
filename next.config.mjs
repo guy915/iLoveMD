@@ -56,16 +56,6 @@ const nextConfig = {
       }
     ]
   },
-
-  // Configure webpack to properly handle client-side only libraries
-  webpack: (config, { isServer }) => {
-    // Exclude jszip from server bundle (client-side only library)
-    if (isServer) {
-      config.externals = [...(config.externals || []), 'jszip']
-    }
-
-    return config
-  }
 }
 
 export default nextConfig
