@@ -20,6 +20,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "jszip": "^3.10.1",
     "katex": "^0.16.25",
     "next": "^14.2.0",
